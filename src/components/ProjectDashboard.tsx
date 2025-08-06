@@ -1,0 +1,120 @@
+import { useState } from 'react';
+import { ProjectCard } from './ProjectCard';
+import { ProjectHeader } from './ProjectHeader';
+import { ProjectDetailModal } from './ProjectDetailModal';
+import { Project, ProjectStatus, Region } from '@/types/project';
+
+interface ProjectDashboardProps {
+  projects: Project[];
+  onUpdateProject: (updatedProject: Project) => void;
+  onAddProject: () => void;
+}
+
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject }: ProjectDashboardProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Filter projects based on search term and filters
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = 
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.address.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
+    
+    return matchesSearch && matchesStatus && matchesRegion;
+  });
+
+  const handleViewDetails = (project: Project) => {
+    setSelectedProject(project);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleUpdateProjectFromModal = (updatedProject: Project) => {
+    onUpdateProject(updatedProject);
+    setSelectedProject(updatedProject);
+  };
+
+  // Statistics for the header
+  const stats = {
+    total: projects.length,
+    planned: projects.filter(p => p.status === 'planned').length,
+    ongoing: projects.filter(p => p.status === 'ongoing').length,
+    completed: projects.filter(p => p.status === 'completed').length,
+    invoiced: projects.filter(p => p.status === 'invoiced').length,
+  };
+
+  return (
+    <div className="space-y-6">
+      <ProjectHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        regionFilter={regionFilter}
+        onRegionFilterChange={setRegionFilter}
+        onAddProject={onAddProject}
+      />
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="p-4 bg-card rounded-lg border shadow-card">
+          <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+          <div className="text-sm text-muted-foreground">Total Projects</div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border shadow-card">
+          <div className="text-2xl font-bold text-planned">{stats.planned}</div>
+          <div className="text-sm text-muted-foreground">Planned</div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border shadow-card">
+          <div className="text-2xl font-bold text-ongoing">{stats.ongoing}</div>
+          <div className="text-sm text-muted-foreground">Ongoing</div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border shadow-card">
+          <div className="text-2xl font-bold text-completed">{stats.completed}</div>
+          <div className="text-sm text-muted-foreground">Completed</div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border shadow-card">
+          <div className="text-2xl font-bold text-invoiced">{stats.invoiced}</div>
+          <div className="text-sm text-muted-foreground">Invoiced</div>
+        </div>
+      </div>
+
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredProjects.map(project => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onViewDetails={handleViewDetails}
+          />
+        ))}
+      </div>
+
+      {filteredProjects.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-muted-foreground">
+            No projects found matching your criteria.
+          </div>
+        </div>
+      )}
+
+      <ProjectDetailModal
+        project={selectedProject}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onUpdateProject={handleUpdateProjectFromModal}
+      />
+    </div>
+  );
+}

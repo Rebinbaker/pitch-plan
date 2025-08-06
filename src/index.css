@@ -2,41 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Professional Roofing Management Design System - All colors MUST be HSL */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors - Professional construction theme */
+    --background: 218 20% 98%;
+    --foreground: 215 25% 15%;
 
+    /* Card and surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Construction blue */
+    --primary: 217 91% 35%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 217 91% 32%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Light construction gray */
+    --secondary: 215 15% 95%;
+    --secondary-foreground: 215 25% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted - Professional grays */
+    --muted: 215 15% 96%;
+    --muted-foreground: 215 13% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Safety orange */
+    --accent: 24 95% 53%;
+    --accent-foreground: 0 0% 98%;
+    --accent-hover: 24 95% 48%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --info: 204 94% 54%;
+    --info-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Status variants for project status */
+    --planned: 220 91% 54%;
+    --ongoing: 24 95% 53%;
+    --completed: 142 71% 45%;
+    --invoiced: 262 83% 58%;
 
-    --radius: 0.5rem;
+    /* Border and inputs */
+    --border: 215 25% 88%;
+    --input: 215 25% 88%;
+    --ring: 217 91% 35%;
+
+    /* Gradient backgrounds */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 35%), hsl(217 91% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(24 95% 53%), hsl(24 95% 63%));
+    --gradient-subtle: linear-gradient(180deg, hsl(218 20% 98%), hsl(215 15% 96%));
+
+    /* Shadows for depth */
+    --shadow-card: 0 2px 8px hsl(215 25% 15% / 0.08);
+    --shadow-hover: 0 4px 16px hsl(215 25% 15% / 0.12);
+    --shadow-primary: 0 4px 16px hsl(217 91% 35% / 0.25);
+
+    /* Animation timings */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
