@@ -18,8 +18,11 @@ import {
   Users, 
   FileText, 
   Edit,
-  ExternalLink 
+  ExternalLink,
+  Download 
 } from 'lucide-react';
+import { downloadProjectReport } from '@/utils/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -34,6 +37,8 @@ export function ProjectDetailModal({
   onClose, 
   onUpdateProject 
 }: ProjectDetailModalProps) {
+  const { toast } = useToast();
+
   if (!project) return null;
 
   const getStatusVariant = (status: string) => {
@@ -57,6 +62,30 @@ export function ProjectDetailModal({
     };
     
     onUpdateProject(updatedProject);
+  };
+
+  const handleExportReport = async () => {
+    try {
+      const result = await downloadProjectReport(project, []);
+      if (result.success) {
+        toast({
+          title: "Report Generated",
+          description: `PDF report downloaded: ${result.fileName}`,
+        });
+      } else {
+        toast({
+          title: "Export Failed",
+          description: result.error || "Failed to generate PDF report",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -189,6 +218,10 @@ export function ProjectDetailModal({
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4" />
                 View Location
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportReport}>
+                <Download className="w-4 h-4" />
+                📄 Export Project Report
               </Button>
             </div>
           </TabsContent>

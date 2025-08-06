@@ -2,7 +2,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download } from 'lucide-react';
+import { downloadProjectReport } from '@/utils/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectCardProps {
   project: Project;
@@ -10,6 +12,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
+  const { toast } = useToast();
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
@@ -17,6 +21,31 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
       default: return 'default';
+    }
+  };
+
+  const handleExportReport = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const result = await downloadProjectReport(project, []);
+      if (result.success) {
+        toast({
+          title: "Report Generated",
+          description: `PDF report downloaded: ${result.fileName}`,
+        });
+      } else {
+        toast({
+          title: "Export Failed",
+          description: result.error || "Failed to generate PDF report",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -85,17 +114,28 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
           </div>
         )}
 
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(project);
-          }}
-        >
-          View Details
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(project);
+            }}
+          >
+            View Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportReport}
+            className="flex items-center gap-1"
+          >
+            <Download className="w-3 h-3" />
+            📄
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
