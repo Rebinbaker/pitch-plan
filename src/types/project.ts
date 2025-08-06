@@ -1,6 +1,18 @@
 export type ProjectStatus = 'planned' | 'ongoing' | 'completed' | 'invoiced';
 export type Region = 'Stockholm' | 'Västra Götaland';
 export type ROTStatus = 'Yes' | 'No';
+export type MaterialType = 'Takpannor' | 'Underlagspapp' | 'Nockpannor' | 'Råspont' | 'Vindskivor' | 'Reglar' | 'Övrigt';
+export type StorageLocation = 'Lundavägen 20' | 'Nålvägen Gusum';
+
+export interface AvvaratMaterial {
+  isReserved: boolean;
+  materialType?: MaterialType;
+  storageLocation?: StorageLocation;
+  dateOfReservation?: string;
+  responsiblePerson?: string;
+  quantity?: string;
+  comments?: string;
+}
 
 export interface Project {
   id: string;
@@ -18,6 +30,7 @@ export interface Project {
   notes: string;
   checklist: ChecklistItem[];
   completionPercentage: number;
+  avvaratMaterial?: AvvaratMaterial;
 }
 
 export interface ChecklistItem {

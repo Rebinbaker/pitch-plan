@@ -7,6 +7,7 @@ import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
+import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { Project } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { ConstructionTeam } from '@/types/team';
@@ -85,12 +86,13 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="projects" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="scaffolding">Scaffolding</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
             <TabsTrigger value="planning">Planning</TabsTrigger>
+            <TabsTrigger value="material">Material</TabsTrigger>
             <TabsTrigger value="notifications">
               Notifications
               {notifications.filter(n => !n.isRead).length > 0 && (
@@ -133,6 +135,12 @@ const Index = () => {
 
           <TabsContent value="planning" className="space-y-6">
             <WeeklyPlanningView 
+              projects={projects}
+            />
+          </TabsContent>
+
+          <TabsContent value="material" className="space-y-6">
+            <AvvaratMaterialOverview 
               projects={projects}
             />
           </TabsContent>

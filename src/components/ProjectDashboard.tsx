@@ -97,6 +97,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject }: Pr
             key={project.id}
             project={project}
             onViewDetails={handleViewDetails}
+            onUpdateProject={onUpdateProject}
           />
         ))}
       </div>

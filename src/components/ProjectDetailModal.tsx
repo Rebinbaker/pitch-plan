@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
+import { AvvaratMaterialSection } from './AvvaratMaterialSection';
 import { Project } from '@/types/project';
 import { 
   CalendarDays, 
@@ -209,6 +210,12 @@ export function ProjectDetailModal({
               </div>
             )}
 
+            {/* Avvarat Material Section */}
+            <AvvaratMaterialSection 
+              project={project}
+              onUpdateProject={onUpdateProject}
+            />
+
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
               <Button variant="outline" size="sm">
@@ -231,6 +238,7 @@ export function ProjectDetailModal({
               checklist={project.checklist}
               onChecklistUpdate={handleChecklistUpdate}
               startDate={project.startDate}
+              project={project}
             />
           </TabsContent>
 

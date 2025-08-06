@@ -5,13 +5,15 @@ import { Project } from '@/types/project';
 import { CalendarDays, MapPin, Phone, User, Users, FileText, Download } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { AvvaratMaterialSection } from './AvvaratMaterialSection';
 
 interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
+  onUpdateProject?: (project: Project) => void;
 }
 
-export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject }: ProjectCardProps) {
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
@@ -112,6 +114,14 @@ export function ProjectCard({ project, onViewDetails }: ProjectCardProps) {
             <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p className="line-clamp-2">{project.notes}</p>
           </div>
+        )}
+
+        {/* Avvarat Material Section */}
+        {onUpdateProject && (
+          <AvvaratMaterialSection 
+            project={project}
+            onUpdateProject={onUpdateProject}
+          />
         )}
 
         <div className="flex gap-2">

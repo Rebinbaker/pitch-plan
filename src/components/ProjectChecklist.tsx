@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChecklistItem } from '@/types/project';
+import { ChecklistItem, Project } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle } from 'lucide-react';
 
 interface ProjectChecklistProps {
@@ -11,13 +11,15 @@ interface ProjectChecklistProps {
   onChecklistUpdate: (updatedChecklist: ChecklistItem[]) => void;
   startDate: string;
   isEditable?: boolean;
+  project?: Project;
 }
 
 export function ProjectChecklist({ 
   checklist, 
   onChecklistUpdate, 
   startDate,
-  isEditable = true 
+  isEditable = true,
+  project
 }: ProjectChecklistProps) {
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
@@ -28,6 +30,16 @@ export function ProjectChecklist({
   const now = new Date();
   const hoursUntilStart = (projectStartDate.getTime() - now.getTime()) / (1000 * 60 * 60);
   const hasUrgentMissingTasks = hoursUntilStart <= 48 && hoursUntilStart > 0 && completedCount < totalCount;
+
+  // Check if reserved material blocks completion
+  const hasIncompleteReservedMaterial = project?.avvaratMaterial?.isReserved && !(
+    project.avvaratMaterial.materialType &&
+    project.avvaratMaterial.storageLocation &&
+    project.avvaratMaterial.dateOfReservation &&
+    project.avvaratMaterial.responsiblePerson
+  );
+
+  const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteReservedMaterial;
 
   const handleItemToggle = (itemId: string) => {
     if (!isEditable) return;
@@ -143,9 +155,19 @@ export function ProjectChecklist({
                 }));
                 onChecklistUpdate(allCompleted);
               }}
+              disabled={hasIncompleteReservedMaterial}
             >
               Mark All Complete
             </Button>
+            
+            {hasIncompleteReservedMaterial && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                <span className="text-sm text-yellow-700">
+                  Complete reserved material section before marking project as completed
+                </span>
+              </div>
+            )}
             <Button 
               variant="outline" 
               size="sm"
