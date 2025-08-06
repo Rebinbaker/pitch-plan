@@ -1,0 +1,53 @@
+import { ConstructionTeam } from '@/types/team';
+
+export const mockTeams: ConstructionTeam[] = [
+  {
+    id: 'team-alpha',
+    name: 'Team Alpha',
+    type: 'Internal',
+    currentJob: 'Villa Andersson - Takbyte',
+    availabilityNextWeek: 'Busy',
+    performanceNotes: 'Excellent work quality, always on time',
+    contactInfo: 'Lars Nilsson: +46 70 123 4567',
+    skills: ['Tile roofing', 'Sheet metal', 'Repairs'],
+  },
+  {
+    id: 'team-beta',
+    name: 'Team Beta',
+    type: 'Internal',
+    currentJob: 'Planning phase',
+    availabilityNextWeek: 'Available',
+    performanceNotes: 'Great with complex commercial projects',
+    contactInfo: 'Maria Ekström: +46 70 987 6543',
+    skills: ['Commercial roofing', 'Flat roofs', 'Industrial'],
+  },
+  {
+    id: 'team-gamma',
+    name: 'Team Gamma',
+    type: 'Internal',
+    currentJob: 'Radhus Karlsson - Takrenovering',
+    availabilityNextWeek: 'Limited',
+    performanceNotes: 'Specialists in residential work',
+    contactInfo: 'Erik Johansson: +46 70 555 1234',
+    skills: ['Residential', 'Renovations', 'ROT work'],
+  },
+  {
+    id: 'contractor-1',
+    name: 'Nordic Roof Solutions',
+    type: 'Subcontractor',
+    availabilityNextWeek: 'Available',
+    performanceNotes: 'Reliable subcontractor, good for overflow work',
+    contactInfo: 'Contract manager: +46 31 444 5678',
+    skills: ['All roof types', 'Emergency repairs'],
+  },
+  {
+    id: 'contractor-2',
+    name: 'Göteborg Takspecialister',
+    type: 'Subcontractor',
+    currentJob: 'External project',
+    availabilityNextWeek: 'Busy',
+    performanceNotes: 'Local expertise in Västra Götaland region',
+    contactInfo: 'Main office: +46 31 222 3333',
+    skills: ['Regional expertise', 'Commercial', 'Industrial'],
+  },
+];
