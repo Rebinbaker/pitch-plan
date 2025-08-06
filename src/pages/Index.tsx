@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectDashboard } from '@/components/ProjectDashboard';
+import { AddProjectModal } from '@/components/AddProjectModal';
 import { ScaffoldingView } from '@/components/ScaffoldingView';
 import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
@@ -22,6 +23,7 @@ const Index = () => {
   const [teams, setTeams] = useState<ConstructionTeam[]>(mockTeams);
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
 
   const handleUpdateProject = (updatedProject: Project) => {
     setProjects(prevProjects => 
@@ -32,8 +34,12 @@ const Index = () => {
   };
 
   const handleAddProject = () => {
-    // TODO: Implement add project functionality
-    console.log('Add new project');
+    setIsAddProjectModalOpen(true);
+  };
+
+  const handleCreateProject = (newProject: Project) => {
+    setProjects(prev => [newProject, ...prev]);
+    setIsAddProjectModalOpen(false);
   };
 
   const handleUpdateScaffolding = (updatedTrailer: ScaffoldingTrailer) => {
@@ -139,6 +145,12 @@ const Index = () => {
             />
           </TabsContent>
         </Tabs>
+
+        <AddProjectModal
+          isOpen={isAddProjectModalOpen}
+          onClose={() => setIsAddProjectModalOpen(false)}
+          onAddProject={handleCreateProject}
+        />
       </div>
     </div>
   );

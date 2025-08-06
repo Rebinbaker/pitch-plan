@@ -1,0 +1,402 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist } from '@/types/project';
+import { useToast } from '@/hooks/use-toast';
+
+const projectFormSchema = z.object({
+  name: z.string().min(1, 'Project name is required'),
+  address: z.string().min(1, 'Address is required'),
+  customerName: z.string().min(1, 'Customer name is required'),
+  customerPhone: z.string().min(1, 'Customer phone is required'),
+  responsibleSeller: z.string().min(1, 'Responsible seller is required'),
+  constructionTeam: z.string().min(1, 'Construction team is required'),
+  startDate: z.string().min(1, 'Start date is required'),
+  deadline: z.string().min(1, 'Deadline is required'),
+  rotStatus: z.enum(['Yes', 'No'] as const),
+  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced'] as const),
+  region: z.enum(['Stockholm', 'Västra Götaland'] as const),
+  notes: z.string().optional(),
+});
+
+type ProjectFormValues = z.infer<typeof projectFormSchema>;
+
+interface AddProjectModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddProject: (project: Project) => void;
+}
+
+const sellers = [
+  'Erik Lundström',
+  'Anna Karlsson',
+  'Magnus Svensson',
+  'Sofia Andersson',
+  'Johan Petersson',
+];
+
+const teams = [
+  'Team Alpha',
+  'Team Beta',
+  'Team Gamma',
+  'Team Delta',
+  'Team Epsilon',
+];
+
+export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectModalProps) {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
+    defaultValues: {
+      name: '',
+      address: '',
+      customerName: '',
+      customerPhone: '',
+      responsibleSeller: '',
+      constructionTeam: '',
+      startDate: '',
+      deadline: '',
+      rotStatus: 'No',
+      status: 'planned',
+      region: 'Stockholm',
+      notes: '',
+    },
+  });
+
+  const onSubmit = async (data: ProjectFormValues) => {
+    setIsSubmitting(true);
+    
+    try {
+      const newProject: Project = {
+        id: `project-${Date.now()}`,
+        name: data.name,
+        address: data.address,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        responsibleSeller: data.responsibleSeller,
+        constructionTeam: data.constructionTeam,
+        startDate: data.startDate,
+        deadline: data.deadline,
+        rotStatus: data.rotStatus,
+        status: data.status,
+        region: data.region,
+        notes: data.notes || '',
+        checklist: defaultChecklist.map((item, index) => ({
+          ...item,
+          id: `checklist-${Date.now()}-${index}`,
+        })),
+        completionPercentage: 0,
+      };
+
+      onAddProject(newProject);
+      
+      toast({
+        title: 'Project created successfully',
+        description: `${newProject.name} has been added to your projects.`,
+      });
+
+      form.reset();
+      onClose();
+    } catch (error) {
+      toast({
+        title: 'Error creating project',
+        description: 'There was an error creating the project. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add New Project</DialogTitle>
+          <DialogDescription>
+            Create a new construction project with all the necessary details.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter project name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="region"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Region</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Stockholm">Stockholm</SelectItem>
+                        <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter project address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="customerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter customer name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customerPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="responsibleSeller"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsible Seller</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select seller" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {sellers.map((seller) => (
+                          <SelectItem key={seller} value={seller}>
+                            {seller}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="constructionTeam"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Construction Team</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select team" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team} value={team}>
+                            {team}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Deadline</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="ongoing">Ongoing</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="invoiced">Invoiced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="rotStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ROT Deduction</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ROT status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Yes">Yes</SelectItem>
+                      <SelectItem value="No">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Whether this project qualifies for ROT tax deduction
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter any additional notes about the project..."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Project'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
