@@ -9,9 +9,10 @@ import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 interface WorkPhasesSectionProps {
   project: Project;
   onUpdateProject: (project: Project) => void;
+  onOpenDetails?: () => void;
 }
 
-export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectionProps) {
+export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: WorkPhasesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const workPhases = project.workPhases || [];
@@ -156,9 +157,15 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
       </Collapsible>
 
       {workPhases.length > 3 && !isExpanded && (
-        <div className="text-xs text-muted-foreground text-center py-1">
+        <button 
+          className="text-xs text-muted-foreground text-center py-1 hover:text-primary transition-colors cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDetails?.();
+          }}
+        >
           +{workPhases.length - 3} fler moment...
-        </div>
+        </button>
       )}
     </div>
   );

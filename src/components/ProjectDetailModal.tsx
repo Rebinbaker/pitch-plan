@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
 import { AvvaratMaterialSection } from './AvvaratMaterialSection';
@@ -20,7 +21,8 @@ import {
   FileText, 
   Edit,
   ExternalLink,
-  Download 
+  Download,
+  Calendar
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -119,9 +121,10 @@ export function ProjectDetailModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="checklist">Checklist</TabsTrigger>
+            <TabsTrigger value="workphases">Arbetsmoment</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
           </TabsList>
 
@@ -247,6 +250,97 @@ export function ProjectDetailModal({
               teams={teams}
               onUpdateProject={onUpdateProject}
             />
+          </TabsContent>
+
+          <TabsContent value="workphases">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Arbetsmoment</h3>
+                <Badge variant="secondary">
+                  {project.workPhases?.filter(p => p.completed).length || 0} av {project.workPhases?.length || 0} klara
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                {(project.workPhases || []).map((phase, index) => (
+                  <div 
+                    key={phase.id}
+                    className={`p-4 rounded-lg border transition-smooth ${
+                      phase.completed 
+                        ? 'bg-success/5 border-success/20' 
+                        : 'bg-card border-border'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox 
+                        id={`modal-${phase.id}`}
+                        checked={phase.completed}
+                        onCheckedChange={() => {
+                          const updatedPhases = project.workPhases?.map(p => {
+                            if (p.id === phase.id) {
+                              return {
+                                ...p,
+                                completed: !p.completed,
+                                completedAt: !p.completed ? new Date().toISOString().split('T')[0] : undefined,
+                              };
+                            }
+                            return p;
+                          });
+                          onUpdateProject({
+                            ...project,
+                            workPhases: updatedPhases,
+                          });
+                        }}
+                        className="data-[state=checked]:bg-success data-[state=checked]:border-success mt-1"
+                      />
+                      
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <label 
+                            htmlFor={`modal-${phase.id}`}
+                            className={`text-sm font-medium cursor-pointer ${
+                              phase.completed 
+                                ? 'text-success line-through' 
+                                : 'text-card-foreground'
+                            }`}
+                          >
+                            {index + 1}. {phase.label}
+                          </label>
+                          {phase.completedAt && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Comment section for detailed view */}
+                        <div className="space-y-2">
+                          <textarea
+                            placeholder="Kommentar (frivillig)..."
+                            value={phase.comment || ''}
+                            onChange={(e) => {
+                              const updatedPhases = project.workPhases?.map(p => {
+                                if (p.id === phase.id) {
+                                  return { ...p, comment: e.target.value };
+                                }
+                                return p;
+                              });
+                              onUpdateProject({
+                                ...project,
+                                workPhases: updatedPhases,
+                              });
+                            }}
+                            className="w-full text-xs p-2 bg-background border rounded resize-none"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="files" className="space-y-4">

@@ -162,6 +162,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           <WorkPhasesSection 
             project={project}
             onUpdateProject={onUpdateProject}
+            onOpenDetails={() => onViewDetails(project)}
           />
         )}
 
