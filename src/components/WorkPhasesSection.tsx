@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,68 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
   const completedPhases = workPhases.filter(phase => phase.completed).length;
   const totalPhases = workPhases.length;
   const completionPercentage = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
+
+  // Check if resources need status update on component mount
+  React.useEffect(() => {
+    if (!onUpdateTeam || !onUpdateTrailer) return;
+    
+    const hasCompletedPhases = completedPhases > 0;
+    const allPhasesCompleted = completionPercentage === 100;
+    
+    // Set resources as "I bruk/Busy" if project has started but not completed
+    if (hasCompletedPhases && !allPhasesCompleted && project.status === 'ongoing') {
+      // Check and update team status
+      if (project.constructionTeam) {
+        const assignedTeam = teams.find(team => team.name === project.constructionTeam);
+        if (assignedTeam && assignedTeam.availabilityNextWeek === 'Available') {
+          onUpdateTeam({
+            ...assignedTeam,
+            availabilityNextWeek: 'Busy',
+            currentJob: project.name
+          });
+        }
+      }
+      
+      // Check and update trailer status
+      if (project.assignedTrailer) {
+        const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+        if (assignedTrailer && assignedTrailer.status === 'Tillgänglig') {
+          onUpdateTrailer({
+            ...assignedTrailer,
+            status: 'I bruk',
+            assignedProject: project.name,
+            location: project.address
+          });
+        }
+      }
+    }
+    
+    // Set resources as "Available/Tillgänglig" if all phases completed
+    if (allPhasesCompleted && project.status === 'completed') {
+      if (project.constructionTeam) {
+        const assignedTeam = teams.find(team => team.name === project.constructionTeam);
+        if (assignedTeam && assignedTeam.availabilityNextWeek !== 'Available') {
+          onUpdateTeam({
+            ...assignedTeam,
+            availabilityNextWeek: 'Available',
+            currentJob: 'Planning phase'
+          });
+        }
+      }
+      
+      if (project.assignedTrailer) {
+        const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+        if (assignedTrailer && assignedTrailer.status !== 'Tillgänglig') {
+          onUpdateTrailer({
+            ...assignedTrailer,
+            status: 'Tillgänglig',
+            assignedProject: undefined,
+            location: 'Lundavägen 20'
+          });
+        }
+      }
+    }
+  }, [project.id, completedPhases, completionPercentage, project.status, project.constructionTeam, project.assignedTrailer]);
 
   const handlePhaseToggle = (phaseId: string) => {
     const updatedPhases = workPhases.map(phase => {
