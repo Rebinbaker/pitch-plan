@@ -6,11 +6,22 @@ export type PlannedAction = 'Användas i framtida projekt' | 'Transporteras till
 
 export type MaterialType = 'Takpannor' | 'Underlagsduk' | 'Läkt' | 'Plåtdetaljer' | 'Isolering' | 'Annat';
 
+export const getMaterialUnit = (materialType: MaterialType): string => {
+  switch (materialType) {
+    case 'Takpannor':
+      return 'st';
+    case 'Läkt':
+      return 'meter';
+    default:
+      return 'kvm²';
+  }
+};
+
 export interface MaterialItem {
   id: string;
   materialType: MaterialType;
   customMaterialType?: string; // For "Annat" option
-  squareMeters: number;
+  squareMeters: number; // This will represent different units based on material type
 }
 
 export interface AvvaratMaterial {
@@ -55,6 +66,7 @@ export interface Project {
   completionPercentage: number;
   avvaratMaterial?: AvvaratMaterial;
   assignedTrailer?: string; // ID of assigned trailer
+  scaffoldingResponsible?: string; // Person responsible for scaffolding
   workPhases?: WorkPhaseItem[];
   activityLog?: ActivityLogEntry[];
 }
@@ -80,8 +92,9 @@ export interface WorkPhaseItem {
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Containerbeställning', completed: false, weight: 5 },
   { label: 'Ställningshantering', completed: false, weight: 5 },
-  { label: 'Schedule construction team', completed: false, weight: 2 },
   { label: 'Materialbeställning', completed: false, weight: 5 },
+  { label: 'Schedule construction team', completed: false, weight: 2 },
+  { label: 'Skapa WhatsApp grupp', completed: false, weight: 1 },
   { label: 'Dagliga egenkontroller', completed: false, weight: 5 },
   { label: 'Slutsynbesiktning', completed: false, weight: 3 },
   { label: 'Avvarat material?', completed: false, weight: 2 },

@@ -113,6 +113,8 @@ export const mockProjects: Project[] = [
     status: 'ongoing',
     region: 'Stockholm',
     notes: 'Kunden vill ha takpannor i antracitgrå. Extra försiktighet vid skorsten.',
+    assignedTrailer: 'trailer-1',
+    scaffoldingResponsible: 'Lars Nilsson',
     checklist: generateChecklist().map((item, index) => ({
       ...item,
       completed: index < 6, // First 6 items completed

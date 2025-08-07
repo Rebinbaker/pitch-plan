@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChecklistItem, Project, MaterialType, MaterialItem } from '@/types/project';
+import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X } from 'lucide-react';
 
 interface ProjectChecklistProps {
@@ -312,31 +312,31 @@ export function ProjectChecklist({
                           <Truck className="w-4 h-4 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Tilldela släpvagn:</span>
                         </div>
-                        <Select 
-                          value={project.assignedTrailer || ''} 
-                          onValueChange={(trailerId) => {
-                            const updatedProject = {
-                              ...project,
-                              assignedTrailer: trailerId === 'none' ? undefined : trailerId,
-                            };
-                            onUpdateProject(updatedProject);
-                            
-                            // Also mark the scaffolding item as complete if trailer is assigned and not already completed
-                            if (trailerId !== 'none' && !item.completed) {
-                              const updatedChecklist = checklist.map(checkItem => {
-                                if (checkItem.id === item.id) {
-                                  return {
-                                    ...checkItem,
-                                    completed: true,
-                                    completedAt: new Date().toISOString().split('T')[0],
-                                  };
-                                }
-                                return checkItem;
-                              });
-                              onChecklistUpdate(updatedChecklist);
-                            }
-                          }}
-                        >
+                         <Select 
+                           value={project.assignedTrailer || ''} 
+                           onValueChange={(trailerId) => {
+                             const updatedProject = {
+                               ...project,
+                               assignedTrailer: trailerId === 'none' ? undefined : trailerId,
+                             };
+                             onUpdateProject(updatedProject);
+                             
+                             // Also mark the scaffolding item as complete if trailer is assigned and not already completed
+                             if (trailerId !== 'none' && !item.completed) {
+                               const updatedChecklist = checklist.map(checkItem => {
+                                 if (checkItem.id === item.id) {
+                                   return {
+                                     ...checkItem,
+                                     completed: true,
+                                     completedAt: new Date().toISOString().split('T')[0],
+                                   };
+                                 }
+                                 return checkItem;
+                               });
+                               onChecklistUpdate(updatedChecklist);
+                             }
+                           }}
+                         >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder="Välj tillgänglig släpvagn..." />
                           </SelectTrigger>
@@ -355,10 +355,27 @@ export function ProjectChecklist({
                                 </SelectItem>
                               ))
                             }
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                           </SelectContent>
+                         </Select>
+                         
+                         {/* Responsible person field */}
+                         <div className="space-y-1">
+                           <Label className="text-xs">Ansvarig person:</Label>
+                           <Input
+                             className="h-7 text-xs"
+                             placeholder="Ange ansvarig person"
+                             value={project.scaffoldingResponsible || ''}
+                             onChange={(e) => {
+                               const updatedProject = {
+                                 ...project,
+                                 scaffoldingResponsible: e.target.value,
+                               };
+                               onUpdateProject(updatedProject);
+                             }}
+                           />
+                         </div>
+                       </div>
+                     )}
                     
                     {/* Show team dropdown for Schedule construction team */}
                     {isScheduleTeam && teams.length > 0 && project && onUpdateProject && (
@@ -539,17 +556,18 @@ export function ProjectChecklist({
                                       </Select>
                                     </div>
                                     
-                                    <div className="space-y-1">
-                                      <Label className="text-xs">Kvm</Label>
-                                      <Input
-                                        className="h-7 text-xs"
-                                        type="number"
-                                        step="0.1"
-                                        min="0"
-                                        value={material.squareMeters || ''}
-                                        onChange={(e) => updateMaterialItem(material.id, 'squareMeters', parseFloat(e.target.value) || 0)}
-                                      />
-                                    </div>
+                                     <div className="space-y-1">
+                                       <Label className="text-xs">{getMaterialUnit(material.materialType)}</Label>
+                                       <Input
+                                         className="h-7 text-xs"
+                                         type="number"
+                                         step="0.1"
+                                         min="0"
+                                         value={material.squareMeters || ''}
+                                         onChange={(e) => updateMaterialItem(material.id, 'squareMeters', parseFloat(e.target.value) || 0)}
+                                         placeholder={`Ange ${getMaterialUnit(material.materialType).toLowerCase()}`}
+                                       />
+                                     </div>
                                   </div>
                                   
                                   {material.materialType === 'Annat' && (
