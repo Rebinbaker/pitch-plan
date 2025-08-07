@@ -55,8 +55,8 @@ export interface WorkPhaseItem {
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Order container', completed: false },
   { label: 'Book scaffolding', completed: false },
-  { label: 'Order material', completed: false },
   { label: 'Schedule construction team', completed: false },
+  { label: 'Order material', completed: false },
   { label: 'Notify customer', completed: false },
   { label: 'Perform pre-inspection', completed: false },
   { label: 'Upload daily photos', completed: false },

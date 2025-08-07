@@ -129,20 +129,30 @@ export function ProjectChecklist({
                       ? 'bg-success/5 border-success/20' 
                       : 'bg-card border-border hover:bg-accent/50'
                   } ${isEditable ? 'cursor-pointer' : ''}`}
-                  onClick={() => !isBookScaffolding && !isScheduleTeam && handleItemToggle(item.id)}
+                  onClick={() => {
+                    if (isBookScaffolding) return; // Book scaffolding disabled
+                    if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
+                    handleItemToggle(item.id);
+                  }}
                 >
                   <Checkbox 
                     id={item.id}
                     checked={!!isItemComplete}
-                    onCheckedChange={() => !isBookScaffolding && !isScheduleTeam && handleItemToggle(item.id)}
-                    disabled={!isEditable || isBookScaffolding || isScheduleTeam}
+                    onCheckedChange={() => {
+                      if (isBookScaffolding) return; // Book scaffolding disabled
+                      if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
+                      handleItemToggle(item.id);
+                    }}
+                    disabled={!isEditable || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
                     className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                   />
                   
                   <div className="flex-1 space-y-1">
                     <label 
                       htmlFor={item.id}
-                      className={`text-sm font-medium leading-none ${!isBookScaffolding && !isScheduleTeam ? 'cursor-pointer' : ''} ${
+                      className={`text-sm font-medium leading-none ${
+                        (!isBookScaffolding && (!isScheduleTeam || hasTeamAssigned)) ? 'cursor-pointer' : ''
+                      } ${
                         isItemComplete 
                           ? 'text-success line-through' 
                           : 'text-card-foreground'
