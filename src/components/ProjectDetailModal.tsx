@@ -59,8 +59,12 @@ export function ProjectDetailModal({
   };
 
   const handleChecklistUpdate = (updatedChecklist: any[]) => {
-    const completedCount = updatedChecklist.filter(item => item.completed).length;
-    const completionPercentage = Math.round((completedCount / updatedChecklist.length) * 100);
+    // Calculate weighted completion percentage
+    const completedWeight = updatedChecklist
+      .filter(item => item.completed)
+      .reduce((sum, item) => sum + (item.weight || 0), 0);
+    const totalWeight = updatedChecklist.reduce((sum, item) => sum + (item.weight || 0), 0);
+    const completionPercentage = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
     
     const updatedProject = {
       ...project,

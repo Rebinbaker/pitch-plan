@@ -42,6 +42,7 @@ export interface ChecklistItem {
   label: string;
   completed: boolean;
   completedAt?: string;
+  weight: number; // Percentage weight for progress calculation
 }
 
 export interface WorkPhaseItem {
@@ -53,17 +54,27 @@ export interface WorkPhaseItem {
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
-  { label: 'Order container', completed: false },
-  { label: 'Book scaffolding', completed: false },
-  { label: 'Schedule construction team', completed: false },
-  { label: 'Order material', completed: false },
-  { label: 'Notify customer', completed: false },
-  { label: 'Perform pre-inspection', completed: false },
-  { label: 'Upload daily photos', completed: false },
-  { label: 'Upload post-inspection', completed: false },
-  { label: 'Final quality control', completed: false },
-  { label: 'Confirm ROT paperwork', completed: false },
-  { label: 'Mark ready for invoice', completed: false },
+  { label: 'Containerbeställning', completed: false, weight: 5 },
+  { label: 'Ställningshantering', completed: false, weight: 5 },
+  { label: 'Schedule construction team', completed: false, weight: 2 },
+  { label: 'Materialkontroll', completed: false, weight: 5 },
+  { label: 'Notify customer', completed: false, weight: 2 },
+  { label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10 },
+  { label: 'Montering av ny råspont', completed: false, weight: 10 },
+  { label: 'Montering av nockregel + trekantslist', completed: false, weight: 5 },
+  { label: 'Montering av underlagsduk', completed: false, weight: 5 },
+  { label: 'Montering av strö- & bärläkt', completed: false, weight: 5 },
+  { label: 'Montering av nockband, fotplåt', completed: false, weight: 5 },
+  { label: 'Montering av nya pannor', completed: false, weight: 15 },
+  { label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5 },
+  { label: 'Montering av snörasskydd', completed: false, weight: 5 },
+  { label: 'Hängrännor & stuprör', completed: false, weight: 5 },
+  { label: 'Dagliga bilder & kommentarer', completed: false, weight: 2 },
+  { label: 'Slutsynbesiktning', completed: false, weight: 3 },
+  { label: 'Bortforsling och städning', completed: false, weight: 5 },
+  { label: 'Final quality control', completed: false, weight: 2 },
+  { label: 'Confirm ROT paperwork', completed: false, weight: 2 },
+  { label: 'Mark ready for invoice', completed: false, weight: 2 },
 ];
 
 export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
