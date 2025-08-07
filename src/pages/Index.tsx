@@ -76,6 +76,10 @@ const Index = () => {
     );
   };
 
+  const handleAddScaffolding = (newTrailer: ScaffoldingTrailer) => {
+    setScaffolding(prev => [...prev, newTrailer]);
+  };
+
   const handleUpdateTeam = (updatedTeam: ConstructionTeam) => {
     setTeams(prev => 
       prev.map(team => 
@@ -157,6 +161,7 @@ const Index = () => {
             <ScaffoldingView 
               scaffolding={scaffolding}
               onUpdateScaffolding={handleUpdateScaffolding}
+              onAddScaffolding={handleAddScaffolding}
               projects={projects}
             />
           </TabsContent>

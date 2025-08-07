@@ -7,16 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Truck, MapPin, User, Plus } from 'lucide-react';
-import { ScaffoldingTrailer, ScaffoldingStatus } from '@/types/scaffolding';
+import { ScaffoldingTrailer, ScaffoldingStatus, ScaffoldingOwnership } from '@/types/scaffolding';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface ScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
   onUpdateScaffolding: (updated: ScaffoldingTrailer) => void;
+  onAddScaffolding: (trailer: ScaffoldingTrailer) => void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function ScaffoldingView({ scaffolding, onUpdateScaffolding, projects = [] }: ScaffoldingViewProps) {
+export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, projects = [] }: ScaffoldingViewProps) {
   const [editingTrailer, setEditingTrailer] = useState<ScaffoldingTrailer | null>(null);
   const [filterStatus, setFilterStatus] = useState<ScaffoldingStatus | 'all'>('all');
 
@@ -47,6 +48,21 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, projects = [
         </div>
         
         <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Nytt släp
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Lägg till nytt släp</DialogTitle>
+              </DialogHeader>
+              <NewTrailerForm onSave={onAddScaffolding} />
+            </DialogContent>
+          </Dialog>
+          
           <Select value={filterStatus} onValueChange={(value: ScaffoldingStatus | 'all') => setFilterStatus(value)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Filter Status" />
@@ -246,6 +262,61 @@ function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
       
       <Button type="submit" className="w-full">
         Spara ändringar
+      </Button>
+    </form>
+  );
+}
+
+interface NewTrailerFormProps {
+  onSave: (trailer: ScaffoldingTrailer) => void;
+}
+
+function NewTrailerForm({ onSave }: NewTrailerFormProps) {
+  const [trailerNumber, setTrailerNumber] = useState('');
+  const [ownership, setOwnership] = useState<ScaffoldingOwnership>('Egna ställningar');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trailerNumber) return;
+
+    const trailer: ScaffoldingTrailer = {
+      id: `trailer-${Date.now()}`,
+      name: trailerNumber,
+      status: 'Tillgänglig',
+      ownership,
+      lastUpdated: new Date().toISOString().split('T')[0],
+    };
+
+    onSave(trailer);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Släp nummer</label>
+        <Input
+          value={trailerNumber}
+          onChange={(e) => setTrailerNumber(e.target.value)}
+          placeholder="t.ex. Släp-001"
+          required
+        />
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium">Typ av ställningar</label>
+        <Select value={ownership} onValueChange={(value: ScaffoldingOwnership) => setOwnership(value)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Egna ställningar">Egna ställningar</SelectItem>
+            <SelectItem value="Inhyrda ställningar">Inhyrda ställningar</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button type="submit" className="w-full" disabled={!trailerNumber}>
+        Lägg till släp
       </Button>
     </form>
   );
