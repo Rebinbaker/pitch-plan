@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { AvvaratMaterialSection } from './AvvaratMaterialSection';
@@ -112,6 +112,43 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             />
           </div>
         </div>
+
+        {/* Assignment Status - Show trailer and team assignments */}
+        {onUpdateProject && (
+          <div className="space-y-2">
+            {(project.assignedTrailer || project.constructionTeam) && (
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                {/* Show assigned trailer */}
+                {project.assignedTrailer && (
+                  <div className="flex items-center gap-2 p-2 bg-accent/20 rounded border">
+                    <Truck className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-muted-foreground">Släpvagn:</span>
+                    <span className="font-medium text-card-foreground">
+                      {trailers.find(t => t.id === project.assignedTrailer)?.name || project.assignedTrailer}
+                    </span>
+                    <Badge variant="secondary" className="text-xs bg-success/20 text-success border-success/30">
+                      Tilldelad
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Show assigned team */}
+                {project.constructionTeam && (
+                  <div className="flex items-center gap-2 p-2 bg-accent/20 rounded border">
+                    <Users className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-muted-foreground">Team:</span>
+                    <span className="font-medium text-card-foreground">
+                      {project.constructionTeam}
+                    </span>
+                    <Badge variant="secondary" className="text-xs bg-success/20 text-success border-success/30">
+                      Schemalagt
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {project.notes && (
           <div className="flex gap-2 text-sm text-muted-foreground">
