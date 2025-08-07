@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChecklistItem, Project } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users } from 'lucide-react';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -14,6 +14,7 @@ interface ProjectChecklistProps {
   isEditable?: boolean;
   project?: Project;
   trailers?: any[];
+  teams?: any[];
   onUpdateProject?: (project: Project) => void;
 }
 
@@ -24,6 +25,7 @@ export function ProjectChecklist({
   isEditable = true,
   project,
   trailers = [],
+  teams = [],
   onUpdateProject
 }: ProjectChecklistProps) {
   const completedCount = checklist.filter(item => item.completed).length;
@@ -104,42 +106,51 @@ export function ProjectChecklist({
       <CardContent>
         <div className="space-y-3">
           {checklist.map((item, index) => {
-            // Special handling for "Book scaffolding" item
+            // Special handling for specific items
             const isBookScaffolding = item.label === 'Book scaffolding';
-            const hasTrailerAssigned = project?.assignedTrailer;
-            const isScaffoldingComplete = isBookScaffolding ? (item.completed && hasTrailerAssigned) : item.completed;
+            const isScheduleTeam = item.label === 'Schedule construction team';
+            const hasTrailerAssigned = !!project?.assignedTrailer;
+            const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
+            
+            // Determine if item is complete based on special conditions
+            let isItemComplete = item.completed;
+            if (isBookScaffolding) {
+              isItemComplete = item.completed && hasTrailerAssigned;
+            } else if (isScheduleTeam) {
+              isItemComplete = item.completed && hasTeamAssigned;
+            }
             
             return (
               <div key={item.id}>
                 {/* Regular checklist item */}
                 <div 
                   className={`flex items-center space-x-3 p-3 rounded-lg border transition-smooth ${
-                    isScaffoldingComplete 
+                    isItemComplete 
                       ? 'bg-success/5 border-success/20' 
                       : 'bg-card border-border hover:bg-accent/50'
                   } ${isEditable ? 'cursor-pointer' : ''}`}
-                  onClick={() => !isBookScaffolding && handleItemToggle(item.id)}
+                  onClick={() => !isBookScaffolding && !isScheduleTeam && handleItemToggle(item.id)}
                 >
                   <Checkbox 
                     id={item.id}
-                    checked={!!isScaffoldingComplete}
-                    onCheckedChange={() => !isBookScaffolding && handleItemToggle(item.id)}
-                    disabled={!isEditable || isBookScaffolding}
+                    checked={!!isItemComplete}
+                    onCheckedChange={() => !isBookScaffolding && !isScheduleTeam && handleItemToggle(item.id)}
+                    disabled={!isEditable || isBookScaffolding || isScheduleTeam}
                     className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                   />
                   
                   <div className="flex-1 space-y-1">
                     <label 
                       htmlFor={item.id}
-                      className={`text-sm font-medium leading-none ${!isBookScaffolding ? 'cursor-pointer' : ''} ${
-                        isScaffoldingComplete 
+                      className={`text-sm font-medium leading-none ${!isBookScaffolding && !isScheduleTeam ? 'cursor-pointer' : ''} ${
+                        isItemComplete 
                           ? 'text-success line-through' 
                           : 'text-card-foreground'
                       }`}
                     >
                       {item.label}
                     </label>
-                    {isScaffoldingComplete && item.completedAt && (
+                    {isItemComplete && item.completedAt && (
                       <p className="text-xs text-muted-foreground">
                         Completed: {new Date(item.completedAt).toLocaleDateString('sv-SE')}
                       </p>
@@ -199,9 +210,67 @@ export function ProjectChecklist({
                         </Select>
                       </div>
                     )}
+                    
+                    {/* Show team dropdown for Schedule construction team */}
+                    {isScheduleTeam && teams.length > 0 && project && onUpdateProject && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Välj byggteam:</span>
+                        </div>
+                        <Select 
+                          value={project.constructionTeam || ''} 
+                          onValueChange={(teamName) => {
+                            const updatedProject = {
+                              ...project,
+                              constructionTeam: teamName === 'none' ? '' : teamName,
+                            };
+                            onUpdateProject(updatedProject);
+                            
+                            // Also mark the team item as complete if team is assigned and not already completed
+                            if (teamName !== 'none' && !item.completed) {
+                              const updatedChecklist = checklist.map(checkItem => {
+                                if (checkItem.id === item.id) {
+                                  return {
+                                    ...checkItem,
+                                    completed: true,
+                                    completedAt: new Date().toISOString().split('T')[0],
+                                  };
+                                }
+                                return checkItem;
+                              });
+                              onChecklistUpdate(updatedChecklist);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Välj tillgängligt team..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border border-border shadow-lg z-50">
+                            <SelectItem value="none">Inget team valt</SelectItem>
+                            {teams
+                              .filter(team => team.availabilityNextWeek === 'Available' || team.name === project.constructionTeam)
+                              .map(team => (
+                                <SelectItem key={team.id} value={team.name}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{team.name}</span>
+                                    <Badge variant="secondary" className="text-xs bg-success/20 text-success border-success/30">
+                                      {team.availabilityNextWeek}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {team.type}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   
-                  {isScaffoldingComplete ? (
+                  {isItemComplete ? (
                     <CheckCircle2 className="w-5 h-5 text-success" />
                   ) : (
                     <Circle className="w-5 h-5 text-muted-foreground" />

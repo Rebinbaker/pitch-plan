@@ -31,6 +31,7 @@ interface ProjectDetailModalProps {
   onClose: () => void;
   onUpdateProject: (updatedProject: Project) => void;
   trailers?: any[];
+  teams?: any[];
 }
 
 export function ProjectDetailModal({ 
@@ -38,7 +39,8 @@ export function ProjectDetailModal({
   isOpen, 
   onClose, 
   onUpdateProject,
-  trailers = []
+  trailers = [],
+  teams = []
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
 
@@ -242,6 +244,7 @@ export function ProjectDetailModal({
               startDate={project.startDate}
               project={project}
               trailers={trailers}
+              teams={teams}
               onUpdateProject={onUpdateProject}
             />
           </TabsContent>

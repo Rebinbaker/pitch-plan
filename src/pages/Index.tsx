@@ -109,6 +109,7 @@ const Index = () => {
               onUpdateProject={handleUpdateProject}
               onAddProject={handleAddProject}
               trailers={scaffolding}
+              teams={teams}
             />
           </TabsContent>
 
