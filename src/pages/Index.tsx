@@ -111,10 +111,11 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle relative">
       {/* Background image */}
       <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-50 z-0"
+        className="fixed inset-0 bg-contain bg-center bg-no-repeat opacity-50 z-0"
         style={{ 
           backgroundImage: 'url(/lovable-uploads/7bf989f5-6fb0-4457-86aa-977ae4c5ff5b.png)',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'fixed',
+          backgroundSize: '80%'
         }}
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
