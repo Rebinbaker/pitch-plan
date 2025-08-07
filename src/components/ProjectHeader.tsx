@@ -27,9 +27,16 @@ export function ProjectHeader({
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Byggprojekt</h1>
-          <p className="text-muted-foreground">Hantera och följ upp alla byggprojekt</p>
+        <div className="flex items-center gap-4">
+          <img 
+            src="/lovable-uploads/77f2bb38-c679-4daf-b9ae-070c12f7a608.png" 
+            alt="Lokala Hantverkarna" 
+            className="h-12 w-auto hover:scale-105 transition-transform duration-300"
+          />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Byggprojekt</h1>
+            <p className="text-muted-foreground">Hantera och följ upp alla byggprojekt</p>
+          </div>
         </div>
         <Button onClick={onAddProject} className="shadow-primary hover:shadow-lg hover:scale-[1.05] transition-all duration-300">
           <Plus className="w-4 h-4" />
