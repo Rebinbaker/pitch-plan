@@ -30,7 +30,21 @@ export function ProjectChecklist({
 }: ProjectChecklistProps) {
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
-  const completionPercentage = Math.round((completedCount / totalCount) * 100);
+  
+  // Calculate weighted completion percentage from both checklist and work phases
+  const checklistWeight = checklist
+    .filter(item => item.completed)
+    .reduce((sum, item) => sum + (item.weight || 0), 0);
+  const workPhasesWeight = (project?.workPhases || [])
+    .filter(phase => phase.completed)
+    .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+  const totalCompletedWeight = checklistWeight + workPhasesWeight;
+  
+  const checklistTotalWeight = checklist.reduce((sum, item) => sum + (item.weight || 0), 0);
+  const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+  const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+  
+  const completionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
 
   // Check if project starts within 48 hours and has missing tasks
   const projectStartDate = new Date(startDate);
@@ -52,34 +66,49 @@ export function ProjectChecklist({
   const handleItemToggle = (itemId: string) => {
     if (!isEditable) return;
     
-    const updatedChecklist = checklist.map(item => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          completed: !item.completed,
-          completedAt: !item.completed ? new Date().toISOString().split('T')[0] : undefined,
-        };
-      }
-      return item;
-    });
+    const updatedChecklist = checklist.map(item => 
+      item.id === itemId 
+        ? { 
+            ...item, 
+            completed: !item.completed,
+            completedAt: !item.completed ? new Date().toISOString().split('T')[0] : undefined
+          }
+        : item
+    );
     
-    onChecklistUpdate(updatedChecklist);
+    // Calculate combined weighted completion percentage
+    const checklistWeight = updatedChecklist
+      .filter(item => item.completed)
+      .reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesWeight = (project?.workPhases || [])
+      .filter(phase => phase.completed)
+      .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalCompletedWeight = checklistWeight + workPhasesWeight;
     
-    // Check if all checklist items are now completed
-    const allChecklistCompleted = updatedChecklist.every(item => item.completed);
+    const checklistTotalWeight = updatedChecklist.reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+    
+    const newCompletionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
+    
+    // Check if all items are completed (100%)
+    const allItemsCompleted = newCompletionPercentage === 100;
     
     // Check if all work phases are completed (100%)
     const allWorkPhasesCompleted = project?.completionPercentage === 100;
     
-    // Auto-complete project if both checklist and work phases are done
-    if (allChecklistCompleted && allWorkPhasesCompleted && project && onUpdateProject && project.status !== 'completed') {
+    // Auto-complete project if all items (checklist + work phases) are done
+    if (allItemsCompleted && project && onUpdateProject && project.status !== 'completed') {
       const updatedProject = {
         ...project,
         status: 'completed' as const,
         checklist: updatedChecklist,
+        completionPercentage: newCompletionPercentage,
       };
       onUpdateProject(updatedProject);
     }
+    
+    onChecklistUpdate(updatedChecklist);
   };
 
   return (

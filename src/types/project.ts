@@ -55,17 +55,17 @@ export interface WorkPhaseItem {
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
-  { label: 'Order container', completed: false, weight: 2 },
-  { label: 'Book scaffolding', completed: false, weight: 2 },
+  { label: 'Containerbeställning', completed: false, weight: 5 },
+  { label: 'Ställningshantering', completed: false, weight: 5 },
   { label: 'Schedule construction team', completed: false, weight: 2 },
-  { label: 'Order material', completed: false, weight: 2 },
-  { label: 'Notify customer', completed: false, weight: 2 },
-  { label: 'Perform pre-inspection', completed: false, weight: 2 },
-  { label: 'Upload daily photos', completed: false, weight: 2 },
-  { label: 'Upload post-inspection', completed: false, weight: 2 },
-  { label: 'Final quality control', completed: false, weight: 2 },
-  { label: 'Confirm ROT paperwork', completed: false, weight: 2 },
-  { label: 'Mark ready for invoice', completed: false, weight: 2 },
+  { label: 'Materialkontroll', completed: false, weight: 5 },
+  { label: 'Notify customer', completed: false, weight: 1 },
+  { label: 'Perform pre-inspection', completed: false, weight: 1 },
+  { label: 'Dagliga bilder & kommentarer', completed: false, weight: 2 },
+  { label: 'Upload post-inspection', completed: false, weight: 1 },
+  { label: 'Slutsynbesiktning', completed: false, weight: 3 },
+  { label: 'Confirm ROT paperwork', completed: false, weight: 1 },
+  { label: 'Mark ready for invoice', completed: false, weight: 1 },
 ];
 
 export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
@@ -80,9 +80,4 @@ export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
   { label: 'Montering av snörasskydd', completed: false, weight: 5 },
   { label: 'Hängrännor & stuprör', completed: false, weight: 5 },
   { label: 'Bortforsling och städning', completed: false, weight: 5 },
-  { label: 'Containerbeställning', completed: false, weight: 5 },
-  { label: 'Ställningshantering', completed: false, weight: 5 },
-  { label: 'Materialkontroll', completed: false, weight: 5 },
-  { label: 'Dagliga bilder & kommentarer', completed: false, weight: 2 },
-  { label: 'Slutsynbesiktning', completed: false, weight: 3 },
 ];

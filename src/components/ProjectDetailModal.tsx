@@ -59,8 +59,20 @@ export function ProjectDetailModal({
   };
 
   const handleChecklistUpdate = (updatedChecklist: any[]) => {
-    const completedCount = updatedChecklist.filter(item => item.completed).length;
-    const completionPercentage = Math.round((completedCount / updatedChecklist.length) * 100);
+    // Calculate combined weighted completion percentage
+    const checklistWeight = updatedChecklist
+      .filter(item => item.completed)
+      .reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesWeight = (project?.workPhases || [])
+      .filter(phase => phase.completed)
+      .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalCompletedWeight = checklistWeight + workPhasesWeight;
+    
+    const checklistTotalWeight = updatedChecklist.reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+    
+    const completionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
     
     const updatedProject = {
       ...project,
@@ -287,19 +299,27 @@ export function ProjectDetailModal({
                             return p;
                           });
                           
-                          // Calculate new completion percentage based on weighted work phases
-                          const completedWeight = updatedPhases
+                          // Calculate combined weighted completion percentage
+                          const checklistWeight = (project.checklist || [])
+                            .filter(item => item.completed)
+                            .reduce((sum, item) => sum + (item.weight || 0), 0);
+                          const workPhasesWeight = updatedPhases
                             ?.filter(p => p.completed)
                             .reduce((sum, p) => sum + (p.weight || 0), 0) || 0;
-                          const totalWeight = updatedPhases
+                          const totalCompletedWeight = checklistWeight + workPhasesWeight;
+                          
+                          const checklistTotalWeight = (project.checklist || []).reduce((sum, item) => sum + (item.weight || 0), 0);
+                          const workPhasesTotalWeight = updatedPhases
                             ?.reduce((sum, p) => sum + (p.weight || 0), 0) || 1;
-                          const newCompletionPercentage = Math.round((completedWeight / totalWeight) * 100);
+                          const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+                          
+                          const newCompletionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
                           
                           // Check if all work phases are completed (100%)
                           const allWorkPhasesCompleted = newCompletionPercentage === 100;
                           
                           // Check if all checklist items are completed
-                          const allChecklistCompleted = project.checklist?.every(item => item.completed) || false;
+                          const allItemsCompleted = newCompletionPercentage === 100;
                           
                           // Check if this is the first work phase being completed and status is planned
                           const completedWorkPhases = updatedPhases?.filter(p => p.completed).length || 0;
@@ -320,7 +340,7 @@ export function ProjectDetailModal({
                             };
                           }
                           // Auto-complete project if both work phases and checklist are done
-                          else if (allWorkPhasesCompleted && allChecklistCompleted && project.status !== 'completed') {
+                          else if (allItemsCompleted && project.status !== 'completed') {
                             updatedProject = {
                               ...updatedProject,
                               status: 'completed' as const,
