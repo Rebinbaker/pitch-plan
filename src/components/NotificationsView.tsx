@@ -10,9 +10,10 @@ interface NotificationsViewProps {
   notifications: Notification[];
   onMarkAsRead: (notificationId: string) => void;
   onDismiss: (notificationId: string) => void;
+  onNavigateToProject: (projectId: string) => void;
 }
 
-export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: NotificationsViewProps) {
+export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNavigateToProject }: NotificationsViewProps) {
   const [filterPriority, setFilterPriority] = useState<NotificationPriority | 'all'>('all');
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
   const [showRead, setShowRead] = useState(false);
@@ -155,9 +156,10 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
           return (
             <Card 
               key={notification.id} 
-              className={`shadow-card transition-all duration-200 ${
+              className={`shadow-card transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.01] ${
                 !notification.isRead ? 'border-l-4 border-l-primary bg-primary/5' : ''
               }`}
+              onClick={() => onNavigateToProject(notification.projectId)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -206,7 +208,10 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onMarkAsRead(notification.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMarkAsRead(notification.id);
+                        }}
                       >
                         <CheckCircle className="w-4 h-4" />
                         Mark Read
@@ -215,7 +220,10 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onDismiss(notification.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDismiss(notification.id);
+                      }}
                     >
                       <X className="w-4 h-4" />
                       Dismiss

@@ -25,6 +25,7 @@ const Index = () => {
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('projects');
 
   const handleUpdateProject = (updatedProject: Project) => {
     setProjects(prevProjects => 
@@ -115,6 +116,12 @@ const Index = () => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
   };
 
+  const handleNavigateToProject = (projectId: string) => {
+    // Switch to projects tab and mark notification as read
+    setActiveTab('projects');
+    // You can add scrolling to specific project here if needed
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle relative">
       {/* Background image */}
@@ -127,7 +134,7 @@ const Index = () => {
         }}
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <Tabs defaultValue="projects" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <TabsTrigger value="projects">Projekt</TabsTrigger>
             <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
@@ -200,6 +207,7 @@ const Index = () => {
               notifications={notifications}
               onMarkAsRead={handleMarkAsRead}
               onDismiss={handleDismissNotification}
+              onNavigateToProject={handleNavigateToProject}
             />
           </TabsContent>
         </Tabs>
