@@ -66,6 +66,7 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Materialbeställning', completed: false, weight: 5 },
   { label: 'Dagliga egenkontroller', completed: false, weight: 5 },
   { label: 'Slutsynbesiktning', completed: false, weight: 3 },
+  { label: 'Avvarat material?', completed: false, weight: 2 },
   { label: 'Mark ready for invoice', completed: false, weight: 5 },
 ];
 

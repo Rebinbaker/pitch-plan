@@ -4,7 +4,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChecklistItem, Project } from '@/types/project';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ChecklistItem, Project, MaterialType } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users } from 'lucide-react';
 
 interface ProjectChecklistProps {
@@ -28,6 +30,14 @@ export function ProjectChecklist({
   teams = [],
   onUpdateProject
 }: ProjectChecklistProps) {
+  const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(
+    project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
+    project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null
+  );
+
+  const materialTypes: MaterialType[] = [
+    'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
+  ];
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
   
@@ -63,6 +73,20 @@ export function ProjectChecklist({
   );
 
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
+
+  const handleMaterialFieldChange = (field: string, value: any) => {
+    if (!project || !onUpdateProject) return;
+    
+    const updatedProject = {
+      ...project,
+      avvaratMaterial: {
+        ...project.avvaratMaterial,
+        hasLeftoverMaterial: materialAnswer === 'yes',
+        [field]: value
+      }
+    };
+    onUpdateProject(updatedProject);
+  };
 
   const handleItemToggle = (itemId: string) => {
     if (!isEditable) return;
@@ -155,6 +179,7 @@ export function ProjectChecklist({
             // Special handling for specific items
             const isBookScaffolding = item.label === 'Ställningshantering';
             const isScheduleTeam = item.label === 'Schedule construction team';
+            const isAvvaratMaterial = item.label === 'Avvarat material?';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
             
@@ -164,6 +189,8 @@ export function ProjectChecklist({
               isItemComplete = item.completed && hasTrailerAssigned;
             } else if (isScheduleTeam) {
               isItemComplete = item.completed && hasTeamAssigned;
+            } else if (isAvvaratMaterial) {
+              isItemComplete = materialAnswer !== null;
             }
             
             return (
@@ -174,30 +201,38 @@ export function ProjectChecklist({
                     isItemComplete 
                       ? 'bg-success/5 border-success/20' 
                       : 'bg-card border-border hover:bg-accent/50'
-                  } ${isEditable ? 'cursor-pointer' : ''}`}
+                  } ${isEditable && !isAvvaratMaterial ? 'cursor-pointer' : ''}`}
                   onClick={() => {
-                    if (isBookScaffolding) return; // Book scaffolding disabled
+                    if (isBookScaffolding || isAvvaratMaterial) return; // Book scaffolding and avvarat material disabled for click
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
                   }}
                 >
-                  <Checkbox 
-                    id={item.id}
-                    checked={!!isItemComplete}
-                    onCheckedChange={() => {
-                      if (isBookScaffolding) return; // Book scaffolding disabled
-                      if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
-                      handleItemToggle(item.id);
-                    }}
-                    disabled={!isEditable || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
-                    className="data-[state=checked]:bg-success data-[state=checked]:border-success"
-                  />
+                  {!isAvvaratMaterial ? (
+                    <Checkbox 
+                      id={item.id}
+                      checked={!!isItemComplete}
+                      onCheckedChange={() => {
+                        if (isBookScaffolding) return; // Book scaffolding disabled
+                        if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
+                        handleItemToggle(item.id);
+                      }}
+                      disabled={!isEditable || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
+                      className="data-[state=checked]:bg-success data-[state=checked]:border-success"
+                    />
+                  ) : (
+                    <div className="w-4 h-4 flex items-center justify-center">
+                      {materialAnswer === 'yes' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                      {materialAnswer === 'no' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                      {materialAnswer === null && <Circle className="w-4 h-4 text-muted-foreground" />}
+                    </div>
+                  )}
                   
                   <div className="flex-1 space-y-1">
                     <label 
                       htmlFor={item.id}
                       className={`text-sm font-medium leading-none ${
-                        (!isBookScaffolding && (!isScheduleTeam || hasTeamAssigned)) ? 'cursor-pointer' : ''
+                        (!isBookScaffolding && (!isScheduleTeam || hasTeamAssigned) && !isAvvaratMaterial) ? 'cursor-pointer' : ''
                       } ${
                         isItemComplete 
                           ? 'text-success line-through' 
@@ -322,6 +357,125 @@ export function ProjectChecklist({
                             }
                           </SelectContent>
                         </Select>
+                      </div>
+                    )}
+                    
+                    {/* Show yes/no buttons for Avvarat material */}
+                    {isAvvaratMaterial && project && onUpdateProject && (
+                      <div className="mt-2 space-y-3">
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={materialAnswer === 'yes' ? 'default' : 'outline'}
+                            onClick={() => {
+                              setMaterialAnswer('yes');
+                              const updatedProject = {
+                                ...project,
+                                avvaratMaterial: {
+                                  ...project.avvaratMaterial,
+                                  hasLeftoverMaterial: true
+                                }
+                              };
+                              onUpdateProject(updatedProject);
+                              
+                              // Mark checklist item as completed
+                              if (!item.completed) {
+                                const updatedChecklist = checklist.map(checkItem => {
+                                  if (checkItem.id === item.id) {
+                                    return {
+                                      ...checkItem,
+                                      completed: true,
+                                      completedAt: new Date().toISOString().split('T')[0],
+                                    };
+                                  }
+                                  return checkItem;
+                                });
+                                onChecklistUpdate(updatedChecklist);
+                              }
+                            }}
+                          >
+                            Ja
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={materialAnswer === 'no' ? 'default' : 'outline'}
+                            onClick={() => {
+                              setMaterialAnswer('no');
+                              const updatedProject = {
+                                ...project,
+                                avvaratMaterial: {
+                                  ...project.avvaratMaterial,
+                                  hasLeftoverMaterial: false
+                                }
+                              };
+                              onUpdateProject(updatedProject);
+                              
+                              // Mark checklist item as completed
+                              if (!item.completed) {
+                                const updatedChecklist = checklist.map(checkItem => {
+                                  if (checkItem.id === item.id) {
+                                    return {
+                                      ...checkItem,
+                                      completed: true,
+                                      completedAt: new Date().toISOString().split('T')[0],
+                                    };
+                                  }
+                                  return checkItem;
+                                });
+                                onChecklistUpdate(updatedChecklist);
+                              }
+                            }}
+                          >
+                            Nej
+                          </Button>
+                        </div>
+                        
+                        {/* Show material form if Yes is selected */}
+                        {materialAnswer === 'yes' && (
+                          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                            <div className="space-y-2">
+                              <Label className="text-sm">Materialtyp</Label>
+                              <Select
+                                value={project.avvaratMaterial?.materialType || ''}
+                                onValueChange={(value) => handleMaterialFieldChange('materialType', value as MaterialType)}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Välj materialtyp" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                  {materialTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {project.avvaratMaterial?.materialType === 'Annat' && (
+                              <div className="space-y-2">
+                                <Label className="text-sm">Ange annan materialtyp</Label>
+                                <Input
+                                  className="h-8 text-xs"
+                                  placeholder="Beskriv materialtypen"
+                                  value={project.avvaratMaterial.customMaterialType || ''}
+                                  onChange={(e) => handleMaterialFieldChange('customMaterialType', e.target.value)}
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="space-y-2">
+                              <Label className="text-sm">Antal kvadratmeter</Label>
+                              <Input
+                                className="h-8 text-xs"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                placeholder="0.0"
+                                value={project.avvaratMaterial?.squareMeters || ''}
+                                onChange={(e) => handleMaterialFieldChange('squareMeters', parseFloat(e.target.value) || 0)}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

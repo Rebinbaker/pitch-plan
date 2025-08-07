@@ -5,7 +5,7 @@ import { Project } from '@/types/project';
 import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
-import { AvvaratMaterialSection } from './AvvaratMaterialSection';
+// import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Not needed anymore
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
@@ -154,7 +154,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
         )}
 
         {/* Avvarat Material Status */}
-        {project.avvaratMaterial?.hasLeftoverMaterial && (
+        {project.avvaratMaterial?.hasLeftoverMaterial === true && (
           <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
             <div className="w-2 h-2 bg-warning rounded-full" />
             <span className="text-sm font-medium text-warning">Avvarat material: Ja</span>
@@ -163,6 +163,13 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
                 ({project.avvaratMaterial.materialType}, {project.avvaratMaterial.squareMeters} m²)
               </span>
             )}
+          </div>
+        )}
+        
+        {project.avvaratMaterial?.hasLeftoverMaterial === false && (
+          <div className="flex items-center gap-2 p-2 bg-success/10 rounded border border-success/20">
+            <div className="w-2 h-2 bg-success rounded-full" />
+            <span className="text-sm font-medium text-success">Avvarat material: Nej</span>
           </div>
         )}
 
@@ -186,13 +193,13 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           />
         )}
 
-        {/* Avvarat Material Section */}
-        {onUpdateProject && (
+        {/* Avvarat Material Section - Remove since it's now in checklist */}
+        {/* {onUpdateProject && (
           <AvvaratMaterialSection 
             project={project}
             onUpdateProject={onUpdateProject}
           />
-        )}
+        )} */
 
         <div className="flex gap-2">
           <Button 
