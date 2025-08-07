@@ -1,10 +1,19 @@
-import { Project, defaultChecklist } from '@/types/project';
+import { Project, defaultChecklist, defaultWorkPhases } from '@/types/project';
 
 // Generate checklist with IDs
 const generateChecklist = () => 
   defaultChecklist.map((item, index) => ({
     ...item,
     id: `checklist-${index + 1}`,
+  }));
+
+// Generate work phases with IDs
+const generateWorkPhases = (completedCount = 0) => 
+  defaultWorkPhases.map((item, index) => ({
+    ...item,
+    id: `workphase-${index + 1}`,
+    completed: index < completedCount,
+    completedAt: index < completedCount ? '2024-01-14' : undefined,
   }));
 
 export const mockProjects: Project[] = [
@@ -27,6 +36,7 @@ export const mockProjects: Project[] = [
       completed: index < 6, // First 6 items completed
       completedAt: index < 6 ? '2024-01-14' : undefined,
     })),
+    workPhases: generateWorkPhases(4), // 4 of 10 work phases completed
     completionPercentage: 55,
   },
   {
@@ -48,6 +58,7 @@ export const mockProjects: Project[] = [
       completed: index < 3, // First 3 items completed
       completedAt: index < 3 ? '2024-01-18' : undefined,
     })),
+    workPhases: generateWorkPhases(0), // No work phases completed yet
     completionPercentage: 27,
   },
   {
@@ -69,6 +80,7 @@ export const mockProjects: Project[] = [
       completed: true,
       completedAt: '2024-01-17',
     })),
+    workPhases: generateWorkPhases(10), // All work phases completed
     completionPercentage: 100,
   },
   {
@@ -90,6 +102,7 @@ export const mockProjects: Project[] = [
       completed: true,
       completedAt: '2024-01-11',
     })),
+    workPhases: generateWorkPhases(10), // All work phases completed
     completionPercentage: 100,
   },
 ];

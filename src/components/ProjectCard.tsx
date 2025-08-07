@@ -7,6 +7,7 @@ import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { AvvaratMaterialSection } from './AvvaratMaterialSection';
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
+import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 
 interface ProjectCardProps {
@@ -124,6 +125,14 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           <TrailerAssignmentSection 
             project={project}
             trailers={trailers}
+            onUpdateProject={onUpdateProject}
+          />
+        )}
+
+        {/* Work Phases Section */}
+        {onUpdateProject && (
+          <WorkPhasesSection 
+            project={project}
             onUpdateProject={onUpdateProject}
           />
         )}

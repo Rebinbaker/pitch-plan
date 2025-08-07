@@ -34,6 +34,7 @@ export interface Project {
   completionPercentage: number;
   avvaratMaterial?: AvvaratMaterial;
   assignedTrailer?: string; // ID of assigned trailer
+  workPhases?: WorkPhaseItem[];
 }
 
 export interface ChecklistItem {
@@ -41,6 +42,14 @@ export interface ChecklistItem {
   label: string;
   completed: boolean;
   completedAt?: string;
+}
+
+export interface WorkPhaseItem {
+  id: string;
+  label: string;
+  completed: boolean;
+  completedAt?: string;
+  comment?: string;
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
@@ -55,4 +64,17 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Final quality control', completed: false },
   { label: 'Confirm ROT paperwork', completed: false },
   { label: 'Mark ready for invoice', completed: false },
+];
+
+export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
+  { label: 'Rivning av pannor, läkt, nockregel', completed: false },
+  { label: 'Montering av ny råspont', completed: false },
+  { label: 'Montering av ny nockregel samt trekantslist', completed: false },
+  { label: 'Montering av ny underlagsduk', completed: false },
+  { label: 'Montering av ny strö- samt bärläkt', completed: false },
+  { label: 'Montering av nockband, fotplåt', completed: false },
+  { label: 'Montering av nya pannor', completed: false },
+  { label: 'Skrapa + måla plåt, nya vindskivebeslag samt fotplåt', completed: false },
+  { label: 'Snöraskydd', completed: false },
+  { label: 'Nya hängrännor och stuprör', completed: false },
 ];

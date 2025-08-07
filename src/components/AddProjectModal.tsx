@@ -29,7 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist } from '@/types/project';
+import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist, defaultWorkPhases } from '@/types/project';
 import { useToast } from '@/hooks/use-toast';
 
 const projectFormSchema = z.object({
@@ -114,6 +114,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
         checklist: defaultChecklist.map((item, index) => ({
           ...item,
           id: `checklist-${Date.now()}-${index}`,
+        })),
+        workPhases: defaultWorkPhases.map((item, index) => ({
+          ...item,
+          id: `workphase-${Date.now()}-${index}`,
         })),
         completionPercentage: 0,
       };
