@@ -144,13 +144,13 @@ export function ProjectDetailModal({
             {/* Project Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Project Details</h3>
+                <h3 className="text-lg font-semibold">Projektdetaljer</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <User className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{project.customerName}</p>
-                      <p className="text-sm text-muted-foreground">Customer</p>
+                      <p className="text-sm text-muted-foreground">Kund</p>
                     </div>
                   </div>
                   
@@ -158,7 +158,7 @@ export function ProjectDetailModal({
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{project.customerPhone}</p>
-                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="text-sm text-muted-foreground">Telefon</p>
                     </div>
                   </div>
                   
@@ -166,20 +166,20 @@ export function ProjectDetailModal({
                     <Users className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{project.constructionTeam}</p>
-                      <p className="text-sm text-muted-foreground">Construction Team</p>
+                      <p className="text-sm text-muted-foreground">Byggteam</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Timeline & Status</h3>
+                <h3 className="text-lg font-semibold">Tidslinje & Status</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <CalendarDays className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{new Date(project.startDate).toLocaleDateString('sv-SE')}</p>
-                      <p className="text-sm text-muted-foreground">Start Date</p>
+                      <p className="text-sm text-muted-foreground">Startdatum</p>
                     </div>
                   </div>
                   
@@ -195,7 +195,7 @@ export function ProjectDetailModal({
                     <User className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{project.responsibleSeller}</p>
-                      <p className="text-sm text-muted-foreground">Responsible Seller</p>
+                      <p className="text-sm text-muted-foreground">Ansvarig säljare</p>
                     </div>
                   </div>
                 </div>
@@ -204,10 +204,10 @@ export function ProjectDetailModal({
 
             {/* Progress Overview */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Project Progress</h3>
+              <h3 className="text-lg font-semibold">Projektframsteg</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Overall Completion</span>
+                  <span className="text-muted-foreground">Övergripande slutförande</span>
                   <span className="font-medium">{project.completionPercentage}%</span>
                 </div>
                 <div className="w-full bg-secondary rounded-full h-4">
@@ -222,7 +222,7 @@ export function ProjectDetailModal({
             {/* Notes */}
             {project.notes && (
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Notes</h3>
+                <h3 className="text-lg font-semibold">Anteckningar</h3>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm">{project.notes}</p>
                 </div>
@@ -235,15 +235,15 @@ export function ProjectDetailModal({
             <div className="flex gap-2 pt-4">
               <Button variant="outline" size="sm">
                 <Edit className="w-4 h-4" />
-                Edit Project
+                Redigera projekt
               </Button>
               <Button variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4" />
-                View Location
+                Visa plats
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportReport}>
                 <Download className="w-4 h-4" />
-                📄 Export Project Report
+                📄 Exportera projektrapport
               </Button>
             </div>
           </TabsContent>
@@ -402,10 +402,10 @@ export function ProjectDetailModal({
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold">Filhantering</h3>
               <p className="text-muted-foreground">
-                File upload and management functionality will be available here.
+                Filuppladdning och hanteringsfunktionalitet kommer att finnas tillgänglig här.
               </p>
               <Button variant="outline" className="mt-4">
-                Upload Files
+                Ladda upp filer
               </Button>
             </div>
           </TabsContent>
