@@ -25,8 +25,8 @@ export const mockProjects: Project[] = [
     customerPhone: '+46 70 123 4567',
     responsibleSeller: 'Anna Lindberg',
     constructionTeam: 'Team Alpha',
-    startDate: '2024-01-15',
-    deadline: '2024-01-25',
+    startDate: '2025-08-04',
+    deadline: '2025-08-08',
     rotStatus: 'Yes',
     status: 'ongoing',
     region: 'Stockholm',
@@ -34,7 +34,7 @@ export const mockProjects: Project[] = [
     checklist: generateChecklist().map((item, index) => ({
       ...item,
       completed: index < 6, // First 6 items completed
-      completedAt: index < 6 ? '2024-01-14' : undefined,
+      completedAt: index < 6 ? '2025-08-03' : undefined,
     })),
     workPhases: generateWorkPhases(4), // 4 of 10 work phases completed
     completionPercentage: 55,
@@ -47,8 +47,8 @@ export const mockProjects: Project[] = [
     customerPhone: '+46 31 987 6543',
     responsibleSeller: 'Marcus Holm',
     constructionTeam: 'Team Beta',
-    startDate: '2024-01-20',
-    deadline: '2024-02-05',
+    startDate: '2025-08-06',
+    deadline: '2025-08-12',
     rotStatus: 'No',
     status: 'planned',
     region: 'Västra Götaland',
@@ -56,7 +56,7 @@ export const mockProjects: Project[] = [
     checklist: generateChecklist().map((item, index) => ({
       ...item,
       completed: index < 3, // First 3 items completed
-      completedAt: index < 3 ? '2024-01-18' : undefined,
+      completedAt: index < 3 ? '2025-08-05' : undefined,
     })),
     workPhases: generateWorkPhases(0), // No work phases completed yet
     completionPercentage: 27,
@@ -69,19 +69,19 @@ export const mockProjects: Project[] = [
     customerPhone: '+46 70 555 1234',
     responsibleSeller: 'Johan Svensson',
     constructionTeam: 'Team Gamma',
-    startDate: '2024-01-10',
-    deadline: '2024-01-18',
+    startDate: '2025-08-02',
+    deadline: '2025-08-09',
     rotStatus: 'Yes',
-    status: 'completed',
+    status: 'ongoing',
     region: 'Stockholm',
-    notes: 'Projekt avslutat framgångsrikt. Kunden mycket nöjd.',
+    notes: 'Pågående projekt, nästan klart denna vecka.',
     checklist: generateChecklist().map(item => ({
       ...item,
       completed: true,
-      completedAt: '2024-01-17',
+      completedAt: '2025-08-07',
     })),
-    workPhases: generateWorkPhases(10), // All work phases completed
-    completionPercentage: 100,
+    workPhases: generateWorkPhases(8), // 8 of 10 work phases completed
+    completionPercentage: 85,
   },
   {
     id: '4',
