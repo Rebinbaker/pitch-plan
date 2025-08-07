@@ -1,4 +1,4 @@
-import { Project, defaultChecklist, defaultWorkPhases } from '@/types/project';
+import { Project, defaultChecklist, defaultWorkPhases, ActivityLogEntry } from '@/types/project';
 
 // Generate checklist with IDs
 const generateChecklist = () => 
@@ -15,6 +15,88 @@ const generateWorkPhases = (completedCount = 0) =>
     completed: index < completedCount,
     completedAt: index < completedCount ? '2024-01-14' : undefined,
   }));
+
+// Generate sample activity log entries
+const generateActivityLog = (projectId: string, completedTasks: number): ActivityLogEntry[] => {
+  const baseDate = new Date('2025-08-01');
+  const entries: ActivityLogEntry[] = [];
+  
+  // Project creation
+  entries.push({
+    id: `activity-${projectId}-1`,
+    timestamp: new Date(baseDate.getTime() + 0 * 24 * 60 * 60 * 1000).toISOString(),
+    user: 'Anna Lindberg',
+    action: 'Projekt skapat',
+    description: 'Nytt takprojekt registrerat i systemet',
+    category: 'general',
+  });
+
+  // Initial planning activities
+  if (completedTasks > 0) {
+    entries.push({
+      id: `activity-${projectId}-2`,
+      timestamp: new Date(baseDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+      user: 'Marcus Holm',
+      action: 'Containerbeställning genomförd',
+      description: 'Container beställd för avfall och material',
+      category: 'checklist',
+      oldValue: 'Ej klar',
+      newValue: 'Klar',
+    });
+  }
+
+  if (completedTasks > 1) {
+    entries.push({
+      id: `activity-${projectId}-3`,
+      timestamp: new Date(baseDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      user: 'Erik Andersson',
+      action: 'Ställning konfigurerad',
+      description: 'Ställningshantering planerad och genomförd',
+      category: 'checklist',
+      oldValue: 'Ej klar',
+      newValue: 'Klar',
+    });
+  }
+
+  if (completedTasks > 2) {
+    entries.push({
+      id: `activity-${projectId}-4`,
+      timestamp: new Date(baseDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      user: 'Anna Lindberg',
+      action: 'Projektstatus ändrad',
+      description: 'Projekt övergick från planerad till pågående',
+      category: 'status',
+      oldValue: 'Planerad',
+      newValue: 'Pågående',
+    });
+  }
+
+  if (completedTasks > 3) {
+    entries.push({
+      id: `activity-${projectId}-5`,
+      timestamp: new Date(baseDate.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+      user: 'Team Alpha',
+      action: 'Rivning påbörjad',
+      description: 'Rivning av pannor, läkt och nockregel slutförd',
+      category: 'workphase',
+      oldValue: 'Ej klar',
+      newValue: 'Klar',
+    });
+  }
+
+  if (completedTasks > 4) {
+    entries.push({
+      id: `activity-${projectId}-6`,
+      timestamp: new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      user: 'Erik Andersson',
+      action: 'Kvalitetskontroll',
+      description: 'Daglig egenkontroll genomförd utan anmärkningar',
+      category: 'checklist',
+    });
+  }
+
+  return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+};
 
 export const mockProjects: Project[] = [
   {
@@ -38,6 +120,7 @@ export const mockProjects: Project[] = [
     })),
     workPhases: generateWorkPhases(4), // 4 of 10 work phases completed
     completionPercentage: 55,
+    activityLog: generateActivityLog('1', 6),
   },
   {
     id: '2',
@@ -60,6 +143,7 @@ export const mockProjects: Project[] = [
     })),
     workPhases: generateWorkPhases(0), // No work phases completed yet
     completionPercentage: 27,
+    activityLog: generateActivityLog('2', 3),
   },
   {
     id: '3',
@@ -82,6 +166,7 @@ export const mockProjects: Project[] = [
     })),
     workPhases: generateWorkPhases(8), // 8 of 10 work phases completed
     completionPercentage: 85,
+    activityLog: generateActivityLog('3', 8),
   },
   {
     id: '4',
@@ -104,5 +189,6 @@ export const mockProjects: Project[] = [
     })),
     workPhases: generateWorkPhases(10), // All work phases completed
     completionPercentage: 100,
+    activityLog: generateActivityLog('4', 10),
   },
 ];

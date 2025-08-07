@@ -25,6 +25,18 @@ export interface AvvaratMaterial {
   comments?: string;
 }
 
+export interface ActivityLogEntry {
+  id: string;
+  timestamp: string; // ISO string
+  user: string; // User who performed the action
+  action: string; // Brief action description
+  description: string; // Detailed description
+  category: 'checklist' | 'workphase' | 'status' | 'general' | 'material' | 'assignment';
+  oldValue?: string; // Previous value (for changes)
+  newValue?: string; // New value (for changes)
+  metadata?: Record<string, any>; // Additional context
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -44,6 +56,7 @@ export interface Project {
   avvaratMaterial?: AvvaratMaterial;
   assignedTrailer?: string; // ID of assigned trailer
   workPhases?: WorkPhaseItem[];
+  activityLog?: ActivityLogEntry[];
 }
 
 export interface ChecklistItem {

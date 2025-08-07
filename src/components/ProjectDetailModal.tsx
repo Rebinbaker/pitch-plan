@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
-// import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Component removed
-import { Project } from '@/types/project';
+import { ActivityLogView } from './ActivityLogView';
+import { Project, ActivityLogEntry } from '@/types/project';
 import { 
   CalendarDays, 
   MapPin, 
@@ -22,7 +22,8 @@ import {
   Edit,
   ExternalLink,
   Download,
-  Calendar
+  Calendar,
+  ScrollText
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -58,6 +59,23 @@ export function ProjectDetailModal({
     }
   };
 
+  const createActivityLogEntry = (
+    action: string,
+    description: string,
+    category: ActivityLogEntry['category'],
+    oldValue?: string,
+    newValue?: string
+  ): ActivityLogEntry => ({
+    id: `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString(),
+    user: 'Aktuell Användare', // TODO: Replace with actual user
+    action,
+    description,
+    category,
+    oldValue,
+    newValue,
+  });
+
   const handleChecklistUpdate = (updatedChecklist: any[]) => {
     // Calculate combined weighted completion percentage
     const checklistWeight = updatedChecklist
@@ -73,13 +91,46 @@ export function ProjectDetailModal({
     const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
     
     const completionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
+
+    // Find differences for activity log
+    const activityEntries: ActivityLogEntry[] = [];
+    updatedChecklist.forEach((newItem, index) => {
+      const oldItem = project.checklist[index];
+      if (oldItem && oldItem.completed !== newItem.completed) {
+        activityEntries.push(createActivityLogEntry(
+          newItem.completed ? 'Checklistepunkt markerad som klar' : 'Checklistepunkt markerad som ej klar',
+          `"${newItem.label}" ${newItem.completed ? 'slutförd' : 'återställd'}`,
+          'checklist',
+          oldItem.completed ? 'Klar' : 'Ej klar',
+          newItem.completed ? 'Klar' : 'Ej klar'
+        ));
+      }
+    });
     
     const updatedProject = {
       ...project,
       checklist: updatedChecklist,
       completionPercentage,
+      activityLog: [...(project.activityLog || []), ...activityEntries],
     };
     
+    onUpdateProject(updatedProject);
+  };
+
+  const handleAddActivityLogEntry = (entryData: Omit<ActivityLogEntry, 'id' | 'timestamp'>) => {
+    const newEntry = createActivityLogEntry(
+      entryData.action,
+      entryData.description,
+      entryData.category,
+      entryData.oldValue,
+      entryData.newValue
+    );
+
+    const updatedProject = {
+      ...project,
+      activityLog: [...(project.activityLog || []), newEntry],
+    };
+
     onUpdateProject(updatedProject);
   };
 
@@ -133,11 +184,12 @@ export function ProjectDetailModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Översikt</TabsTrigger>
             <TabsTrigger value="checklist">Checklista</TabsTrigger>
             <TabsTrigger value="workphases">Arbetsmoment</TabsTrigger>
             <TabsTrigger value="files">Filer</TabsTrigger>
+            <TabsTrigger value="activity">Aktivitetslogg</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -321,25 +373,51 @@ export function ProjectDetailModal({
                           const completedWorkPhases = updatedPhases?.filter(p => p.completed).length || 0;
                           const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
                           
+                          // Create activity log entry
+                          const activityEntry = createActivityLogEntry(
+                            phase.completed ? 'Arbetsmoment markerat som klart' : 'Arbetsmoment markerat som ej klart',
+                            `"${phase.label}" ${phase.completed ? 'återställt' : 'slutfört'}`,
+                            'workphase',
+                            phase.completed ? 'Klar' : 'Ej klar',
+                            phase.completed ? 'Ej klar' : 'Klar'
+                          );
+
                           // Auto-complete project if both work phases and checklist are done
                           let updatedProject = {
                             ...project,
                             workPhases: updatedPhases,
                             completionPercentage: newCompletionPercentage,
+                            activityLog: [...(project.activityLog || []), activityEntry],
                           };
 
                           // Change status from planned to ongoing when first work phase is completed
                           if (wasFirstPhaseCompleted) {
+                            const statusEntry = createActivityLogEntry(
+                              'Projektstatus ändrad',
+                              'Projekt övergick från planerad till pågående',
+                              'status',
+                              'Planerad',
+                              'Pågående'
+                            );
                             updatedProject = {
                               ...updatedProject,
                               status: 'ongoing' as const,
+                              activityLog: [...updatedProject.activityLog, statusEntry],
                             };
                           }
                           // Auto-complete project if both work phases and checklist are done
                           else if (allItemsCompleted && project.status !== 'completed') {
+                            const statusEntry = createActivityLogEntry(
+                              'Projekt slutfört',
+                              'Alla arbetsmoment och checklistepunkter är klara',
+                              'status',
+                              project.status.charAt(0).toUpperCase() + project.status.slice(1),
+                              'Slutfört'
+                            );
                             updatedProject = {
                               ...updatedProject,
                               status: 'completed' as const,
+                              activityLog: [...updatedProject.activityLog, statusEntry],
                             };
                           }
                           
@@ -408,6 +486,13 @@ export function ProjectDetailModal({
                 Ladda upp filer
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <ActivityLogView 
+              activityLog={project.activityLog || []}
+              onAddEntry={handleAddActivityLogEntry}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
