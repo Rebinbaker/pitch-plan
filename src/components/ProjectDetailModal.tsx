@@ -59,12 +59,8 @@ export function ProjectDetailModal({
   };
 
   const handleChecklistUpdate = (updatedChecklist: any[]) => {
-    // Calculate weighted completion percentage
-    const completedWeight = updatedChecklist
-      .filter(item => item.completed)
-      .reduce((sum, item) => sum + (item.weight || 0), 0);
-    const totalWeight = updatedChecklist.reduce((sum, item) => sum + (item.weight || 0), 0);
-    const completionPercentage = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+    const completedCount = updatedChecklist.filter(item => item.completed).length;
+    const completionPercentage = Math.round((completedCount / updatedChecklist.length) * 100);
     
     const updatedProject = {
       ...project,
@@ -291,10 +287,13 @@ export function ProjectDetailModal({
                             return p;
                           });
                           
-                          // Calculate new completion percentage based on completed work phases
-                          const completedWorkPhases = updatedPhases?.filter(p => p.completed).length || 0;
-                          const totalWorkPhases = updatedPhases?.length || 1;
-                          const newCompletionPercentage = Math.round((completedWorkPhases / totalWorkPhases) * 100);
+                          // Calculate new completion percentage based on weighted work phases
+                          const completedWeight = updatedPhases
+                            ?.filter(p => p.completed)
+                            .reduce((sum, p) => sum + (p.weight || 0), 0) || 0;
+                          const totalWeight = updatedPhases
+                            ?.reduce((sum, p) => sum + (p.weight || 0), 0) || 1;
+                          const newCompletionPercentage = Math.round((completedWeight / totalWeight) * 100);
                           
                           // Check if all work phases are completed (100%)
                           const allWorkPhasesCompleted = newCompletionPercentage === 100;
@@ -303,6 +302,7 @@ export function ProjectDetailModal({
                           const allChecklistCompleted = project.checklist?.every(item => item.completed) || false;
                           
                           // Check if this is the first work phase being completed and status is planned
+                          const completedWorkPhases = updatedPhases?.filter(p => p.completed).length || 0;
                           const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
                           
                           // Auto-complete project if both work phases and checklist are done

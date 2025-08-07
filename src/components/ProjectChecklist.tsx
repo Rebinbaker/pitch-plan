@@ -30,13 +30,7 @@ export function ProjectChecklist({
 }: ProjectChecklistProps) {
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
-  
-  // Calculate weighted completion percentage
-  const completedWeight = checklist
-    .filter(item => item.completed)
-    .reduce((sum, item) => sum + (item.weight || 0), 0);
-  const totalWeight = checklist.reduce((sum, item) => sum + (item.weight || 0), 0);
-  const completionPercentage = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
   // Check if project starts within 48 hours and has missing tasks
   const projectStartDate = new Date(startDate);
