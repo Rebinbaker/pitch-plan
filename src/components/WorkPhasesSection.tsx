@@ -36,7 +36,7 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
       return phase;
     });
 
-    // Calculate new completion percentage based on completed work phases (10% per phase)
+    // Calculate new completion percentage based on completed work phases
     const completedWorkPhases = updatedPhases.filter(phase => phase.completed).length;
     const newCompletionPercentage = Math.round((completedWorkPhases / updatedPhases.length) * 100);
 
@@ -48,6 +48,34 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
     
     // Check if this is the first work phase being completed and status is planned
     const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
+    
+    // Mark resources as "I bruk" when project starts (first work phase completed)
+    if (wasFirstPhaseCompleted && onUpdateTeam && onUpdateTrailer) {
+      // Mark assigned team as busy
+      if (project.constructionTeam) {
+        const assignedTeam = teams.find(team => team.name === project.constructionTeam);
+        if (assignedTeam && assignedTeam.availabilityNextWeek === 'Available') {
+          onUpdateTeam({
+            ...assignedTeam,
+            availabilityNextWeek: 'Busy',
+            currentJob: project.name
+          });
+        }
+      }
+      
+      // Mark assigned trailer as "I bruk"
+      if (project.assignedTrailer) {
+        const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+        if (assignedTrailer && assignedTrailer.status === 'Tillgänglig') {
+          onUpdateTrailer({
+            ...assignedTrailer,
+            status: 'I bruk',
+            assignedProject: project.name,
+            location: project.address
+          });
+        }
+      }
+    }
     
     // Auto-complete project if both work phases and checklist are done
     let updatedProject = {
@@ -70,9 +98,8 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
         status: 'completed' as const,
       };
     }
-
     
-    // Free up resources when all work phases are completed
+    // Free up resources ONLY when all work phases are completed (100%)
     if (allWorkPhasesCompleted && onUpdateTeam && onUpdateTrailer) {
       // Mark assigned team as available
       if (project.constructionTeam) {
