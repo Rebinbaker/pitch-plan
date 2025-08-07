@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar as CalendarIcon, Clock, MapPin, User, Truck, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, User, Truck, Users, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 import { format } from 'date-fns';
@@ -239,7 +239,7 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-600">
-                <Calendar className="w-5 h-5" />
+                <CalendarDays className="w-5 h-5" />
                 Starting This Week ({startingThisWeek.length})
               </CardTitle>
             </CardHeader>
@@ -279,7 +279,7 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-600">
-                <Calendar className="w-5 h-5" />
+                <CalendarDays className="w-5 h-5" />
                 Due This Week ({completingThisWeek.length})
               </CardTitle>
             </CardHeader>
