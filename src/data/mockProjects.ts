@@ -7,7 +7,7 @@ const generateChecklist = () =>
     id: `checklist-${index + 1}`,
   }));
 
-// Generate work phases with IDs
+// Generate work phases with IDs - includes all 10 work phases
 const generateWorkPhases = (completedCount = 0) => 
   defaultWorkPhases.map((item, index) => ({
     ...item,

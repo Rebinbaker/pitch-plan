@@ -135,6 +135,11 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
 
         <CollapsibleContent>
           <CardContent className="pt-0">
+            {totalPhases === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Inga arbetsmoment har skapats för detta projekt än.
+              </div>
+            ) : (
             <div className="space-y-3">
               {workPhases.map((phase, index) => (
                 <div 
@@ -197,7 +202,8 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
