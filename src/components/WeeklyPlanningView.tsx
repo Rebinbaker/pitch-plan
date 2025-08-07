@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MapPin, User, Truck, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, User, Truck, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
@@ -14,16 +18,30 @@ interface WeeklyPlanningViewProps {
 export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board'>('board');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // Calculate dates for this week
-  const today = new Date();
-  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  // Calculate dates for the selected week
+  const getWeekDates = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay() + 1); // Monday
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+    return { startOfWeek, endOfWeek };
+  };
 
-  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  const { startOfWeek, endOfWeek } = getWeekDates(selectedDate);
 
-  // Filter projects for this week
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + (direction === 'next' ? 7 : -7));
+    setSelectedDate(newDate);
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  // Filter projects for the selected week
   const thisWeekProjects = projects.filter(project => {
     const startDate = new Date(project.startDate);
     const deadline = new Date(project.deadline);
@@ -78,37 +96,104 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
     return null;
   };
 
+  const isCurrentWeek = () => {
+    const today = new Date();
+    const { startOfWeek: currentStart, endOfWeek: currentEnd } = getWeekDates(today);
+    return startOfWeek.getTime() === currentStart.getTime();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Weekly Planning</h2>
-          <p className="text-muted-foreground">
-            Week of {startOfWeek.toLocaleDateString()} - {endOfWeek.toLocaleDateString()}
-          </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Select value={regionFilter} onValueChange={(value: Region | 'all') => setRegionFilter(value)}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter Region" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla regioner</SelectItem>
-              <SelectItem value="Stockholm">Stockholm</SelectItem>
-              <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4">
+        {/* Header with date navigation */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Weekly Planning</h2>
+            <p className="text-muted-foreground">
+              Week of {format(startOfWeek, 'MMM d')} - {format(endOfWeek, 'MMM d, yyyy')}
+            </p>
+          </div>
           
-          <Select value={viewMode} onValueChange={(value: 'calendar' | 'board') => setViewMode(value)}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="board">Kortvy</SelectItem>
-              <SelectItem value="calendar">Kalendervy</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={regionFilter} onValueChange={(value: Region | 'all') => setRegionFilter(value)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter Region" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alla regioner</SelectItem>
+                <SelectItem value="Stockholm">Stockholm</SelectItem>
+                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={viewMode} onValueChange={(value: 'calendar' | 'board') => setViewMode(value)}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="board">Kortvy</SelectItem>
+                <SelectItem value="calendar">Kalendervy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Date navigation controls */}
+        <div className="flex items-center gap-4 justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateWeek('prev')}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Föregående vecka
+          </Button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "PPP") : <span>Välj datum</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateWeek('next')}
+            className="flex items-center gap-2"
+          >
+            Nästa vecka
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+
+          {!isCurrentWeek() && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={goToToday}
+              className="ml-2"
+            >
+              Denna vecka
+            </Button>
+          )}
         </div>
       </div>
 
