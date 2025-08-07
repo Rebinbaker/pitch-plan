@@ -108,8 +108,16 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-subtle relative">
+      {/* Background image */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20 z-0"
+        style={{ 
+          backgroundImage: 'url(/lovable-uploads/7bf989f5-6fb0-4457-86aa-977ae4c5ff5b.png)',
+          backgroundAttachment: 'fixed'
+        }}
+      />
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <Tabs defaultValue="projects" className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="projects">Projekt</TabsTrigger>
