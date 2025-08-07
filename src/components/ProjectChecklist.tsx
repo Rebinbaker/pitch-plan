@@ -152,7 +152,7 @@ export function ProjectChecklist({
         <div className="space-y-3">
           {checklist.map((item, index) => {
             // Special handling for specific items
-            const isBookScaffolding = item.label === 'Book scaffolding';
+            const isBookScaffolding = item.label === 'Ställningshantering';
             const isScheduleTeam = item.label === 'Schedule construction team';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
