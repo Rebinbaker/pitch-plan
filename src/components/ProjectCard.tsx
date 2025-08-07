@@ -158,9 +158,11 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
             <div className="w-2 h-2 bg-warning rounded-full" />
             <span className="text-sm font-medium text-warning">Avvarat material: Ja</span>
-            {project.avvaratMaterial.materialType && project.avvaratMaterial.squareMeters && (
+            {project.avvaratMaterial.materials && project.avvaratMaterial.materials.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                ({project.avvaratMaterial.materialType}, {project.avvaratMaterial.squareMeters} m²)
+                ({project.avvaratMaterial.materials.map(m => 
+                  `${m.materialType === 'Annat' ? m.customMaterialType : m.materialType}: ${m.squareMeters}m²`
+                ).join(', ')})
               </span>
             )}
           </div>

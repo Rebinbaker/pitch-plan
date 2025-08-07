@@ -6,11 +6,16 @@ export type PlannedAction = 'Användas i framtida projekt' | 'Transporteras till
 
 export type MaterialType = 'Takpannor' | 'Underlagsduk' | 'Läkt' | 'Plåtdetaljer' | 'Isolering' | 'Annat';
 
+export interface MaterialItem {
+  id: string;
+  materialType: MaterialType;
+  customMaterialType?: string; // For "Annat" option
+  squareMeters: number;
+}
+
 export interface AvvaratMaterial {
   hasLeftoverMaterial: boolean;
-  materialType?: MaterialType;
-  customMaterialType?: string; // For "Annat" option
-  squareMeters?: number;
+  materials?: MaterialItem[];
   storageLocation?: StorageLocation;
   customStorageLocation?: string; // For "Annat" option
   dateNoted?: string;

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChecklistItem, Project, MaterialType } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users } from 'lucide-react';
+import { ChecklistItem, Project, MaterialType, MaterialItem } from '@/types/project';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X } from 'lucide-react';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -64,8 +64,9 @@ export function ProjectChecklist({
 
   // Check if leftover material blocks completion
   const hasIncompleteLeftoverMaterial = project?.avvaratMaterial?.hasLeftoverMaterial && !(
-    project.avvaratMaterial.materialType &&
-    project.avvaratMaterial.squareMeters &&
+    project.avvaratMaterial.materials &&
+    project.avvaratMaterial.materials.length > 0 &&
+    project.avvaratMaterial.materials.every(m => m.materialType && m.squareMeters > 0) &&
     project.avvaratMaterial.storageLocation &&
     project.avvaratMaterial.dateNoted &&
     project.avvaratMaterial.responsiblePerson &&
@@ -73,6 +74,63 @@ export function ProjectChecklist({
   );
 
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
+
+  const addMaterialItem = () => {
+    if (!project || !onUpdateProject) return;
+    
+    const newMaterial: MaterialItem = {
+      id: `material-${Date.now()}`,
+      materialType: 'Takpannor',
+      squareMeters: 0
+    };
+    
+    const currentMaterials = project.avvaratMaterial?.materials || [];
+    const updatedProject = {
+      ...project,
+      avvaratMaterial: {
+        ...project.avvaratMaterial,
+        hasLeftoverMaterial: materialAnswer === 'yes',
+        materials: [...currentMaterials, newMaterial]
+      }
+    };
+    onUpdateProject(updatedProject);
+  };
+
+  const removeMaterialItem = (materialId: string) => {
+    if (!project || !onUpdateProject) return;
+    
+    const currentMaterials = project.avvaratMaterial?.materials || [];
+    const updatedProject = {
+      ...project,
+      avvaratMaterial: {
+        ...project.avvaratMaterial,
+        hasLeftoverMaterial: materialAnswer === 'yes',
+        materials: currentMaterials.filter(m => m.id !== materialId)
+      }
+    };
+    onUpdateProject(updatedProject);
+  };
+
+  const updateMaterialItem = (materialId: string, field: keyof MaterialItem, value: any) => {
+    if (!project || !onUpdateProject) return;
+    
+    const currentMaterials = project.avvaratMaterial?.materials || [];
+    const updatedMaterials = currentMaterials.map(material => 
+      material.id === materialId 
+        ? { ...material, [field]: value }
+        : material
+    );
+    
+    const updatedProject = {
+      ...project,
+      avvaratMaterial: {
+        ...project.avvaratMaterial,
+        hasLeftoverMaterial: materialAnswer === 'yes',
+        materials: updatedMaterials
+      }
+    };
+    onUpdateProject(updatedProject);
+  };
 
   const handleMaterialFieldChange = (field: string, value: any) => {
     if (!project || !onUpdateProject) return;
@@ -433,46 +491,93 @@ export function ProjectChecklist({
                         {/* Show material form if Yes is selected */}
                         {materialAnswer === 'yes' && (
                           <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
-                            <div className="space-y-2">
-                              <Label className="text-sm">Materialtyp</Label>
-                              <Select
-                                value={project.avvaratMaterial?.materialType || ''}
-                                onValueChange={(value) => handleMaterialFieldChange('materialType', value as MaterialType)}
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Material som finns kvar</Label>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={addMaterialItem}
+                                className="h-6 w-6 p-0"
                               >
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Välj materialtyp" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border border-border shadow-lg z-50">
-                                  {materialTypes.map((type) => (
-                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                <Plus className="h-3 w-3" />
+                              </Button>
                             </div>
                             
-                            {project.avvaratMaterial?.materialType === 'Annat' && (
-                              <div className="space-y-2">
-                                <Label className="text-sm">Ange annan materialtyp</Label>
-                                <Input
-                                  className="h-8 text-xs"
-                                  placeholder="Beskriv materialtypen"
-                                  value={project.avvaratMaterial.customMaterialType || ''}
-                                  onChange={(e) => handleMaterialFieldChange('customMaterialType', e.target.value)}
-                                />
-                              </div>
-                            )}
-                            
-                            <div className="space-y-2">
-                              <Label className="text-sm">Antal kvadratmeter</Label>
-                              <Input
-                                className="h-8 text-xs"
-                                type="number"
-                                step="0.1"
-                                min="0"
-                                placeholder="0.0"
-                                value={project.avvaratMaterial?.squareMeters || ''}
-                                onChange={(e) => handleMaterialFieldChange('squareMeters', parseFloat(e.target.value) || 0)}
-                              />
+                            {/* Material items list */}
+                            <div className="space-y-3">
+                              {(project.avvaratMaterial?.materials || []).map((material, index) => (
+                                <div key={material.id} className="space-y-2 p-3 border rounded bg-background">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-medium text-muted-foreground">Material {index + 1}</span>
+                                    {(project.avvaratMaterial?.materials?.length || 0) > 1 && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => removeMaterialItem(material.id)}
+                                        className="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Materialtyp</Label>
+                                      <Select
+                                        value={material.materialType}
+                                        onValueChange={(value) => updateMaterialItem(material.id, 'materialType', value as MaterialType)}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                          {materialTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Kvm</Label>
+                                      <Input
+                                        className="h-7 text-xs"
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        value={material.squareMeters || ''}
+                                        onChange={(e) => updateMaterialItem(material.id, 'squareMeters', parseFloat(e.target.value) || 0)}
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  {material.materialType === 'Annat' && (
+                                    <div className="space-y-1">
+                                      <Label className="text-xs">Ange materialtyp</Label>
+                                      <Input
+                                        className="h-7 text-xs"
+                                        placeholder="Beskriv materialtypen"
+                                        value={material.customMaterialType || ''}
+                                        onChange={(e) => updateMaterialItem(material.id, 'customMaterialType', e.target.value)}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              
+                              {/* If no materials, show add button */}
+                              {(!project.avvaratMaterial?.materials || project.avvaratMaterial.materials.length === 0) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={addMaterialItem}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Lägg till material
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )}

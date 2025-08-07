@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
-import { AvvaratMaterialSection } from './AvvaratMaterialSection';
+// import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Component removed
 import { Project } from '@/types/project';
 import { 
   CalendarDays, 
@@ -229,11 +229,7 @@ export function ProjectDetailModal({
               </div>
             )}
 
-            {/* Avvarat Material Section */}
-            <AvvaratMaterialSection 
-              project={project}
-              onUpdateProject={onUpdateProject}
-            />
+            {/* Avvarat Material now handled in checklist */}
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">

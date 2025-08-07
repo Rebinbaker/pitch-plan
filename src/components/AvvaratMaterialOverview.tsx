@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Project, StorageLocation, PlannedAction } from '@/types/project';
+import { Project, StorageLocation, PlannedAction, MaterialItem } from '@/types/project';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,8 +32,10 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
       const matchesSearch = 
         project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (material.materialType || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (material.customMaterialType || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (material.materials || []).some(m => 
+          (m.materialType || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (m.customMaterialType || '').toLowerCase().includes(searchTerm.toLowerCase())
+        );
       
       const matchesLocation = locationFilter === 'all' || material.storageLocation === locationFilter;
       const matchesAction = actionFilter === 'all' || material.plannedAction === actionFilter;
@@ -227,11 +229,18 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
                         </div>
                       </TableCell>
                       <TableCell className="text-sm max-w-xs">
-                        <div className="truncate">
-                          {material.materialType === 'Annat' && material.customMaterialType 
-                            ? material.customMaterialType 
-                            : material.materialType || 'Ej specificerat'}
-                          {material.squareMeters && ` (${material.squareMeters} m²)`}
+                        <div className="space-y-1">
+                          {(material.materials || []).map((materialItem, index) => (
+                            <div key={index} className="text-xs">
+                              {materialItem.materialType === 'Annat' && materialItem.customMaterialType 
+                                ? materialItem.customMaterialType 
+                                : materialItem.materialType}
+                              {materialItem.squareMeters && ` (${materialItem.squareMeters} m²)`}
+                            </div>
+                          ))}
+                          {(!material.materials || material.materials.length === 0) && (
+                            <span className="text-muted-foreground">Ej specificerat</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
