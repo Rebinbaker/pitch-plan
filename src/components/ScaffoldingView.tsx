@@ -8,13 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Truck, MapPin, User, Plus } from 'lucide-react';
 import { ScaffoldingTrailer, ScaffoldingStatus } from '@/types/scaffolding';
+import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface ScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
   onUpdateScaffolding: (updated: ScaffoldingTrailer) => void;
+  projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function ScaffoldingView({ scaffolding, onUpdateScaffolding }: ScaffoldingViewProps) {
+export function ScaffoldingView({ scaffolding, onUpdateScaffolding, projects = [] }: ScaffoldingViewProps) {
   const [editingTrailer, setEditingTrailer] = useState<ScaffoldingTrailer | null>(null);
   const [filterStatus, setFilterStatus] = useState<ScaffoldingStatus | 'all'>('all');
 
@@ -130,6 +132,24 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding }: Scaffoldin
                   <User className="w-4 h-4 mt-0.5 text-muted-foreground" />
                   <div className="text-sm text-muted-foreground">{trailer.moverNote}</div>
                 </div>
+              )}
+              
+              {/* Time estimation for scaffolding availability */}
+              {trailer.assignedProject && trailer.status === 'I bruk' && (
+                (() => {
+                  const project = projects.find(p => p.name === trailer.assignedProject);
+                  if (project) {
+                    const timeEstimate = calculateRemainingTime(project);
+                    return (
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                        <div className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                          Ställning ledig om: {formatDaysRemaining(timeEstimate.scaffoldingRemainingDays)}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
               )}
               
               <div className="text-xs text-muted-foreground">

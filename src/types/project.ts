@@ -52,6 +52,7 @@ export interface WorkPhaseItem {
   completedAt?: string;
   comment?: string;
   weight: number; // Percentage weight for progress calculation
+  estimatedDays: number; // Estimated days to complete this phase
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
@@ -65,15 +66,15 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
 ];
 
 export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
-  { label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10 },
-  { label: 'Montering av ny råspont', completed: false, weight: 10 },
-  { label: 'Montering av nockregel + trekantslist', completed: false, weight: 5 },
-  { label: 'Montering av underlagsduk', completed: false, weight: 5 },
-  { label: 'Montering av strö- & bärläkt', completed: false, weight: 5 },
-  { label: 'Montering av nockband, fotplåt', completed: false, weight: 5 },
-  { label: 'Montering av nya pannor', completed: false, weight: 15 },
-  { label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5 },
-  { label: 'Montering av snörasskydd', completed: false, weight: 5 },
-  { label: 'Hängrännor & stuprör', completed: false, weight: 5 },
-  { label: 'Bortforsling och städning', completed: false, weight: 5 },
+  { label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10, estimatedDays: 1 },
+  { label: 'Montering av ny råspont', completed: false, weight: 10, estimatedDays: 1 },
+  { label: 'Montering av nockregel + trekantslist', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Montering av underlagsduk', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Montering av strö- & bärläkt', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Montering av nockband, fotplåt', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Montering av nya pannor', completed: false, weight: 15, estimatedDays: 1.5 },
+  { label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Montering av snörasskydd', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5 },
 ];

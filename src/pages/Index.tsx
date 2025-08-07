@@ -144,6 +144,7 @@ const Index = () => {
             <ScaffoldingView 
               scaffolding={scaffolding}
               onUpdateScaffolding={handleUpdateScaffolding}
+              projects={projects}
             />
           </TabsContent>
 
@@ -151,6 +152,7 @@ const Index = () => {
             <TeamsView 
               teams={teams}
               onUpdateTeam={handleUpdateTeam}
+              projects={projects}
             />
           </TabsContent>
 

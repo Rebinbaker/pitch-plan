@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Users, Phone, Briefcase, Star } from 'lucide-react';
 import { ConstructionTeam, TeamType, AvailabilityStatus } from '@/types/team';
+import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface TeamsViewProps {
   teams: ConstructionTeam[];
   onUpdateTeam: (updated: ConstructionTeam) => void;
+  projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function TeamsView({ teams, onUpdateTeam }: TeamsViewProps) {
+export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps) {
   const [filterType, setFilterType] = useState<TeamType | 'all'>('all');
   const [filterAvailability, setFilterAvailability] = useState<AvailabilityStatus | 'all'>('all');
 
@@ -163,6 +165,24 @@ export function TeamsView({ teams, onUpdateTeam }: TeamsViewProps) {
                   <Star className="w-4 h-4 mt-0.5 text-muted-foreground" />
                   <div className="text-sm text-muted-foreground">{team.performanceNotes}</div>
                 </div>
+              )}
+              
+              {/* Time estimation for team availability */}
+              {team.currentJob && team.availabilityNextWeek === 'Busy' && (
+                (() => {
+                  const project = projects.find(p => p.name === team.currentJob);
+                  if (project) {
+                    const timeEstimate = calculateRemainingTime(project);
+                    return (
+                      <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800">
+                        <div className="text-xs font-medium text-red-700 dark:text-red-300">
+                          Team ledig om: {formatDaysRemaining(timeEstimate.workersRemainingDays)}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
               )}
               
               <Dialog>
