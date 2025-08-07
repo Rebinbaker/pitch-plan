@@ -19,6 +19,10 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
   const [comments, setComments] = useState<Record<string, string>>({});
 
   const workPhases = project.workPhases || [];
+  
+  console.log('WorkPhasesSection rendered for project:', project.name);
+  console.log('Work phases:', workPhases);
+  console.log('Has onUpdateProject:', !!onUpdateProject);
   const completedPhases = workPhases.filter(phase => phase.completed).length;
   const totalPhases = workPhases.length;
   const completionPercentage = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
@@ -92,7 +96,7 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
             </div>
             
             {/* Progress Summary - Always visible */}
-            {totalPhases > 0 && (
+            {totalPhases > 0 ? (
               <div className="space-y-3 mt-2">
                 <div className="w-full bg-secondary rounded-full h-2">
                   <div 
@@ -120,6 +124,10 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
                     <span>Ställning frisläpps {format(scaffoldingFreeDate, 'yyyy-MM-dd')}</span>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground mt-2">
+                Inga arbetsmoment definierade än
               </div>
             )}
           </CardHeader>
