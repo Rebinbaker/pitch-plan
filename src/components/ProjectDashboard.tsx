@@ -11,9 +11,11 @@ interface ProjectDashboardProps {
   onAddProject: () => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
+  onUpdateTeam?: (team: any) => void;
+  onUpdateTrailer?: (trailer: any) => void;
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [] }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -102,6 +104,9 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
             onViewDetails={handleViewDetails}
             onUpdateProject={onUpdateProject}
             trailers={trailers}
+            teams={teams}
+            onUpdateTeam={onUpdateTeam}
+            onUpdateTrailer={onUpdateTrailer}
           />
         ))}
       </div>

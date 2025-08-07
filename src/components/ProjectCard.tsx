@@ -15,9 +15,12 @@ interface ProjectCardProps {
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
   trailers?: ScaffoldingTrailer[];
+  teams?: any[];
+  onUpdateTeam?: (team: any) => void;
+  onUpdateTrailer?: (trailer: any) => void;
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [] }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer }: ProjectCardProps) {
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
@@ -163,6 +166,10 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             project={project}
             onUpdateProject={onUpdateProject}
             onOpenDetails={() => onViewDetails(project)}
+            teams={teams}
+            trailers={trailers}
+            onUpdateTeam={onUpdateTeam}
+            onUpdateTrailer={onUpdateTrailer}
           />
         )}
 

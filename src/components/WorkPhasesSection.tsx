@@ -10,9 +10,13 @@ interface WorkPhasesSectionProps {
   project: Project;
   onUpdateProject: (project: Project) => void;
   onOpenDetails?: () => void;
+  teams?: any[];
+  trailers?: any[];
+  onUpdateTeam?: (team: any) => void;
+  onUpdateTrailer?: (trailer: any) => void;
 }
 
-export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: WorkPhasesSectionProps) {
+export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, teams = [], trailers = [], onUpdateTeam, onUpdateTrailer }: WorkPhasesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const workPhases = project.workPhases || [];
@@ -65,6 +69,36 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: W
         ...updatedProject,
         status: 'completed' as const,
       };
+    }
+
+    
+    // Free up resources when all work phases are completed
+    if (allWorkPhasesCompleted && onUpdateTeam && onUpdateTrailer) {
+      // Mark assigned team as available
+      if (project.constructionTeam) {
+        const assignedTeam = teams.find(team => team.name === project.constructionTeam);
+        if (assignedTeam && assignedTeam.availabilityNextWeek !== 'Available') {
+          onUpdateTeam({
+            ...assignedTeam,
+            availabilityNextWeek: 'Available',
+            currentJob: 'Planning phase'
+          });
+        }
+      }
+      
+      // Mark assigned trailer as available
+      if (project.assignedTrailer) {
+        const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+        if (assignedTrailer && assignedTrailer.status !== 'Tillgänglig') {
+          onUpdateTrailer({
+            ...assignedTrailer,
+            status: 'Tillgänglig',
+            assignedProject: undefined,
+            location: 'Lundavägen 20',
+            moverNote: undefined
+          });
+        }
+      }
     }
 
     onUpdateProject(updatedProject);
