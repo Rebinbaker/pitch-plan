@@ -73,23 +73,23 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="p-4 bg-card rounded-lg border shadow-card">
+        <div className="p-4 bg-card rounded-lg border shadow-card hover:shadow-lg hover:bg-background/90 hover:scale-[1.05] transition-all duration-300">
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
           <div className="text-sm text-muted-foreground">Totalt projekt</div>
         </div>
-        <div className="p-4 bg-card rounded-lg border shadow-card">
+        <div className="p-4 bg-card rounded-lg border shadow-card hover:shadow-lg hover:bg-background/90 hover:scale-[1.05] transition-all duration-300">
           <div className="text-2xl font-bold text-planned">{stats.planned}</div>
           <div className="text-sm text-muted-foreground">Planerade</div>
         </div>
-        <div className="p-4 bg-card rounded-lg border shadow-card">
+        <div className="p-4 bg-card rounded-lg border shadow-card hover:shadow-lg hover:bg-background/90 hover:scale-[1.05] transition-all duration-300">
           <div className="text-2xl font-bold text-ongoing">{stats.ongoing}</div>
           <div className="text-sm text-muted-foreground">Pågående</div>
         </div>
-        <div className="p-4 bg-card rounded-lg border shadow-card">
+        <div className="p-4 bg-card rounded-lg border shadow-card hover:shadow-lg hover:bg-background/90 hover:scale-[1.05] transition-all duration-300">
           <div className="text-2xl font-bold text-completed">{stats.completed}</div>
           <div className="text-sm text-muted-foreground">Slutförda</div>
         </div>
-        <div className="p-4 bg-card rounded-lg border shadow-card">
+        <div className="p-4 bg-card rounded-lg border shadow-card hover:shadow-lg hover:bg-background/90 hover:scale-[1.05] transition-all duration-300">
           <div className="text-2xl font-bold text-invoiced">{stats.invoiced}</div>
           <div className="text-sm text-muted-foreground">Fakturerade</div>
         </div>

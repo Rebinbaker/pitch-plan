@@ -111,7 +111,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle relative">
       {/* Background image */}
       <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-50 z-0"
         style={{ 
           backgroundImage: 'url(/lovable-uploads/7bf989f5-6fb0-4457-86aa-977ae4c5ff5b.png)',
           backgroundAttachment: 'fixed'
@@ -119,7 +119,7 @@ const Index = () => {
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
         <Tabs defaultValue="projects" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-7 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <TabsTrigger value="projects">Projekt</TabsTrigger>
             <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
             <TabsTrigger value="teams">Team</TabsTrigger>

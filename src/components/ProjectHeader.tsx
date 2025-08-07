@@ -31,7 +31,7 @@ export function ProjectHeader({
           <h1 className="text-3xl font-bold text-foreground">Takprojekt</h1>
           <p className="text-muted-foreground">Hantera och följ upp alla takprojekt</p>
         </div>
-        <Button onClick={onAddProject} className="shadow-primary">
+        <Button onClick={onAddProject} className="shadow-primary hover:shadow-lg hover:scale-[1.05] transition-all duration-300">
           <Plus className="w-4 h-4" />
           Nytt projekt
         </Button>
