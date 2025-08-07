@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Truck, Users } from 'lucide-react';
 import { Project, ProjectStatus, Region } from '@/types/project';
+import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
@@ -250,6 +251,28 @@ function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
     return null;
   };
 
+  // Calculate estimated completion
+  const timeEstimate = calculateRemainingTime(project);
+  const estimatedCompletionDate = () => {
+    if (project.status === 'completed') return 'Klart';
+    if (timeEstimate.workersRemainingDays === 0) return 'Klart idag';
+    
+    const today = new Date();
+    const workingDaysToAdd = timeEstimate.workersRemainingDays;
+    let completionDate = new Date(today);
+    let daysAdded = 0;
+    
+    while (daysAdded < workingDaysToAdd) {
+      completionDate.setDate(completionDate.getDate() + 1);
+      // Skip weekends (Saturday = 6, Sunday = 0)
+      if (completionDate.getDay() !== 0 && completionDate.getDay() !== 6) {
+        daysAdded++;
+      }
+    }
+    
+    return completionDate.toLocaleDateString('sv-SE');
+  };
+
   return (
     <Card className="shadow-card">
       <CardContent className="p-4 space-y-2">
@@ -269,13 +292,39 @@ function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
         </div>
         
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <User className="w-3 h-3" />
+          <Users className="w-3 h-3" />
           {project.constructionTeam}
+        </div>
+
+        {/* Show assigned trailer if available */}
+        {project.assignedTrailer && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Truck className="w-3 h-3" />
+            <span>Släp: {project.assignedTrailer}</span>
+          </div>
+        )}
+        
+        <div className="text-xs text-muted-foreground">
+          Start: {new Date(project.startDate).toLocaleDateString('sv-SE')}
         </div>
         
         <div className="text-xs text-muted-foreground">
-          {project.startDate} → {project.deadline}
+          Deadline: {new Date(project.deadline).toLocaleDateString('sv-SE')}
         </div>
+
+        {/* Estimated completion for ongoing projects */}
+        {project.status === 'ongoing' && (
+          <div className="text-xs font-medium text-orange-600">
+            Uppskattat klart: {estimatedCompletionDate()}
+          </div>
+        )}
+
+        {/* Time remaining for ongoing projects */}
+        {project.status === 'ongoing' && timeEstimate.workersRemainingDays > 0 && (
+          <div className="text-xs text-muted-foreground">
+            Tid kvar: {formatDaysRemaining(timeEstimate.workersRemainingDays)}
+          </div>
+        )}
         
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
@@ -286,6 +335,14 @@ function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
         <div className="text-xs text-muted-foreground text-right">
           {project.completionPercentage}% complete
         </div>
+
+        {/* Avvarat Material Status */}
+        {project.avvaratMaterial?.hasLeftoverMaterial === true && (
+          <div className="flex items-center gap-1 text-xs">
+            <div className="w-2 h-2 bg-warning rounded-full" />
+            <span className="text-warning font-medium">Avvarat material</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
