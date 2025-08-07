@@ -32,9 +32,14 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: W
       return phase;
     });
 
+    // Calculate new completion percentage based on completed work phases (10% per phase)
+    const completedWorkPhases = updatedPhases.filter(phase => phase.completed).length;
+    const newCompletionPercentage = Math.round((completedWorkPhases / updatedPhases.length) * 100);
+
     onUpdateProject({
       ...project,
       workPhases: updatedPhases,
+      completionPercentage: newCompletionPercentage,
     });
   };
 

@@ -286,9 +286,16 @@ export function ProjectDetailModal({
                             }
                             return p;
                           });
+                          
+                          // Calculate new completion percentage based on completed work phases
+                          const completedWorkPhases = updatedPhases?.filter(p => p.completed).length || 0;
+                          const totalWorkPhases = updatedPhases?.length || 1;
+                          const newCompletionPercentage = Math.round((completedWorkPhases / totalWorkPhases) * 100);
+                          
                           onUpdateProject({
                             ...project,
                             workPhases: updatedPhases,
+                            completionPercentage: newCompletionPercentage,
                           });
                         }}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success mt-1"
