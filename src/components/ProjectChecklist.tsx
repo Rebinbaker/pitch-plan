@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChecklistItem, Project } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle } from 'lucide-react';
+import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -12,6 +13,8 @@ interface ProjectChecklistProps {
   startDate: string;
   isEditable?: boolean;
   project?: Project;
+  trailers?: any[];
+  onUpdateProject?: (project: Project) => void;
 }
 
 export function ProjectChecklist({ 
@@ -19,7 +22,9 @@ export function ProjectChecklist({
   onChecklistUpdate, 
   startDate,
   isEditable = true,
-  project
+  project,
+  trailers = [],
+  onUpdateProject
 }: ProjectChecklistProps) {
   const completedCount = checklist.filter(item => item.completed).length;
   const totalCount = checklist.length;
@@ -98,46 +103,59 @@ export function ProjectChecklist({
       
       <CardContent>
         <div className="space-y-3">
-          {checklist.map((item) => (
-            <div 
-              key={item.id} 
-              className={`flex items-center space-x-3 p-3 rounded-lg border transition-smooth ${
-                item.completed 
-                  ? 'bg-success/5 border-success/20' 
-                  : 'bg-card border-border hover:bg-accent/50'
-              } ${isEditable ? 'cursor-pointer' : ''}`}
-              onClick={() => handleItemToggle(item.id)}
-            >
-              <Checkbox 
-                id={item.id}
-                checked={item.completed}
-                onCheckedChange={() => handleItemToggle(item.id)}
-                disabled={!isEditable}
-                className="data-[state=checked]:bg-success data-[state=checked]:border-success"
-              />
-              
-              <div className="flex-1 space-y-1">
-                <label 
-                  htmlFor={item.id}
-                  className={`text-sm font-medium leading-none cursor-pointer ${
-                    item.completed 
-                      ? 'text-success line-through' 
-                      : 'text-card-foreground'
-                  }`}
-                >
-                  {item.label}
-                </label>
-                {item.completedAt && (
-                  <p className="text-xs text-muted-foreground">
-                    Completed: {new Date(item.completedAt).toLocaleDateString('sv-SE')}
-                  </p>
+          {checklist.map((item, index) => (
+            <div key={item.id}>
+              {/* Regular checklist item */}
+              <div 
+                className={`flex items-center space-x-3 p-3 rounded-lg border transition-smooth ${
+                  item.completed 
+                    ? 'bg-success/5 border-success/20' 
+                    : 'bg-card border-border hover:bg-accent/50'
+                } ${isEditable ? 'cursor-pointer' : ''}`}
+                onClick={() => handleItemToggle(item.id)}
+              >
+                <Checkbox 
+                  id={item.id}
+                  checked={item.completed}
+                  onCheckedChange={() => handleItemToggle(item.id)}
+                  disabled={!isEditable}
+                  className="data-[state=checked]:bg-success data-[state=checked]:border-success"
+                />
+                
+                <div className="flex-1 space-y-1">
+                  <label 
+                    htmlFor={item.id}
+                    className={`text-sm font-medium leading-none cursor-pointer ${
+                      item.completed 
+                        ? 'text-success line-through' 
+                        : 'text-card-foreground'
+                    }`}
+                  >
+                    {item.label}
+                  </label>
+                  {item.completedAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Completed: {new Date(item.completedAt).toLocaleDateString('sv-SE')}
+                    </p>
+                  )}
+                </div>
+                
+                {item.completed ? (
+                  <CheckCircle2 className="w-5 h-5 text-success" />
+                ) : (
+                  <Circle className="w-5 h-5 text-muted-foreground" />
                 )}
               </div>
-              
-              {item.completed ? (
-                <CheckCircle2 className="w-5 h-5 text-success" />
-              ) : (
-                <Circle className="w-5 h-5 text-muted-foreground" />
+
+              {/* Show trailer selection after "Book scaffolding" */}
+              {item.label === 'Book scaffolding' && trailers.length > 0 && project && onUpdateProject && (
+                <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent">
+                  <TrailerAssignmentSection 
+                    project={project}
+                    trailers={trailers}
+                    onUpdateProject={onUpdateProject}
+                  />
+                </div>
               )}
             </div>
           ))}

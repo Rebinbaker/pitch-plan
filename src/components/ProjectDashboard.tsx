@@ -118,6 +118,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         onUpdateProject={handleUpdateProjectFromModal}
+        trailers={trailers}
       />
     </div>
   );

@@ -120,15 +120,6 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           </div>
         )}
 
-        {/* Trailer Assignment Section */}
-        {onUpdateProject && trailers.length > 0 && (
-          <TrailerAssignmentSection 
-            project={project}
-            trailers={trailers}
-            onUpdateProject={onUpdateProject}
-          />
-        )}
-
         {/* Work Phases Section */}
         {onUpdateProject && (
           <WorkPhasesSection 
