@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Project, WorkPhaseItem } from '@/types/project';
-import { Calendar, ChevronDown, ChevronRight, Hammer, CalendarDays, Users, Building } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { format, addDays } from 'date-fns';
+import { Project } from '@/types/project';
+import { Hammer, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface WorkPhasesSectionProps {
   project: Project;
@@ -15,25 +12,12 @@ interface WorkPhasesSectionProps {
 }
 
 export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectionProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [comments, setComments] = useState<Record<string, string>>({});
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const workPhases = project.workPhases || [];
-  
-  console.log('WorkPhasesSection rendered for project:', project.name);
-  console.log('Work phases:', workPhases);
-  console.log('Has onUpdateProject:', !!onUpdateProject);
   const completedPhases = workPhases.filter(phase => phase.completed).length;
   const totalPhases = workPhases.length;
   const completionPercentage = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
-  
-  // Calculate estimates (1 day per phase)
-  const remainingPhases = totalPhases - completedPhases;
-  const estimatedDaysLeft = remainingPhases;
-  const startDate = new Date(project.startDate);
-  const estimatedCompletionDate = addDays(startDate, totalPhases);
-  const teamAvailableDate = estimatedCompletionDate;
-  const scaffoldingFreeDate = estimatedCompletionDate;
 
   const handlePhaseToggle = (phaseId: string) => {
     const updatedPhases = workPhases.map(phase => {
@@ -53,160 +37,129 @@ export function WorkPhasesSection({ project, onUpdateProject }: WorkPhasesSectio
     });
   };
 
-  const handleCommentChange = (phaseId: string, comment: string) => {
-    setComments(prev => ({ ...prev, [phaseId]: comment }));
-  };
-
-  const handleCommentSave = (phaseId: string) => {
-    const comment = comments[phaseId];
-    const updatedPhases = workPhases.map(phase => {
-      if (phase.id === phaseId) {
-        return { ...phase, comment };
-      }
-      return phase;
-    });
-
-    onUpdateProject({
-      ...project,
-      workPhases: updatedPhases,
-    });
-  };
+  if (totalPhases === 0) {
+    return (
+      <div className="text-center py-2 text-sm text-muted-foreground">
+        Inga arbetsmoment har skapats för detta projekt än.
+      </div>
+    );
+  }
 
   return (
-    <Card className="w-full">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-smooth">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Hammer className="w-5 h-5" />
-                Arbetsmoment
-                {totalPhases > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {completedPhases}/{totalPhases}
-                  </Badge>
-                )}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {totalPhases > 0 && (
-                  <span className="text-sm font-medium">{completionPercentage}%</span>
-                )}
-                {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              </div>
-            </div>
-            
-            {/* Progress Summary - Always visible */}
-            {totalPhases > 0 ? (
-              <div className="space-y-3 mt-2">
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div 
-                    className="bg-gradient-primary h-2 rounded-full transition-smooth" 
-                    style={{ width: `${completionPercentage}%` }}
-                  />
-                </div>
-                
-                {/* Quick estimates */}
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Hammer className="w-3 h-3" />
-                    <span>{completedPhases} av {totalPhases} moment klara ({completionPercentage}%)</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <CalendarDays className="w-3 h-3" />
-                    <span>Prognos: klart om {estimatedDaysLeft} dagar</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    <span>{project.constructionTeam} tillgängliga {format(teamAvailableDate, 'yyyy-MM-dd')}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Building className="w-3 h-3" />
-                    <span>Ställning frisläpps {format(scaffoldingFreeDate, 'yyyy-MM-dd')}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground mt-2">
-                Inga arbetsmoment definierade än
+    <div className="space-y-3">
+      {/* Header with progress */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Hammer className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Arbetsmoment</span>
+          <Badge variant="secondary" className="text-xs">
+            {completedPhases}/{totalPhases}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{completionPercentage}%</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-6 w-6 p-0"
+          >
+            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-secondary rounded-full h-1.5">
+        <div 
+          className="bg-gradient-primary h-1.5 rounded-full transition-smooth" 
+          style={{ width: `${completionPercentage}%` }}
+        />
+      </div>
+
+      {/* Always show first 3 work phases */}
+      <div className="space-y-2">
+        {workPhases.slice(0, 3).map((phase, index) => (
+          <div 
+            key={phase.id}
+            className={`flex items-center gap-2 p-2 rounded text-xs ${
+              phase.completed 
+                ? 'bg-success/5 border border-success/20' 
+                : 'bg-card border border-border'
+            }`}
+          >
+            <Checkbox 
+              id={phase.id}
+              checked={phase.completed}
+              onCheckedChange={() => handlePhaseToggle(phase.id)}
+              className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
+            />
+            <label 
+              htmlFor={phase.id}
+              className={`flex-1 cursor-pointer ${
+                phase.completed 
+                  ? 'text-success line-through' 
+                  : 'text-card-foreground'
+              }`}
+            >
+              {index + 1}. {phase.label}
+            </label>
+            {phase.completedAt && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Calendar className="w-2 h-2" />
+                <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
               </div>
             )}
-          </CardHeader>
-        </CollapsibleTrigger>
+          </div>
+        ))}
+      </div>
 
+      {/* Expandable detailed view for remaining phases */}
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleContent>
-          <CardContent className="pt-0">
-            {totalPhases === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                Inga arbetsmoment har skapats för detta projekt än.
-              </div>
-            ) : (
-            <div className="space-y-3">
-              {workPhases.map((phase, index) => (
-                <div 
-                  key={phase.id}
-                  className={`p-3 rounded-lg border transition-smooth ${
+          <div className="space-y-2">
+            {workPhases.slice(3).map((phase, index) => (
+              <div 
+                key={phase.id}
+                className={`flex items-center gap-2 p-2 rounded text-xs ${
+                  phase.completed 
+                    ? 'bg-success/5 border border-success/20' 
+                    : 'bg-card border border-border'
+                }`}
+              >
+                <Checkbox 
+                  id={phase.id}
+                  checked={phase.completed}
+                  onCheckedChange={() => handlePhaseToggle(phase.id)}
+                  className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
+                />
+                <label 
+                  htmlFor={phase.id}
+                  className={`flex-1 cursor-pointer ${
                     phase.completed 
-                      ? 'bg-success/5 border-success/20' 
-                      : 'bg-card border-border'
+                      ? 'text-success line-through' 
+                      : 'text-card-foreground'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <Checkbox 
-                      id={phase.id}
-                      checked={phase.completed}
-                      onCheckedChange={() => handlePhaseToggle(phase.id)}
-                      className="data-[state=checked]:bg-success data-[state=checked]:border-success mt-1"
-                    />
-                    
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <label 
-                          htmlFor={phase.id}
-                          className={`text-sm font-medium cursor-pointer ${
-                            phase.completed 
-                              ? 'text-success line-through' 
-                              : 'text-card-foreground'
-                          }`}
-                        >
-                          {index + 1}. {phase.label}
-                        </label>
-                        {phase.completedAt && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Comment section */}
-                      <div className="space-y-2">
-                        <Textarea
-                          placeholder="Kommentar (frivillig)..."
-                          value={comments[phase.id] ?? phase.comment ?? ''}
-                          onChange={(e) => handleCommentChange(phase.id, e.target.value)}
-                          className="text-xs resize-none"
-                          rows={2}
-                        />
-                        {comments[phase.id] !== undefined && comments[phase.id] !== (phase.comment ?? '') && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleCommentSave(phase.id)}
-                            className="h-6 text-xs"
-                          >
-                            Spara kommentar
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                  {index + 4}. {phase.label}
+                </label>
+                {phase.completedAt && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="w-2 h-2" />
+                    <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
                   </div>
-                </div>
-              ))}
+                )}
               </div>
-            )}
-          </CardContent>
+            ))}
+          </div>
         </CollapsibleContent>
       </Collapsible>
-    </Card>
+
+      {workPhases.length > 3 && !isExpanded && (
+        <div className="text-xs text-muted-foreground text-center py-1">
+          +{workPhases.length - 3} fler moment...
+        </div>
+      )}
+    </div>
   );
 }
