@@ -3,9 +3,26 @@ import * as React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Project } from '@/types/project';
+import { Project, ActivityLogEntry } from '@/types/project';
 import { Hammer, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+
+const createActivityLogEntry = (
+  action: string,
+  description: string,
+  category: ActivityLogEntry['category'],
+  oldValue?: string,
+  newValue?: string
+): ActivityLogEntry => ({
+  id: Math.random().toString(36).substr(2, 9),
+  timestamp: new Date().toISOString(),
+  user: 'Aktuell Användare',
+  action,
+  description,
+  category,
+  oldValue,
+  newValue,
+});
 
 interface WorkPhasesSectionProps {
   project: Project;
@@ -88,13 +105,27 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
   }, [project.id, completedPhases, completionPercentage, project.status, project.constructionTeam, project.assignedTrailer]);
 
   const handlePhaseToggle = (phaseId: string) => {
+    const activityEntries: ActivityLogEntry[] = [];
+    
     const updatedPhases = workPhases.map(phase => {
       if (phase.id === phaseId) {
-        return {
+        const wasCompleted = phase.completed;
+        const newPhase = {
           ...phase,
           completed: !phase.completed,
           completedAt: !phase.completed ? new Date().toISOString().split('T')[0] : undefined,
         };
+        
+        // Log the work phase change
+        activityEntries.push(createActivityLogEntry(
+          newPhase.completed ? 'Arbetsmoment markerat som klart' : 'Arbetsmoment markerat som ej klart',
+          `"${newPhase.label}" ${newPhase.completed ? 'slutfört' : 'återställt'}`,
+          'workphase',
+          wasCompleted ? 'Klart' : 'Ej klart',
+          newPhase.completed ? 'Klart' : 'Ej klart'
+        ));
+        
+        return newPhase;
       }
       return phase;
     });
@@ -149,6 +180,14 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
 
     // Change status from planned to ongoing when first work phase is completed
     if (wasFirstPhaseCompleted) {
+      activityEntries.push(createActivityLogEntry(
+        'Projektstatus ändrad',
+        'Projekt startad - första arbetsmoment slutfört',
+        'status',
+        'Planerat',
+        'Pågående'
+      ));
+      
       updatedProject = {
         ...updatedProject,
         status: 'ongoing' as const,
@@ -156,6 +195,14 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
     }
     // Auto-complete project if both work phases and checklist are done
     else if (allWorkPhasesCompleted && allChecklistCompleted && project.status !== 'completed') {
+      activityEntries.push(createActivityLogEntry(
+        'Projektstatus ändrad',
+        'Projekt slutfört - alla arbetsmoment och checklistepunkter klara',
+        'status',
+        project.status.charAt(0).toUpperCase() + project.status.slice(1),
+        'Slutfört'
+      ));
+      
       updatedProject = {
         ...updatedProject,
         status: 'completed' as const,
@@ -190,6 +237,12 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
         }
       }
     }
+
+    // Add activity log entries to the project
+    updatedProject = {
+      ...updatedProject,
+      activityLog: [...(project.activityLog || []), ...activityEntries],
+    };
 
     onUpdateProject(updatedProject);
   };
