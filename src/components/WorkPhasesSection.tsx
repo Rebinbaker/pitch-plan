@@ -42,6 +42,9 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: W
     // Check if all checklist items are completed
     const allChecklistCompleted = project.checklist?.every(item => item.completed) || false;
     
+    // Check if this is the first work phase being completed and status is planned
+    const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
+    
     // Auto-complete project if both work phases and checklist are done
     let updatedProject = {
       ...project,
@@ -49,7 +52,15 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: W
       completionPercentage: newCompletionPercentage,
     };
 
-    if (allWorkPhasesCompleted && allChecklistCompleted && project.status !== 'completed') {
+    // Change status from planned to ongoing when first work phase is completed
+    if (wasFirstPhaseCompleted) {
+      updatedProject = {
+        ...updatedProject,
+        status: 'ongoing' as const,
+      };
+    }
+    // Auto-complete project if both work phases and checklist are done
+    else if (allWorkPhasesCompleted && allChecklistCompleted && project.status !== 'completed') {
       updatedProject = {
         ...updatedProject,
         status: 'completed' as const,
