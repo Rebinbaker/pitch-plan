@@ -375,11 +375,11 @@ export function ProjectDetailModal({
                           
                           // Create activity log entry
                           const activityEntry = createActivityLogEntry(
-                            phase.completed ? 'Arbetsmoment markerat som klart' : 'Arbetsmoment markerat som ej klart',
-                            `"${phase.label}" ${phase.completed ? 'återställt' : 'slutfört'}`,
+                            !phase.completed ? 'Arbetsmoment markerat som klart' : 'Arbetsmoment markerat som ej klart',
+                            `"${phase.label}" ${!phase.completed ? 'slutfört' : 'återställt'}`,
                             'workphase',
-                            phase.completed ? 'Klar' : 'Ej klar',
-                            phase.completed ? 'Ej klar' : 'Klar'
+                            phase.completed ? 'Klart' : 'Ej klart',
+                            !phase.completed ? 'Klart' : 'Ej klart'
                           );
 
                           // Auto-complete project if both work phases and checklist are done
