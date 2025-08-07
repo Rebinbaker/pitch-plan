@@ -32,6 +32,31 @@ const Index = () => {
         project.id === updatedProject.id ? updatedProject : project
       )
     );
+    
+    // If project is completed, free up resources
+    if (updatedProject.status === 'completed') {
+      // Free up assigned trailer
+      if (updatedProject.assignedTrailer) {
+        setScaffolding(prevScaffolding =>
+          prevScaffolding.map(trailer =>
+            trailer.id === updatedProject.assignedTrailer
+              ? { ...trailer, status: 'Tillgänglig' as const }
+              : trailer
+          )
+        );
+      }
+      
+      // Free up assigned team
+      if (updatedProject.constructionTeam) {
+        setTeams(prevTeams =>
+          prevTeams.map(team =>
+            team.name === updatedProject.constructionTeam
+              ? { ...team, availabilityNextWeek: 'Available' as const }
+              : team
+          )
+        );
+      }
+    }
   };
 
   const handleAddProject = () => {

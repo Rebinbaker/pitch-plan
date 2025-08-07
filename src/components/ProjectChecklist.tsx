@@ -64,6 +64,22 @@ export function ProjectChecklist({
     });
     
     onChecklistUpdate(updatedChecklist);
+    
+    // Check if all checklist items are now completed
+    const allChecklistCompleted = updatedChecklist.every(item => item.completed);
+    
+    // Check if all work phases are completed (100%)
+    const allWorkPhasesCompleted = project?.completionPercentage === 100;
+    
+    // Auto-complete project if both checklist and work phases are done
+    if (allChecklistCompleted && allWorkPhasesCompleted && project && onUpdateProject && project.status !== 'completed') {
+      const updatedProject = {
+        ...project,
+        status: 'completed' as const,
+        checklist: updatedChecklist,
+      };
+      onUpdateProject(updatedProject);
+    }
   };
 
   return (

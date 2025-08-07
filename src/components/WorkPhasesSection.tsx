@@ -36,11 +36,27 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails }: W
     const completedWorkPhases = updatedPhases.filter(phase => phase.completed).length;
     const newCompletionPercentage = Math.round((completedWorkPhases / updatedPhases.length) * 100);
 
-    onUpdateProject({
+    // Check if all work phases are completed (100%)
+    const allWorkPhasesCompleted = newCompletionPercentage === 100;
+    
+    // Check if all checklist items are completed
+    const allChecklistCompleted = project.checklist?.every(item => item.completed) || false;
+    
+    // Auto-complete project if both work phases and checklist are done
+    let updatedProject = {
       ...project,
       workPhases: updatedPhases,
       completionPercentage: newCompletionPercentage,
-    });
+    };
+
+    if (allWorkPhasesCompleted && allChecklistCompleted && project.status !== 'completed') {
+      updatedProject = {
+        ...updatedProject,
+        status: 'completed' as const,
+      };
+    }
+
+    onUpdateProject(updatedProject);
   };
 
   if (totalPhases === 0) {
