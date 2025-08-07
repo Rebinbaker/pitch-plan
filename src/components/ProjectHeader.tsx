@@ -28,12 +28,12 @@ export function ProjectHeader({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Roofing Projects</h1>
-          <p className="text-muted-foreground">Manage and track all roofing projects</p>
+          <h1 className="text-3xl font-bold text-foreground">Takprojekt</h1>
+          <p className="text-muted-foreground">Hantera och följ upp alla takprojekt</p>
         </div>
         <Button onClick={onAddProject} className="shadow-primary">
           <Plus className="w-4 h-4" />
-          New Project
+          Nytt projekt
         </Button>
       </div>
 
@@ -42,7 +42,7 @@ export function ProjectHeader({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search projects, customers, or addresses..."
+            placeholder="Sök projekt, kunder eller adresser..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10"

@@ -75,23 +75,23 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="p-4 bg-card rounded-lg border shadow-card">
           <div className="text-2xl font-bold text-foreground">{stats.total}</div>
-          <div className="text-sm text-muted-foreground">Total Projects</div>
+          <div className="text-sm text-muted-foreground">Totalt projekt</div>
         </div>
         <div className="p-4 bg-card rounded-lg border shadow-card">
           <div className="text-2xl font-bold text-planned">{stats.planned}</div>
-          <div className="text-sm text-muted-foreground">Planned</div>
+          <div className="text-sm text-muted-foreground">Planerade</div>
         </div>
         <div className="p-4 bg-card rounded-lg border shadow-card">
           <div className="text-2xl font-bold text-ongoing">{stats.ongoing}</div>
-          <div className="text-sm text-muted-foreground">Ongoing</div>
+          <div className="text-sm text-muted-foreground">Pågående</div>
         </div>
         <div className="p-4 bg-card rounded-lg border shadow-card">
           <div className="text-2xl font-bold text-completed">{stats.completed}</div>
-          <div className="text-sm text-muted-foreground">Completed</div>
+          <div className="text-sm text-muted-foreground">Slutförda</div>
         </div>
         <div className="p-4 bg-card rounded-lg border shadow-card">
           <div className="text-2xl font-bold text-invoiced">{stats.invoiced}</div>
-          <div className="text-sm text-muted-foreground">Invoiced</div>
+          <div className="text-sm text-muted-foreground">Fakturerade</div>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
       {filteredProjects.length === 0 && (
         <div className="text-center py-12">
           <div className="text-muted-foreground">
-            No projects found matching your criteria.
+            Inga projekt hittades som matchar dina kriterier.
           </div>
         </div>
       )}

@@ -205,7 +205,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
               onViewDetails(project);
             }}
           >
-            View Details
+            Visa detaljer
           </Button>
           <Button 
             variant="outline" 

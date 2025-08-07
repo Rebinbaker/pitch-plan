@@ -125,16 +125,16 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
       onAddProject(newProject);
       
       toast({
-        title: 'Project created successfully',
-        description: `${newProject.name} has been added to your projects.`,
+        title: 'Projekt skapat framgångsrikt',
+        description: `${newProject.name} har lagts till i dina projekt.`,
       });
 
       form.reset();
       onClose();
     } catch (error) {
       toast({
-        title: 'Error creating project',
-        description: 'There was an error creating the project. Please try again.',
+        title: 'Fel vid skapande av projekt',
+        description: 'Det uppstod ett fel vid skapandet av projektet. Försök igen.',
         variant: 'destructive',
       });
     } finally {
@@ -151,9 +151,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Project</DialogTitle>
+          <DialogTitle>Lägg till nytt projekt</DialogTitle>
           <DialogDescription>
-            Create a new construction project with all the necessary details.
+            Skapa ett nytt byggprojekt med alla nödvändiga detaljer.
           </DialogDescription>
         </DialogHeader>
 
@@ -165,7 +165,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Name</FormLabel>
+                    <FormLabel>Projektnamn</FormLabel>
                     <FormControl>
                       <Input placeholder="Ange projektnamn" {...field} />
                     </FormControl>
@@ -204,7 +204,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 <FormItem>
                   <FormLabel>Adress</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter project address" {...field} />
+                    <Input placeholder="Ange projektadress" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,9 +217,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="customerName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer Name</FormLabel>
+                    <FormLabel>Kundnamn</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter customer name" {...field} />
+                      <Input placeholder="Ange kundnamn" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -231,9 +231,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="customerPhone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer Phone</FormLabel>
+                    <FormLabel>Kundtelefon</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter phone number" {...field} />
+                      <Input placeholder="Ange telefonnummer" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,11 +247,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="responsibleSeller"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Responsible Seller</FormLabel>
+                    <FormLabel>Ansvarig säljare</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select seller" />
+                          <SelectValue placeholder="Välj säljare" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -272,11 +272,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="constructionTeam"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Construction Team</FormLabel>
+                    <FormLabel>Byggteam</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select team" />
+                          <SelectValue placeholder="Välj team" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -331,7 +331,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder="Välj status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -352,11 +352,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
               name="rotStatus"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ROT Deduction</FormLabel>
+                  <FormLabel>ROT-avdrag</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select ROT status" />
+                        <SelectValue placeholder="Välj ROT-status" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -365,7 +365,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Whether this project qualifies for ROT tax deduction
+                    Om detta projekt kvalificerar för ROT-skatteavdrag
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
