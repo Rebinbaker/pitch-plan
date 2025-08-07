@@ -27,46 +27,46 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
 
   const getAvailabilityColor = (availability: AvailabilityStatus) => {
     switch (availability) {
-      case 'Available': return 'bg-green-500';
-      case 'Limited': return 'bg-orange-500';
-      case 'Busy': return 'bg-red-500';
+      case 'Tillgänglig': return 'bg-green-500';
+      case 'Begränsad': return 'bg-orange-500';
+      case 'Upptagen': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
 
   const getTypeColor = (type: TeamType) => {
-    return type === 'Internal' ? 'bg-blue-500' : 'bg-purple-500';
+    return type === 'Internt' ? 'bg-blue-500' : 'bg-purple-500';
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Construction Teams</h2>
-          <p className="text-muted-foreground">Manage internal teams and subcontractors</p>
+          <h2 className="text-2xl font-bold text-foreground">Byggteam</h2>
+          <p className="text-muted-foreground">Hantera interna team och underentreprenörer</p>
         </div>
         
         <div className="flex gap-2">
           <Select value={filterType} onValueChange={(value: TeamType | 'all') => setFilterType(value)}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Team Type" />
+              <SelectValue placeholder="Teamtyp" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="Internal">Internal</SelectItem>
-              <SelectItem value="Subcontractor">Subcontractor</SelectItem>
+              <SelectItem value="all">Alla typer</SelectItem>
+              <SelectItem value="Internt">Internt</SelectItem>
+              <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
             </SelectContent>
           </Select>
           
           <Select value={filterAvailability} onValueChange={(value: AvailabilityStatus | 'all') => setFilterAvailability(value)}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Availability" />
+              <SelectValue placeholder="Tillgänglighet" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Availability</SelectItem>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Limited">Limited</SelectItem>
-              <SelectItem value="Busy">Busy</SelectItem>
+              <SelectItem value="all">Alla tillgängligheter</SelectItem>
+              <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
+              <SelectItem value="Begränsad">Begränsad</SelectItem>
+              <SelectItem value="Upptagen">Upptagen</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -77,33 +77,33 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">
-              {teams.filter(t => t.type === 'Internal').length}
+              {teams.filter(t => t.type === 'Internt').length}
             </div>
-            <div className="text-sm text-muted-foreground">Internal Teams</div>
+            <div className="text-sm text-muted-foreground">Interna team</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {teams.filter(t => t.type === 'Subcontractor').length}
+              {teams.filter(t => t.type === 'Underentreprenör').length}
             </div>
-            <div className="text-sm text-muted-foreground">Subcontractors</div>
+            <div className="text-sm text-muted-foreground">Underentreprenörer</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">
-              {teams.filter(t => t.availabilityNextWeek === 'Available').length}
+              {teams.filter(t => t.availabilityNextWeek === 'Tillgänglig').length}
             </div>
-            <div className="text-sm text-muted-foreground">Available Next Week</div>
+            <div className="text-sm text-muted-foreground">Tillgänglig nästa vecka</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">
-              {teams.filter(t => t.availabilityNextWeek === 'Busy').length}
+              {teams.filter(t => t.availabilityNextWeek === 'Upptagen').length}
             </div>
-            <div className="text-sm text-muted-foreground">Busy Next Week</div>
+            <div className="text-sm text-muted-foreground">Upptagen nästa vecka</div>
           </CardContent>
         </Card>
       </div>
@@ -128,7 +128,7 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
                 variant="secondary" 
                 className={`${getAvailabilityColor(team.availabilityNextWeek)} text-white w-fit`}
               >
-                {team.availabilityNextWeek} Next Week
+                {team.availabilityNextWeek} nästa vecka
               </Badge>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -136,7 +136,7 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-foreground flex items-center gap-2">
                     <Briefcase className="w-4 h-4" />
-                    Current Job
+                    Nuvarande jobb
                   </div>
                   <div className="text-sm text-muted-foreground">{team.currentJob}</div>
                 </div>
@@ -150,7 +150,7 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
               )}
               
               <div className="space-y-1">
-                <div className="text-sm font-medium text-foreground">Skills</div>
+                <div className="text-sm font-medium text-foreground">Färdigheter</div>
                 <div className="flex flex-wrap gap-1">
                   {team.skills.map((skill, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
@@ -168,7 +168,7 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
               )}
               
               {/* Time estimation for team availability */}
-              {team.currentJob && team.availabilityNextWeek === 'Busy' && (
+              {team.currentJob && team.availabilityNextWeek === 'Upptagen' && (
                 (() => {
                   const project = projects.find(p => p.name === team.currentJob);
                   if (project) {
@@ -188,12 +188,12 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full">
-                    Edit Team Info
+                    Redigera teaminfo
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Edit {team.name}</DialogTitle>
+                    <DialogTitle>Redigera {team.name}</DialogTitle>
                   </DialogHeader>
                   <TeamEditForm
                     team={team}
@@ -225,7 +225,7 @@ function TeamEditForm({ team, onSave }: TeamEditFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-sm font-medium">Availability Next Week</label>
+        <label className="text-sm font-medium">Tillgänglighet nästa vecka</label>
         <Select 
           value={formData.availabilityNextWeek} 
           onValueChange={(value: AvailabilityStatus) => 
@@ -236,25 +236,25 @@ function TeamEditForm({ team, onSave }: TeamEditFormProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Available">Available</SelectItem>
-            <SelectItem value="Limited">Limited</SelectItem>
-            <SelectItem value="Busy">Busy</SelectItem>
+            <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
+            <SelectItem value="Begränsad">Begränsad</SelectItem>
+            <SelectItem value="Upptagen">Upptagen</SelectItem>
           </SelectContent>
         </Select>
       </div>
       
       <div>
-        <label className="text-sm font-medium">Performance Notes</label>
+        <label className="text-sm font-medium">Prestationsanteckningar</label>
         <Textarea
           value={formData.performanceNotes || ''}
           onChange={(e) => setFormData({ ...formData, performanceNotes: e.target.value })}
-          placeholder="Notes about team performance"
+          placeholder="Anteckningar om teamprestanda"
           rows={3}
         />
       </div>
       
       <Button type="submit" className="w-full">
-        Save Changes
+        Spara ändringar
       </Button>
     </form>
   );

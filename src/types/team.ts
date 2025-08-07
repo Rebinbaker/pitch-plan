@@ -1,5 +1,5 @@
-export type TeamType = 'Internal' | 'Subcontractor';
-export type AvailabilityStatus = 'Available' | 'Busy' | 'Limited';
+export type TeamType = 'Internt' | 'Underentreprenör';
+export type AvailabilityStatus = 'Tillgänglig' | 'Upptagen' | 'Begränsad';
 
 export interface ConstructionTeam {
   id: string;

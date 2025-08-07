@@ -134,10 +134,10 @@ export function ProjectDetailModal({
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="checklist">Checklist</TabsTrigger>
+            <TabsTrigger value="overview">Översikt</TabsTrigger>
+            <TabsTrigger value="checklist">Checklista</TabsTrigger>
             <TabsTrigger value="workphases">Arbetsmoment</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
+            <TabsTrigger value="files">Filer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -400,7 +400,7 @@ export function ProjectDetailModal({
           <TabsContent value="files" className="space-y-4">
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold">File Management</h3>
+              <h3 className="text-lg font-semibold">Filhantering</h3>
               <p className="text-muted-foreground">
                 File upload and management functionality will be available here.
               </p>

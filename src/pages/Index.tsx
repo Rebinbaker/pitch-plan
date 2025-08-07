@@ -51,7 +51,7 @@ const Index = () => {
         setTeams(prevTeams =>
           prevTeams.map(team =>
             team.name === updatedProject.constructionTeam
-              ? { ...team, availabilityNextWeek: 'Available' as const }
+              ? { ...team, availabilityNextWeek: 'Tillgänglig' as const }
               : team
           )
         );
@@ -112,14 +112,14 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="projects" className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="projects">Projekt</TabsTrigger>
             <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
-            <TabsTrigger value="teams">Teams</TabsTrigger>
-            <TabsTrigger value="files">Files</TabsTrigger>
-            <TabsTrigger value="planning">Planning</TabsTrigger>
+            <TabsTrigger value="teams">Team</TabsTrigger>
+            <TabsTrigger value="files">Filer</TabsTrigger>
+            <TabsTrigger value="planning">Planering</TabsTrigger>
             <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
             <TabsTrigger value="notifications">
-              Notifications
+              Meddelanden
               {notifications.filter(n => !n.isRead).length > 0 && (
                 <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                   {notifications.filter(n => !n.isRead).length}

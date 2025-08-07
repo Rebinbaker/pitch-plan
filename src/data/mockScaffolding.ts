@@ -7,7 +7,7 @@ export const mockScaffolding: ScaffoldingTrailer[] = [
     status: 'I bruk',
     assignedProject: 'Villa Andersson - Takbyte',
     location: 'Storgatan 15, Stockholm',
-    moverNote: 'Team Alpha will move after completion',
+    moverNote: 'Team Alpha flyttar efter slutförande',
     lastUpdated: '2024-01-20',
   },
   {
@@ -22,7 +22,7 @@ export const mockScaffolding: ScaffoldingTrailer[] = [
     name: '#LH Släp PKD25J',
     status: 'Under transport',
     assignedProject: 'Företagsbyggnad - Plåttak',
-    moverNote: 'External contractor moving to Göteborg',
+    moverNote: 'Extern entreprenör flyttar till Göteborg',
     lastUpdated: '2024-01-19',
   },
   {
@@ -38,7 +38,7 @@ export const mockScaffolding: ScaffoldingTrailer[] = [
     status: 'I bruk',
     assignedProject: 'Radhus Karlsson - Takrenovering',
     location: 'Björkvägen 8, Stockholm',
-    moverNote: 'Team Gamma handles pickup',
+    moverNote: 'Team Gamma hanterar upphämtning',
     lastUpdated: '2024-01-16',
   },
   {

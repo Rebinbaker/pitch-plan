@@ -202,7 +202,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>Adress</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter project address" {...field} />
                   </FormControl>
@@ -360,8 +360,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
+                      <SelectItem value="Yes">Ja</SelectItem>
+                      <SelectItem value="No">Nej</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
