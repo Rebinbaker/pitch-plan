@@ -31,15 +31,16 @@ export function ProjectChecklist({
   const hoursUntilStart = (projectStartDate.getTime() - now.getTime()) / (1000 * 60 * 60);
   const hasUrgentMissingTasks = hoursUntilStart <= 48 && hoursUntilStart > 0 && completedCount < totalCount;
 
-  // Check if reserved material blocks completion
-  const hasIncompleteReservedMaterial = project?.avvaratMaterial?.isReserved && !(
-    project.avvaratMaterial.materialType &&
+  // Check if leftover material blocks completion
+  const hasIncompleteLeftoverMaterial = project?.avvaratMaterial?.hasLeftoverMaterial && !(
+    project.avvaratMaterial.materialDescription &&
     project.avvaratMaterial.storageLocation &&
-    project.avvaratMaterial.dateOfReservation &&
-    project.avvaratMaterial.responsiblePerson
+    project.avvaratMaterial.dateNoted &&
+    project.avvaratMaterial.responsiblePerson &&
+    project.avvaratMaterial.plannedAction
   );
 
-  const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteReservedMaterial;
+  const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
 
   const handleItemToggle = (itemId: string) => {
     if (!isEditable) return;
@@ -155,16 +156,16 @@ export function ProjectChecklist({
                 }));
                 onChecklistUpdate(allCompleted);
               }}
-              disabled={hasIncompleteReservedMaterial}
+              disabled={hasIncompleteLeftoverMaterial}
             >
               Mark All Complete
             </Button>
             
-            {hasIncompleteReservedMaterial && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm text-yellow-700">
-                  Complete reserved material section before marking project as completed
+            {hasIncompleteLeftoverMaterial && (
+              <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                <span className="text-sm text-foreground">
+                  Fyll i avvarat material-sektionen före markering som färdig
                 </span>
               </div>
             )}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Project, MaterialType, StorageLocation } from '@/types/project';
+import { Project, StorageLocation, PlannedAction } from '@/types/project';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,15 +21,15 @@ interface AvvaratMaterialSectionProps {
 export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMaterialSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    project.avvaratMaterial?.dateOfReservation ? new Date(project.avvaratMaterial.dateOfReservation) : undefined
+    project.avvaratMaterial?.dateNoted ? new Date(project.avvaratMaterial.dateNoted) : undefined
   );
 
-  const materialTypes: MaterialType[] = [
-    'Takpannor', 'Underlagspapp', 'Nockpannor', 'Råspont', 'Vindskivor', 'Reglar', 'Övrigt'
+  const storageLocations: StorageLocation[] = [
+    'Hos kund', 'Ställningspark', 'I bil', 'Montörens garage', 'Annat'
   ];
 
-  const storageLocations: StorageLocation[] = [
-    'Lundavägen 20', 'Nålvägen Gusum'
+  const plannedActions: PlannedAction[] = [
+    'Användas i framtida projekt', 'Transporteras till ställningspark', 'Returneras till leverantör', 'Kasseras', 'Annat'
   ];
 
   const responsiblePersons = [
@@ -41,14 +41,16 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
       ...project,
       avvaratMaterial: {
         ...project.avvaratMaterial,
-        isReserved: checked,
+        hasLeftoverMaterial: checked,
         // Clear other fields if unchecked
         ...(checked ? {} : {
-          materialType: undefined,
+          materialDescription: undefined,
           storageLocation: undefined,
-          dateOfReservation: undefined,
+          customStorageLocation: undefined,
+          dateNoted: undefined,
           responsiblePerson: undefined,
-          quantity: undefined,
+          plannedAction: undefined,
+          customPlannedAction: undefined,
           comments: undefined,
         })
       }
@@ -64,7 +66,7 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
       ...project,
       avvaratMaterial: {
         ...project.avvaratMaterial,
-        isReserved: project.avvaratMaterial?.isReserved || false,
+        hasLeftoverMaterial: project.avvaratMaterial?.hasLeftoverMaterial || false,
         [field]: value
       }
     };
@@ -73,18 +75,19 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
 
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
-    handleFieldChange('dateOfReservation', date?.toISOString());
+    handleFieldChange('dateNoted', date?.toISOString());
   };
 
   const isFormComplete = () => {
     const material = project.avvaratMaterial;
-    if (!material?.isReserved) return true;
+    if (!material?.hasLeftoverMaterial) return true;
     
     return !!(
-      material.materialType &&
+      material.materialDescription &&
       material.storageLocation &&
-      material.dateOfReservation &&
-      material.responsiblePerson
+      material.dateNoted &&
+      material.responsiblePerson &&
+      material.plannedAction
     );
   };
 
@@ -98,10 +101,10 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
           <div className="flex items-center gap-2">
             <Recycle className="w-4 h-4 text-primary" />
             <span className="font-medium">🔄 Avvarat material</span>
-            {project.avvaratMaterial?.isReserved && (
+            {project.avvaratMaterial?.hasLeftoverMaterial && (
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                <span className="text-xs text-muted-foreground">Reserved</span>
+                <div className="w-2 h-2 bg-warning rounded-full" />
+                <span className="text-xs text-muted-foreground">Kvar material</span>
               </div>
             )}
           </div>
@@ -114,44 +117,36 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
           {/* Checkbox */}
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="material-reserved"
-              checked={project.avvaratMaterial?.isReserved || false}
+              id="material-leftover"
+              checked={project.avvaratMaterial?.hasLeftoverMaterial || false}
               onCheckedChange={handleCheckboxChange}
             />
-            <Label htmlFor="material-reserved" className="text-sm font-medium">
-              ✅ Material has been avvarat (reserved)
+            <Label htmlFor="material-leftover" className="text-sm font-medium">
+              ☑️ Avvarat material finns
             </Label>
           </div>
 
-          {project.avvaratMaterial?.isReserved && (
+          {project.avvaratMaterial?.hasLeftoverMaterial && (
             <div className="space-y-4 pl-6 border-l-2 border-primary/20">
-              {/* Material Type */}
+              {/* Material Description */}
               <div className="space-y-2">
-                <Label className="text-sm">🏷️ Material type</Label>
-                <Select
-                  value={project.avvaratMaterial.materialType || ''}
-                  onValueChange={(value) => handleFieldChange('materialType', value as MaterialType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select material type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {materialTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-sm">🏷️ Materialtyp och beskrivning</Label>
+                <Input
+                  placeholder="t.ex. 2 rullar underlagspapp, 50 takpannor"
+                  value={project.avvaratMaterial.materialDescription || ''}
+                  onChange={(e) => handleFieldChange('materialDescription', e.target.value)}
+                />
               </div>
 
               {/* Storage Location */}
               <div className="space-y-2">
-                <Label className="text-sm">📍 Storage location</Label>
+                <Label className="text-sm">📍 Förvaringsplats</Label>
                 <Select
                   value={project.avvaratMaterial.storageLocation || ''}
                   onValueChange={(value) => handleFieldChange('storageLocation', value as StorageLocation)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select storage location" />
+                    <SelectValue placeholder="Välj förvaringsplats" />
                   </SelectTrigger>
                   <SelectContent>
                     {storageLocations.map((location) => (
@@ -161,9 +156,21 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
                 </Select>
               </div>
 
+              {/* Custom Storage Location */}
+              {project.avvaratMaterial.storageLocation === 'Annat' && (
+                <div className="space-y-2">
+                  <Label className="text-sm">📍 Ange annan förvaringsplats</Label>
+                  <Input
+                    placeholder="Beskriv förvaringsplatsen"
+                    value={project.avvaratMaterial.customStorageLocation || ''}
+                    onChange={(e) => handleFieldChange('customStorageLocation', e.target.value)}
+                  />
+                </div>
+              )}
+
               {/* Date Picker */}
               <div className="space-y-2">
-                <Label className="text-sm">📆 Date of reservation</Label>
+                <Label className="text-sm">📆 Datum då materialet noterades</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -174,7 +181,7 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Välj datum</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -191,13 +198,13 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
 
               {/* Responsible Person */}
               <div className="space-y-2">
-                <Label className="text-sm">👤 Responsible person</Label>
+                <Label className="text-sm">👤 Ansvarig person</Label>
                 <Select
                   value={project.avvaratMaterial.responsiblePerson || ''}
                   onValueChange={(value) => handleFieldChange('responsiblePerson', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select responsible person" />
+                    <SelectValue placeholder="Välj ansvarig person" />
                   </SelectTrigger>
                   <SelectContent>
                     {responsiblePersons.map((person) => (
@@ -207,21 +214,41 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
                 </Select>
               </div>
 
-              {/* Quantity/Description */}
+              {/* Planned Action */}
               <div className="space-y-2">
-                <Label className="text-sm">🔢 Quantity / Description (optional)</Label>
-                <Input
-                  placeholder="e.g., 50 takpannor, 10 m² underlagspapp"
-                  value={project.avvaratMaterial.quantity || ''}
-                  onChange={(e) => handleFieldChange('quantity', e.target.value)}
-                />
+                <Label className="text-sm">📋 Planerad åtgärd</Label>
+                <Select
+                  value={project.avvaratMaterial.plannedAction || ''}
+                  onValueChange={(value) => handleFieldChange('plannedAction', value as PlannedAction)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Välj planerad åtgärd" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plannedActions.map((action) => (
+                      <SelectItem key={action} value={action}>{action}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Custom Planned Action */}
+              {project.avvaratMaterial.plannedAction === 'Annat' && (
+                <div className="space-y-2">
+                  <Label className="text-sm">📋 Ange annan åtgärd</Label>
+                  <Input
+                    placeholder="Beskriv den planerade åtgärden"
+                    value={project.avvaratMaterial.customPlannedAction || ''}
+                    onChange={(e) => handleFieldChange('customPlannedAction', e.target.value)}
+                  />
+                </div>
+              )}
 
               {/* Comments */}
               <div className="space-y-2">
-                <Label className="text-sm">📝 Comments (optional)</Label>
+                <Label className="text-sm">📝 Kommentar (valfritt)</Label>
                 <Textarea
-                  placeholder="Additional notes about the reserved material"
+                  placeholder="Extra information om det avvarade materialet"
                   value={project.avvaratMaterial.comments || ''}
                   onChange={(e) => handleFieldChange('comments', e.target.value)}
                 />
@@ -229,10 +256,10 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
 
               {/* Validation indicator */}
               {!isFormComplete() && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                  <span className="text-sm text-yellow-700">
-                    Complete all required fields to allow project completion
+                <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                  <div className="w-2 h-2 bg-warning rounded-full" />
+                  <span className="text-sm text-foreground">
+                    Fyll i alla obligatoriska fält för att kunna markera projektet som färdigt
                   </span>
                 </div>
               )}

@@ -1,16 +1,18 @@
 export type ProjectStatus = 'planned' | 'ongoing' | 'completed' | 'invoiced';
 export type Region = 'Stockholm' | 'Västra Götaland';
 export type ROTStatus = 'Yes' | 'No';
-export type MaterialType = 'Takpannor' | 'Underlagspapp' | 'Nockpannor' | 'Råspont' | 'Vindskivor' | 'Reglar' | 'Övrigt';
-export type StorageLocation = 'Lundavägen 20' | 'Nålvägen Gusum';
+export type StorageLocation = 'Hos kund' | 'Ställningspark' | 'I bil' | 'Montörens garage' | 'Annat';
+export type PlannedAction = 'Användas i framtida projekt' | 'Transporteras till ställningspark' | 'Returneras till leverantör' | 'Kasseras' | 'Annat';
 
 export interface AvvaratMaterial {
-  isReserved: boolean;
-  materialType?: MaterialType;
+  hasLeftoverMaterial: boolean;
+  materialDescription?: string; // Free text for material type and quantity
   storageLocation?: StorageLocation;
-  dateOfReservation?: string;
+  customStorageLocation?: string; // For "Annat" option
+  dateNoted?: string;
   responsiblePerson?: string;
-  quantity?: string;
+  plannedAction?: PlannedAction;
+  customPlannedAction?: string; // For "Annat" option
   comments?: string;
 }
 

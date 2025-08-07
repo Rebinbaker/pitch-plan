@@ -92,7 +92,7 @@ const Index = () => {
             <TabsTrigger value="teams">Teams</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
             <TabsTrigger value="planning">Planning</TabsTrigger>
-            <TabsTrigger value="material">Material</TabsTrigger>
+            <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
             <TabsTrigger value="notifications">
               Notifications
               {notifications.filter(n => !n.isRead).length > 0 && (
