@@ -319,6 +319,17 @@ export function ProjectChecklist({
                   completedAt: new Date().toISOString().split('T')[0],
                 }));
                 onChecklistUpdate(allCompleted);
+                
+                // Check if work phases are also completed and auto-complete project
+                const allWorkPhasesCompleted = project?.completionPercentage === 100;
+                if (allWorkPhasesCompleted && project && onUpdateProject && project.status !== 'completed') {
+                  const updatedProject = {
+                    ...project,
+                    status: 'completed' as const,
+                    checklist: allCompleted,
+                  };
+                  onUpdateProject(updatedProject);
+                }
               }}
               disabled={hasIncompleteLeftoverMaterial}
             >
