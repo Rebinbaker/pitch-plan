@@ -24,9 +24,9 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding }: Scaffoldin
 
   const getStatusColor = (status: ScaffoldingStatus) => {
     switch (status) {
-      case 'Available': return 'bg-green-500';
-      case 'In use': return 'bg-blue-500';
-      case 'Being moved': return 'bg-orange-500';
+      case 'Tillgänglig': return 'bg-green-500';
+      case 'I bruk': return 'bg-blue-500';
+      case 'Under transport': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };
@@ -51,9 +51,9 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding }: Scaffoldin
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="In use">In Use</SelectItem>
-              <SelectItem value="Being moved">Being Moved</SelectItem>
+              <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
+              <SelectItem value="I bruk">I bruk</SelectItem>
+              <SelectItem value="Under transport">Under transport</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -64,25 +64,25 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding }: Scaffoldin
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">
-              {scaffolding.filter(s => s.status === 'Available').length}
+              {scaffolding.filter(s => s.status === 'Tillgänglig').length}
             </div>
-            <div className="text-sm text-muted-foreground">Available</div>
+            <div className="text-sm text-muted-foreground">Tillgänglig</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">
-              {scaffolding.filter(s => s.status === 'In use').length}
+              {scaffolding.filter(s => s.status === 'I bruk').length}
             </div>
-            <div className="text-sm text-muted-foreground">In Use</div>
+            <div className="text-sm text-muted-foreground">I bruk</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-orange-600">
-              {scaffolding.filter(s => s.status === 'Being moved').length}
+              {scaffolding.filter(s => s.status === 'Under transport').length}
             </div>
-            <div className="text-sm text-muted-foreground">Being Moved</div>
+            <div className="text-sm text-muted-foreground">Under transport</div>
           </CardContent>
         </Card>
         <Card>
@@ -190,9 +190,9 @@ function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Available">Available</SelectItem>
-            <SelectItem value="In use">In Use</SelectItem>
-            <SelectItem value="Being moved">Being Moved</SelectItem>
+            <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
+            <SelectItem value="I bruk">I bruk</SelectItem>
+            <SelectItem value="Under transport">Under transport</SelectItem>
           </SelectContent>
         </Select>
       </div>

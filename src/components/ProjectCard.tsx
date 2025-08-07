@@ -6,14 +6,17 @@ import { CalendarDays, MapPin, Phone, User, Users, FileText, Download } from 'lu
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { AvvaratMaterialSection } from './AvvaratMaterialSection';
+import { TrailerAssignmentSection } from './TrailerAssignmentSection';
+import { ScaffoldingTrailer } from '@/types/scaffolding';
 
 interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  trailers?: ScaffoldingTrailer[];
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [] }: ProjectCardProps) {
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
@@ -114,6 +117,15 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject }: Project
             <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p className="line-clamp-2">{project.notes}</p>
           </div>
+        )}
+
+        {/* Trailer Assignment Section */}
+        {onUpdateProject && trailers.length > 0 && (
+          <TrailerAssignmentSection 
+            project={project}
+            trailers={trailers}
+            onUpdateProject={onUpdateProject}
+          />
         )}
 
         {/* Avvarat Material Section */}

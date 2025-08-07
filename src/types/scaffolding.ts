@@ -1,4 +1,4 @@
-export type ScaffoldingStatus = 'Available' | 'In use' | 'Being moved';
+export type ScaffoldingStatus = 'Tillgänglig' | 'I bruk' | 'Under transport';
 
 export interface ScaffoldingTrailer {
   id: string;

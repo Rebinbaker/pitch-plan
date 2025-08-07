@@ -33,6 +33,7 @@ export interface Project {
   checklist: ChecklistItem[];
   completionPercentage: number;
   avvaratMaterial?: AvvaratMaterial;
+  assignedTrailer?: string; // ID of assigned trailer
 }
 
 export interface ChecklistItem {

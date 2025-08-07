@@ -3,14 +3,16 @@ import { ProjectCard } from './ProjectCard';
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
 import { Project, ProjectStatus, Region } from '@/types/project';
+import { ScaffoldingTrailer } from '@/types/scaffolding';
 
 interface ProjectDashboardProps {
   projects: Project[];
   onUpdateProject: (updatedProject: Project) => void;
   onAddProject: () => void;
+  trailers?: ScaffoldingTrailer[];
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [] }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -98,6 +100,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject }: Pr
             project={project}
             onViewDetails={handleViewDetails}
             onUpdateProject={onUpdateProject}
+            trailers={trailers}
           />
         ))}
       </div>

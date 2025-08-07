@@ -88,7 +88,7 @@ const Index = () => {
         <Tabs defaultValue="projects" className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="scaffolding">Scaffolding</TabsTrigger>
+            <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
             <TabsTrigger value="teams">Teams</TabsTrigger>
             <TabsTrigger value="files">Files</TabsTrigger>
             <TabsTrigger value="planning">Planning</TabsTrigger>
@@ -108,6 +108,7 @@ const Index = () => {
               projects={projects}
               onUpdateProject={handleUpdateProject}
               onAddProject={handleAddProject}
+              trailers={scaffolding}
             />
           </TabsContent>
 
