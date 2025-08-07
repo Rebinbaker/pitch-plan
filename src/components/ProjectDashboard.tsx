@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProjectCard } from './ProjectCard';
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
@@ -13,14 +13,27 @@ interface ProjectDashboardProps {
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
+  selectedProjectId?: string | null;
+  onClearSelection?: () => void;
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Auto-open project detail modal when selectedProjectId changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      const project = projects.find(p => p.id === selectedProjectId);
+      if (project) {
+        setSelectedProject(project);
+        setIsDetailModalOpen(true);
+      }
+    }
+  }, [selectedProjectId, projects]);
 
   // Filter projects based on search term and filters
   const filteredProjects = projects.filter(project => {
@@ -43,6 +56,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedProject(null);
+    onClearSelection?.();
   };
 
   const handleUpdateProjectFromModal = (updatedProject: Project) => {

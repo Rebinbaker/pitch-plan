@@ -26,6 +26,7 @@ const Index = () => {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   const handleUpdateProject = (updatedProject: Project) => {
     setProjects(prevProjects => 
@@ -117,9 +118,9 @@ const Index = () => {
   };
 
   const handleNavigateToProject = (projectId: string) => {
-    // Switch to projects tab and mark notification as read
+    // Switch to projects tab and set selected project
     setActiveTab('projects');
-    // You can add scrolling to specific project here if needed
+    setSelectedProjectId(projectId);
   };
 
   return (
@@ -161,6 +162,8 @@ const Index = () => {
               teams={teams}
               onUpdateTeam={handleUpdateTeam}
               onUpdateTrailer={handleUpdateScaffolding}
+              selectedProjectId={selectedProjectId}
+              onClearSelection={() => setSelectedProjectId(null)}
             />
           </TabsContent>
 
