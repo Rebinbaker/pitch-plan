@@ -115,7 +115,7 @@ const Index = () => {
         style={{ 
           backgroundImage: 'url(/lovable-uploads/7bf989f5-6fb0-4457-86aa-977ae4c5ff5b.png)',
           backgroundAttachment: 'fixed',
-          backgroundSize: '80%'
+          backgroundSize: '50%'
         }}
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
