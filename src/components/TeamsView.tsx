@@ -3,19 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Phone, Briefcase, Star } from 'lucide-react';
-import { ConstructionTeam, TeamType, AvailabilityStatus } from '@/types/team';
+import { Users, Phone, Briefcase, Star, Plus, UserPlus } from 'lucide-react';
+import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface TeamsViewProps {
   teams: ConstructionTeam[];
   onUpdateTeam: (updated: ConstructionTeam) => void;
+  onAddTeam: (team: ConstructionTeam) => void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps) {
+export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: TeamsViewProps) {
   const [filterType, setFilterType] = useState<TeamType | 'all'>('all');
   const [filterAvailability, setFilterAvailability] = useState<AvailabilityStatus | 'all'>('all');
 
@@ -47,6 +49,21 @@ export function TeamsView({ teams, onUpdateTeam, projects = [] }: TeamsViewProps
         </div>
         
         <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Nytt team
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Skapa nytt team</DialogTitle>
+              </DialogHeader>
+              <NewTeamForm onSave={onAddTeam} />
+            </DialogContent>
+          </Dialog>
+          
           <Select value={filterType} onValueChange={(value: TeamType | 'all') => setFilterType(value)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Teamtyp" />
@@ -255,6 +272,141 @@ function TeamEditForm({ team, onSave }: TeamEditFormProps) {
       
       <Button type="submit" className="w-full">
         Spara ändringar
+      </Button>
+    </form>
+  );
+}
+
+interface NewTeamFormProps {
+  onSave: (team: ConstructionTeam) => void;
+}
+
+function NewTeamForm({ onSave }: NewTeamFormProps) {
+  const [teamName, setTeamName] = useState('');
+  const [teamType, setTeamType] = useState<TeamType>('Internt');
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [newMember, setNewMember] = useState({
+    firstName: '',
+    lastName: '',
+    skills: ''
+  });
+
+  const addMember = () => {
+    if (newMember.firstName && newMember.lastName) {
+      const member: TeamMember = {
+        id: `member-${Date.now()}`,
+        firstName: newMember.firstName,
+        lastName: newMember.lastName,
+        skills: newMember.skills.split(',').map(s => s.trim()).filter(s => s)
+      };
+      setMembers([...members, member]);
+      setNewMember({ firstName: '', lastName: '', skills: '' });
+    }
+  };
+
+  const removeMember = (id: string) => {
+    setMembers(members.filter(m => m.id !== id));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teamName || members.length === 0) return;
+
+    const team: ConstructionTeam = {
+      id: `team-${Date.now()}`,
+      name: teamName,
+      type: teamType,
+      availabilityNextWeek: 'Tillgänglig',
+      skills: [...new Set(members.flatMap(m => m.skills))],
+      members
+    };
+
+    onSave(team);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium">Teamnamn</label>
+          <Input
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            placeholder="t.ex. Team Alpha"
+            required
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium">Teamtyp</label>
+          <Select value={teamType} onValueChange={(value: TeamType) => setTeamType(value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Internt">Internt</SelectItem>
+              <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium mb-3 block">Teammedlemmar</label>
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="grid grid-cols-3 gap-2">
+            <Input
+              value={newMember.firstName}
+              onChange={(e) => setNewMember({ ...newMember, firstName: e.target.value })}
+              placeholder="Förnamn"
+            />
+            <Input
+              value={newMember.lastName}
+              onChange={(e) => setNewMember({ ...newMember, lastName: e.target.value })}
+              placeholder="Efternamn"
+            />
+            <div className="flex gap-2">
+              <Input
+                value={newMember.skills}
+                onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
+                placeholder="Färdigheter (komma-separerat)"
+                className="flex-1"
+              />
+              <Button type="button" onClick={addMember} size="sm">
+                <UserPlus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {members.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Tillagda medlemmar:</div>
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between bg-muted p-2 rounded">
+                  <div>
+                    <span className="font-medium">{member.firstName} {member.lastName}</span>
+                    {member.skills.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {member.skills.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeMember(member.id)}
+                  >
+                    Ta bort
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full" disabled={!teamName || members.length === 0}>
+        Skapa team
       </Button>
     </form>
   );

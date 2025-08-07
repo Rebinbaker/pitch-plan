@@ -84,6 +84,10 @@ const Index = () => {
     );
   };
 
+  const handleAddTeam = (newTeam: ConstructionTeam) => {
+    setTeams(prev => [...prev, newTeam]);
+  };
+
   const handleUploadFile = (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
     const newFile: ProjectFile = {
       ...file,
@@ -161,6 +165,7 @@ const Index = () => {
             <TeamsView 
               teams={teams}
               onUpdateTeam={handleUpdateTeam}
+              onAddTeam={handleAddTeam}
               projects={projects}
             />
           </TabsContent>
