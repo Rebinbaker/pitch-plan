@@ -56,20 +56,20 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Project Files & Inspections</h2>
-          <p className="text-muted-foreground">Upload and manage project documentation</p>
+          <h2 className="text-2xl font-bold text-foreground">Projektfiler & Inspektioner</h2>
+          <p className="text-muted-foreground">Ladda upp och hantera projektdokumentation</p>
         </div>
         
         <Dialog>
           <DialogTrigger asChild>
             <Button className="shadow-primary">
               <Upload className="w-4 h-4" />
-              Upload File
+              Ladda upp fil
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload New File</DialogTitle>
+              <DialogTitle>Ladda upp ny fil</DialogTitle>
             </DialogHeader>
             <FileUploadForm
               projects={projects}
@@ -84,7 +84,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search files..."
+            placeholder="Sök filer..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -94,10 +94,10 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
         <div className="flex gap-2">
           <Select value={filterProject} onValueChange={setFilterProject}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Project" />
+              <SelectValue placeholder="Filtrera efter projekt" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
+              <SelectItem value="all">Alla projekt</SelectItem>
               {projects.map(project => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
@@ -108,14 +108,14 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
           
           <Select value={filterType} onValueChange={(value: FileType | 'all') => setFilterType(value)}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="File Type" />
+              <SelectValue placeholder="Filtyp" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="photo">Photos</SelectItem>
+              <SelectItem value="all">Alla typer</SelectItem>
+              <SelectItem value="photo">Foton</SelectItem>
               <SelectItem value="pdf">PDFs</SelectItem>
-              <SelectItem value="inspection">Inspections</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="inspection">Inspektioner</SelectItem>
+              <SelectItem value="other">Övrigt</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -128,7 +128,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
             <div className="text-2xl font-bold text-green-600">
               {files.filter(f => f.type === 'photo').length}
             </div>
-            <div className="text-sm text-muted-foreground">Photos</div>
+            <div className="text-sm text-muted-foreground">Foton</div>
           </CardContent>
         </Card>
         <Card>
@@ -136,7 +136,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
             <div className="text-2xl font-bold text-blue-600">
               {files.filter(f => f.type === 'inspection').length}
             </div>
-            <div className="text-sm text-muted-foreground">Inspections</div>
+            <div className="text-sm text-muted-foreground">Inspektioner</div>
           </CardContent>
         </Card>
         <Card>
@@ -144,7 +144,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
             <div className="text-2xl font-bold text-red-600">
               {files.filter(f => f.type === 'pdf').length}
             </div>
-            <div className="text-sm text-muted-foreground">PDF Documents</div>
+            <div className="text-sm text-muted-foreground">PDF-dokument</div>
           </CardContent>
         </Card>
         <Card>
@@ -152,7 +152,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
             <div className="text-2xl font-bold text-foreground">
               {files.length}
             </div>
-            <div className="text-sm text-muted-foreground">Total Files</div>
+            <div className="text-sm text-muted-foreground">Totalt filer</div>
           </CardContent>
         </Card>
       </div>
@@ -176,19 +176,19 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Project</div>
+                  <div className="text-sm font-medium text-foreground">Projekt</div>
                   <div className="text-sm text-muted-foreground">{getProjectName(file.projectId)}</div>
                 </div>
                 
                 {file.description && (
                   <div className="space-y-1">
-                    <div className="text-sm font-medium text-foreground">Description</div>
+                    <div className="text-sm font-medium text-foreground">Beskrivning</div>
                     <div className="text-sm text-muted-foreground">{file.description}</div>
                   </div>
                 )}
                 
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Tags</div>
+                  <div className="text-sm font-medium text-foreground">Taggar</div>
                   <div className="flex flex-wrap gap-1">
                     {file.tags.map((tag, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -199,17 +199,17 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
                 </div>
                 
                 <div className="text-xs text-muted-foreground">
-                  Uploaded: {new Date(file.uploadedAt).toLocaleDateString()} by {file.uploadedBy}
+                  Uppladdad: {new Date(file.uploadedAt).toLocaleDateString()} av {file.uploadedBy}
                 </div>
                 
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1">
                     <Eye className="w-4 h-4" />
-                    View
+                    Visa
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
                     <Download className="w-4 h-4" />
-                    Download
+                    Ladda ner
                   </Button>
                 </div>
               </CardContent>
@@ -221,7 +221,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
       {filteredFiles.length === 0 && (
         <div className="text-center py-12">
           <div className="text-muted-foreground">
-            No files found matching your criteria.
+            Inga filer hittades som matchar dina kriterier.
           </div>
         </div>
       )}
@@ -264,17 +264,17 @@ function FileUploadForm({ projects, onUpload }: FileUploadFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-sm font-medium">File Name</label>
+        <label className="text-sm font-medium">Filnamn</label>
         <Input
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Enter file name"
+          placeholder="Ange filnamn"
           required
         />
       </div>
       
       <div>
-        <label className="text-sm font-medium">File Type</label>
+        <label className="text-sm font-medium">Filtyp</label>
         <Select 
           value={formData.type} 
           onValueChange={(value: FileType) => setFormData({ ...formData, type: value })}
@@ -283,22 +283,22 @@ function FileUploadForm({ projects, onUpload }: FileUploadFormProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="photo">Photo</SelectItem>
-            <SelectItem value="pdf">PDF Document</SelectItem>
-            <SelectItem value="inspection">Inspection Report</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="photo">Foto</SelectItem>
+            <SelectItem value="pdf">PDF-dokument</SelectItem>
+            <SelectItem value="inspection">Inspektionsrapport</SelectItem>
+            <SelectItem value="other">Övrigt</SelectItem>
           </SelectContent>
         </Select>
       </div>
       
       <div>
-        <label className="text-sm font-medium">Project</label>
+        <label className="text-sm font-medium">Projekt</label>
         <Select 
           value={formData.projectId} 
           onValueChange={(value) => setFormData({ ...formData, projectId: value })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select project" />
+            <SelectValue placeholder="Välj projekt" />
           </SelectTrigger>
           <SelectContent>
             {projects.map(project => (
@@ -311,16 +311,16 @@ function FileUploadForm({ projects, onUpload }: FileUploadFormProps) {
       </div>
       
       <div>
-        <label className="text-sm font-medium">Description (Optional)</label>
+        <label className="text-sm font-medium">Beskrivning (valfritt)</label>
         <Input
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="File description"
+          placeholder="Filbeskrivning"
         />
       </div>
       
       <Button type="submit" className="w-full">
-        Upload File
+        Ladda upp fil
       </Button>
     </form>
   );

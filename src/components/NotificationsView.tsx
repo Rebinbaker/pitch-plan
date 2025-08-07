@@ -78,11 +78,11 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
         <div className="flex gap-2">
           <Select value={filterPriority} onValueChange={(value: NotificationPriority | 'all') => setFilterPriority(value)}>
             <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Priority" />
+              <SelectValue placeholder="Prioritet" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="all">Alla prioriteter</SelectItem>
+              <SelectItem value="urgent">Brådskande</SelectItem>
               <SelectItem value="high">High</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="low">Low</SelectItem>
@@ -91,11 +91,11 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
           
           <Select value={filterType} onValueChange={(value: NotificationType | 'all') => setFilterType(value)}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder="Typ" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="material_order">Material Orders</SelectItem>
+              <SelectItem value="all">Alla typer</SelectItem>
+              <SelectItem value="material_order">Materialbeställningar</SelectItem>
               <SelectItem value="checklist_incomplete">Checklists</SelectItem>
               <SelectItem value="inspection_missing">Inspections</SelectItem>
               <SelectItem value="deadline_warning">Deadlines</SelectItem>
@@ -107,7 +107,7 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss }: No
             onClick={() => setShowRead(!showRead)}
             size="sm"
           >
-            {showRead ? "Hide Read" : "Show Read"}
+            {showRead ? "Dölj lästa" : "Visa lästa"}
           </Button>
         </div>
       </div>

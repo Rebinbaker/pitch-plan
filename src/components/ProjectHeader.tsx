@@ -57,10 +57,10 @@ export function ProjectHeader({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alla statusar</SelectItem>
-              <SelectItem value="planned">Planned</SelectItem>
-              <SelectItem value="ongoing">Ongoing</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="invoiced">Invoiced</SelectItem>
+              <SelectItem value="planned">Planerad</SelectItem>
+              <SelectItem value="ongoing">Pågående</SelectItem>
+              <SelectItem value="completed">Slutförd</SelectItem>
+              <SelectItem value="invoiced">Fakturerad</SelectItem>
             </SelectContent>
           </Select>
 
@@ -69,7 +69,7 @@ export function ProjectHeader({
               <SelectValue placeholder="Region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="all">Alla regioner</SelectItem>
               <SelectItem value="Stockholm">Stockholm</SelectItem>
               <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
             </SelectContent>

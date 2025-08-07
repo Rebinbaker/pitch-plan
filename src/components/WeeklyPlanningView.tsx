@@ -93,7 +93,7 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
               <SelectValue placeholder="Filter Region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="all">Alla regioner</SelectItem>
               <SelectItem value="Stockholm">Stockholm</SelectItem>
               <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
             </SelectContent>
@@ -104,8 +104,8 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="board">Board View</SelectItem>
-              <SelectItem value="calendar">Calendar View</SelectItem>
+              <SelectItem value="board">Kortvy</SelectItem>
+              <SelectItem value="calendar">Kalendervy</SelectItem>
             </SelectContent>
           </Select>
         </div>

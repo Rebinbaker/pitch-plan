@@ -52,7 +52,7 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, projects = [
               <SelectValue placeholder="Filter Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">Alla statusar</SelectItem>
               <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
               <SelectItem value="I bruk">I bruk</SelectItem>
               <SelectItem value="Under transport">Under transport</SelectItem>
@@ -218,34 +218,34 @@ function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
       </div>
       
       <div>
-        <label className="text-sm font-medium">Assigned Project</label>
+        <label className="text-sm font-medium">Tilldelat projekt</label>
         <Input
           value={formData.assignedProject || ''}
           onChange={(e) => setFormData({ ...formData, assignedProject: e.target.value })}
-          placeholder="Project name"
+          placeholder="Projektnamn"
         />
       </div>
       
       <div>
-        <label className="text-sm font-medium">Location</label>
+        <label className="text-sm font-medium">Plats</label>
         <Input
           value={formData.location || ''}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          placeholder="Current location"
+          placeholder="Nuvarande plats"
         />
       </div>
       
       <div>
-        <label className="text-sm font-medium">Mover Note</label>
+        <label className="text-sm font-medium">Transportanteckning</label>
         <Textarea
           value={formData.moverNote || ''}
           onChange={(e) => setFormData({ ...formData, moverNote: e.target.value })}
-          placeholder="Who will move this trailer?"
+          placeholder="Vem ska flytta denna släpvagn?"
         />
       </div>
       
       <Button type="submit" className="w-full">
-        Save Changes
+        Spara ändringar
       </Button>
     </form>
   );

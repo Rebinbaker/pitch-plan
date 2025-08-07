@@ -167,7 +167,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter project name" {...field} />
+                      <Input placeholder="Ange projektnamn" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,7 +183,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select region" />
+                          <SelectValue placeholder="Välj region" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -299,7 +299,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Startdatum</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -335,10 +335,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="ongoing">Ongoing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="invoiced">Invoiced</SelectItem>
+                        <SelectItem value="planned">Planerad</SelectItem>
+                        <SelectItem value="ongoing">Pågående</SelectItem>
+                        <SelectItem value="completed">Slutförd</SelectItem>
+                        <SelectItem value="invoiced">Fakturerad</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -377,10 +377,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>Anteckningar</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter any additional notes about the project..."
+                      placeholder="Ange eventuella ytterligare anteckningar om projektet..."
                       className="min-h-[80px]"
                       {...field}
                     />
@@ -392,10 +392,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
+                Avbryt
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Project'}
+                {isSubmitting ? 'Skapar...' : 'Skapa projekt'}
               </Button>
             </DialogFooter>
           </form>
