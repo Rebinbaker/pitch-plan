@@ -193,14 +193,6 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           />
         )}
 
-        {/* Avvarat Material Section - Remove since it's now in checklist */}
-        {/* {onUpdateProject && (
-          <AvvaratMaterialSection 
-            project={project}
-            onUpdateProject={onUpdateProject}
-          />
-        )} */
-
         <div className="flex gap-2">
           <Button 
             variant="outline" 
