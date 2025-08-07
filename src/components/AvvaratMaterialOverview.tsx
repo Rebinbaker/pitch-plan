@@ -32,7 +32,8 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
       const matchesSearch = 
         project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (material.materialDescription || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (material.materialType || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (material.customMaterialType || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesLocation = locationFilter === 'all' || material.storageLocation === locationFilter;
       const matchesAction = actionFilter === 'all' || material.plannedAction === actionFilter;
@@ -227,7 +228,10 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
                       </TableCell>
                       <TableCell className="text-sm max-w-xs">
                         <div className="truncate">
-                          {material.materialDescription || 'Ej specificerat'}
+                          {material.materialType === 'Annat' && material.customMaterialType 
+                            ? material.customMaterialType 
+                            : material.materialType || 'Ej specificerat'}
+                          {material.squareMeters && ` (${material.squareMeters} m²)`}
                         </div>
                       </TableCell>
                       <TableCell>

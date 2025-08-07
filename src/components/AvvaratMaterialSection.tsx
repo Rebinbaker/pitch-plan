@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Project, StorageLocation, PlannedAction } from '@/types/project';
+import { Project, StorageLocation, PlannedAction, MaterialType } from '@/types/project';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +24,20 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
     project.avvaratMaterial?.dateNoted ? new Date(project.avvaratMaterial.dateNoted) : undefined
   );
 
+  // Check if "Slutsynsbesiktning" is completed
+  const finalInspectionCompleted = project.checklist.find(item => 
+    item.label === 'Slutsynsbesiktning'
+  )?.completed || false;
+
+  // Don't render if final inspection not completed
+  if (!finalInspectionCompleted) {
+    return null;
+  }
+
+  const materialTypes: MaterialType[] = [
+    'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
+  ];
+
   const storageLocations: StorageLocation[] = [
     'Hos kund', 'Ställningspark', 'I bil', 'Montörens garage', 'Annat'
   ];
@@ -44,7 +58,9 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
         hasLeftoverMaterial: checked,
         // Clear other fields if unchecked
         ...(checked ? {} : {
-          materialDescription: undefined,
+          materialType: undefined,
+          customMaterialType: undefined,
+          squareMeters: undefined,
           storageLocation: undefined,
           customStorageLocation: undefined,
           dateNoted: undefined,
@@ -83,7 +99,8 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
     if (!material?.hasLeftoverMaterial) return true;
     
     return !!(
-      material.materialDescription &&
+      material.materialType &&
+      material.squareMeters &&
       material.storageLocation &&
       material.dateNoted &&
       material.responsiblePerson &&
@@ -126,17 +143,50 @@ export function AvvaratMaterialSection({ project, onUpdateProject }: AvvaratMate
             </Label>
           </div>
 
-          {project.avvaratMaterial?.hasLeftoverMaterial && (
-            <div className="space-y-4 pl-6 border-l-2 border-primary/20">
-              {/* Material Description */}
-              <div className="space-y-2">
-                <Label className="text-sm">🏷️ Materialtyp och beskrivning</Label>
-                <Input
-                  placeholder="t.ex. 2 rullar underlagspapp, 50 takpannor"
-                  value={project.avvaratMaterial.materialDescription || ''}
-                  onChange={(e) => handleFieldChange('materialDescription', e.target.value)}
-                />
-              </div>
+            {project.avvaratMaterial?.hasLeftoverMaterial && (
+              <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                {/* Material Type */}
+                <div className="space-y-2">
+                  <Label className="text-sm">🏷️ Materialtyp</Label>
+                  <Select
+                    value={project.avvaratMaterial.materialType || ''}
+                    onValueChange={(value) => handleFieldChange('materialType', value as MaterialType)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Välj materialtyp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {materialTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Custom Material Type */}
+                {project.avvaratMaterial.materialType === 'Annat' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">🏷️ Ange annan materialtyp</Label>
+                    <Input
+                      placeholder="Beskriv materialtypen"
+                      value={project.avvaratMaterial.customMaterialType || ''}
+                      onChange={(e) => handleFieldChange('customMaterialType', e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {/* Square Meters */}
+                <div className="space-y-2">
+                  <Label className="text-sm">📐 Antal kvadratmeter</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="0.0"
+                    value={project.avvaratMaterial.squareMeters || ''}
+                    onChange={(e) => handleFieldChange('squareMeters', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
 
               {/* Storage Location */}
               <div className="space-y-2">

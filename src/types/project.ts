@@ -4,9 +4,13 @@ export type ROTStatus = 'Yes' | 'No';
 export type StorageLocation = 'Hos kund' | 'Ställningspark' | 'I bil' | 'Montörens garage' | 'Annat';
 export type PlannedAction = 'Användas i framtida projekt' | 'Transporteras till ställningspark' | 'Returneras till leverantör' | 'Kasseras' | 'Annat';
 
+export type MaterialType = 'Takpannor' | 'Underlagsduk' | 'Läkt' | 'Plåtdetaljer' | 'Isolering' | 'Annat';
+
 export interface AvvaratMaterial {
   hasLeftoverMaterial: boolean;
-  materialDescription?: string; // Free text for material type and quantity
+  materialType?: MaterialType;
+  customMaterialType?: string; // For "Annat" option
+  squareMeters?: number;
   storageLocation?: StorageLocation;
   customStorageLocation?: string; // For "Annat" option
   dateNoted?: string;

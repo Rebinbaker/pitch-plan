@@ -153,6 +153,19 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           </div>
         )}
 
+        {/* Avvarat Material Status */}
+        {project.avvaratMaterial?.hasLeftoverMaterial && (
+          <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
+            <div className="w-2 h-2 bg-warning rounded-full" />
+            <span className="text-sm font-medium text-warning">Avvarat material: Ja</span>
+            {project.avvaratMaterial.materialType && project.avvaratMaterial.squareMeters && (
+              <span className="text-xs text-muted-foreground">
+                ({project.avvaratMaterial.materialType}, {project.avvaratMaterial.squareMeters} m²)
+              </span>
+            )}
+          </div>
+        )}
+
         {project.notes && (
           <div className="flex gap-2 text-sm text-muted-foreground">
             <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />

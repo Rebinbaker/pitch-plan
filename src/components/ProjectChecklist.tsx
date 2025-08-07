@@ -54,7 +54,8 @@ export function ProjectChecklist({
 
   // Check if leftover material blocks completion
   const hasIncompleteLeftoverMaterial = project?.avvaratMaterial?.hasLeftoverMaterial && !(
-    project.avvaratMaterial.materialDescription &&
+    project.avvaratMaterial.materialType &&
+    project.avvaratMaterial.squareMeters &&
     project.avvaratMaterial.storageLocation &&
     project.avvaratMaterial.dateNoted &&
     project.avvaratMaterial.responsiblePerson &&
