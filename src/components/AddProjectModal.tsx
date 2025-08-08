@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -55,19 +55,25 @@ interface AddProjectModalProps {
   onAddProject: (project: Project) => void;
   project?: Project; // Optional project for editing
   onUpdateProject?: (project: Project) => void; // Optional update handler
-  teams?: any[]; // Teams data for sales people
 }
 
-const constructionTeams = [
+const sellers = [
+  'Erik Lundström',
+  'Anna Karlsson',
+  'Magnus Svensson',
+  'Sofia Andersson',
+  'Johan Petersson',
+];
+
+const teams = [
   'Team Alpha',
-  'Team Beta', 
+  'Team Beta',
   'Team Gamma',
   'Team Delta',
   'Team Epsilon',
 ];
 
-export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject, teams = [] }: AddProjectModalProps) {
-  console.log('AddProjectModal rendered, isOpen:', isOpen, 'project:', project, 'teams:', teams);
+export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject }: AddProjectModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!project;
@@ -75,69 +81,20 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      customerName: '',
-      customerPhone: '',
-      responsibleSeller: '',
-      constructionTeam: '',
-      startDate: '',
-      deadline: '',
-      rotStatus: 'No',
-      status: 'planned',
-      region: 'Stockholm',
-      notes: '',
+      name: project?.name || '',
+      address: project?.address || '',
+      customerName: project?.customerName || '',
+      customerPhone: project?.customerPhone || '',
+      responsibleSeller: project?.responsibleSeller || '',
+      constructionTeam: project?.constructionTeam || '',
+      startDate: project?.startDate || '',
+      deadline: project?.deadline || '',
+      rotStatus: project?.rotStatus || 'No',
+      status: project?.status || 'planned',
+      region: project?.region || 'Stockholm',
+      notes: project?.notes || '',
     },
   });
-
-  // Reset form when project prop changes
-  React.useEffect(() => {
-    console.log('useEffect triggered, project:', project);
-    if (project) {
-      form.reset({
-        name: project.name || '',
-        address: project.address || '',
-        customerName: project.customerName || '',
-        customerPhone: project.customerPhone || '',
-        responsibleSeller: project.responsibleSeller || '',
-        constructionTeam: project.constructionTeam || '',
-        startDate: project.startDate || '',
-        deadline: project.deadline || '',
-        rotStatus: project.rotStatus || 'No',
-        status: project.status || 'planned',
-        region: project.region || 'Stockholm',
-        notes: project.notes || '',
-      });
-    } else {
-      form.reset({
-        name: '',
-        address: '',
-        customerName: '',
-        customerPhone: '',
-        responsibleSeller: '',
-        constructionTeam: '',
-        startDate: '',
-        deadline: '',
-        rotStatus: 'No',
-        status: 'planned',
-        region: 'Stockholm',
-        notes: '',
-      });
-    }
-  }, [project, form]);
-
-  // Get sales people filtered by selected region
-  const selectedRegion = form.watch('region');
-  console.log('Selected region:', selectedRegion, 'Available teams:', teams);
-  const availableSellers = teams
-    .filter(team => team?.type === 'Säljare')
-    .filter(team => !selectedRegion || team?.region === selectedRegion)
-    .map(team => ({
-      value: `${team?.firstName || ''} ${team?.lastName || ''}`.trim(),
-      label: `${team?.firstName || ''} ${team?.lastName || ''}`.trim(),
-      region: team?.region || ''
-    }))
-    .filter(seller => seller.value && seller.label); // Remove empty entries
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);
@@ -216,9 +173,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   };
 
   const handleClose = () => {
-    if (!isEditing) {
-      form.reset();
-    }
+    form.reset();
     onClose();
   };
 
@@ -255,7 +210,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Region</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj region" />
@@ -330,17 +285,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableSellers.length > 0 ? (
-                          availableSellers.map((seller) => (
-                            <SelectItem key={seller.value} value={seller.value}>
-                              {seller.label}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="" disabled>
-                            Inga säljare tillgängliga för {selectedRegion || 'vald region'}
+                        {sellers.map((seller) => (
+                          <SelectItem key={seller} value={seller}>
+                            {seller}
                           </SelectItem>
-                        )}
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -361,7 +310,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {constructionTeams.map((team) => (
+                        {teams.map((team) => (
                           <SelectItem key={team} value={team}>
                             {team}
                           </SelectItem>
@@ -409,7 +358,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj status" />
@@ -434,7 +383,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>ROT-avdrag</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Välj ROT-status" />

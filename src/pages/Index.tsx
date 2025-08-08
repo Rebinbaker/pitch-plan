@@ -219,7 +219,6 @@ const Index = () => {
           isOpen={isAddProjectModalOpen}
           onClose={() => setIsAddProjectModalOpen(false)}
           onAddProject={handleCreateProject}
-          teams={teams}
         />
       </div>
     </div>
