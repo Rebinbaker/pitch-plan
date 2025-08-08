@@ -505,6 +505,7 @@ export function ProjectDetailModal({
         onClose={() => setIsEditModalOpen(false)}
         onAddProject={() => {}} // Not used for editing
         project={project}
+        teams={teams}
         onUpdateProject={(updatedProject) => {
           onUpdateProject(updatedProject);
           setIsEditModalOpen(false);

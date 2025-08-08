@@ -55,25 +55,18 @@ interface AddProjectModalProps {
   onAddProject: (project: Project) => void;
   project?: Project; // Optional project for editing
   onUpdateProject?: (project: Project) => void; // Optional update handler
+  teams?: any[]; // Teams data for sales people
 }
 
-const sellers = [
-  'Erik Lundström',
-  'Anna Karlsson',
-  'Magnus Svensson',
-  'Sofia Andersson',
-  'Johan Petersson',
-];
-
-const teams = [
+const constructionTeams = [
   'Team Alpha',
-  'Team Beta',
+  'Team Beta', 
   'Team Gamma',
   'Team Delta',
   'Team Epsilon',
 ];
 
-export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject }: AddProjectModalProps) {
+export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject, teams = [] }: AddProjectModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!project;
@@ -95,6 +88,17 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       notes: project?.notes || '',
     },
   });
+
+  // Get sales people filtered by selected region
+  const selectedRegion = form.watch('region');
+  const availableSellers = teams
+    .filter(team => team.type === 'Säljare')
+    .filter(team => !selectedRegion || team.region === selectedRegion)
+    .map(team => ({
+      value: `${team.firstName} ${team.lastName}`,
+      label: `${team.firstName} ${team.lastName}`,
+      region: team.region
+    }));
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);
@@ -285,11 +289,17 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {sellers.map((seller) => (
-                          <SelectItem key={seller} value={seller}>
-                            {seller}
+                        {availableSellers.length > 0 ? (
+                          availableSellers.map((seller) => (
+                            <SelectItem key={seller.value} value={seller.value}>
+                              {seller.label} ({seller.region})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            Inga säljare tillgängliga för {selectedRegion || 'vald region'}
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -310,7 +320,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {teams.map((team) => (
+                        {constructionTeams.map((team) => (
                           <SelectItem key={team} value={team}>
                             {team}
                           </SelectItem>
