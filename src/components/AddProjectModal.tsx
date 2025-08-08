@@ -96,15 +96,6 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   const allSellers = teamsData.flatMap(team => team.sellers || []);
   const availableSellers = allSellers.filter(seller => seller.region === selectedRegion);
 
-  // Debug: Log what sellers we have
-  React.useEffect(() => {
-    console.log('=== SELLER DEBUG ===');
-    console.log('Teams data:', teamsData);
-    console.log('All sellers from teams:', allSellers);
-    console.log('Selected region:', selectedRegion);
-    console.log('Available sellers for region:', availableSellers);
-    console.log('==================');
-  }, [teamsData, allSellers, selectedRegion, availableSellers]);
 
 
   // Reset form when project prop changes (for editing)
