@@ -83,10 +83,10 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
           
           <Select value={filterAvailability} onValueChange={(value: AvailabilityStatus | 'all') => setFilterAvailability(value)}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Tillgänglighet" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alla tillgängligheter</SelectItem>
+              <SelectItem value="all">Alla statusar</SelectItem>
               <SelectItem value="Tillgänglig">Tillgänglig</SelectItem>
               <SelectItem value="Begränsad">Begränsad</SelectItem>
               <SelectItem value="Upptagen">Upptagen</SelectItem>
