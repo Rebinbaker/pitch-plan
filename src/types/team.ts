@@ -1,4 +1,4 @@
-export type TeamType = 'Internt' | 'Underentreprenör';
+export type TeamType = 'Internt' | 'Underentreprenör' | 'Säljare';
 export type AvailabilityStatus = 'Tillgänglig' | 'Upptagen' | 'Begränsad';
 
 export interface TeamMember {
@@ -18,4 +18,8 @@ export interface ConstructionTeam {
   contactInfo?: string;
   skills: string[];
   members?: TeamMember[];
+  // For sales people
+  firstName?: string;
+  lastName?: string;
+  region?: string;
 }
