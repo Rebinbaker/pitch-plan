@@ -438,11 +438,18 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           </div>
           <div>
             <label className="text-sm font-medium">Region</label>
-            <Input
-              value={salesPerson.region}
-              onChange={(e) => setSalesPerson({ ...salesPerson, region: e.target.value })}
-              placeholder="Region"
-            />
+            <Select 
+              value={salesPerson.region} 
+              onValueChange={(value) => setSalesPerson({ ...salesPerson, region: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Välj region" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+                <SelectItem value="Stockholm">Stockholm</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       ) : (
