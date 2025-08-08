@@ -57,12 +57,12 @@ interface AddProjectModalProps {
   onUpdateProject?: (project: Project) => void; // Optional update handler
 }
 
-const sellers = [
-  'Erik Lundström',
-  'Anna Karlsson',
-  'Magnus Svensson',
-  'Sofia Andersson',
-  'Johan Petersson',
+const sellersData = [
+  { name: 'Erik Lundström', region: 'Stockholm' },
+  { name: 'Anna Karlsson', region: 'Stockholm' },
+  { name: 'Magnus Svensson', region: 'Västra Götaland' },
+  { name: 'Sofia Andersson', region: 'Västra Götaland' },
+  { name: 'Johan Petersson', region: 'Stockholm' },
 ];
 
 const teams = [
@@ -95,6 +95,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       notes: '',
     },
   });
+
+  // Watch the region field to filter sellers
+  const selectedRegion = form.watch('region');
+  const availableSellers = sellersData.filter(seller => seller.region === selectedRegion);
 
   // Reset form when project prop changes (for editing)
   React.useEffect(() => {
@@ -130,6 +134,16 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       });
     }
   }, [project, isEditing, form]);
+
+  // Clear seller selection when region changes
+  React.useEffect(() => {
+    const currentSeller = form.getValues('responsibleSeller');
+    const isSellerValidForRegion = availableSellers.some(seller => seller.name === currentSeller);
+    
+    if (currentSeller && !isSellerValidForRegion) {
+      form.setValue('responsibleSeller', '');
+    }
+  }, [selectedRegion, form, availableSellers]);
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);
@@ -320,9 +334,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {sellers.map((seller) => (
-                          <SelectItem key={seller} value={seller}>
-                            {seller}
+                        {availableSellers.map((seller) => (
+                          <SelectItem key={seller.name} value={seller.name}>
+                            {seller.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
