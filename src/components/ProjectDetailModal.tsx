@@ -287,7 +287,10 @@ export function ProjectDetailModal({
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => {
+                setIsEditModalOpen(true);
+                onClose(); // Close detail modal when opening edit modal
+              }}>
                 <Edit className="w-4 h-4" />
                 Redigera projekt
               </Button>
@@ -499,18 +502,22 @@ export function ProjectDetailModal({
         </Tabs>
       </DialogContent>
       
-      {/* Edit Project Modal */}
-      <AddProjectModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onAddProject={() => {}} // Not used for editing
-        project={project}
-        teams={teams}
-        onUpdateProject={(updatedProject) => {
-          onUpdateProject(updatedProject);
-          setIsEditModalOpen(false);
-        }}
-      />
+      {/* Edit Project Modal - Conditional rendering */}
+      {isEditModalOpen && (
+        <AddProjectModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+          }}
+          onAddProject={() => {}} // Not used for editing
+          project={project}
+          teams={teams}
+          onUpdateProject={(updatedProject) => {
+            onUpdateProject(updatedProject);
+            setIsEditModalOpen(false);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -74,20 +74,55 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: project?.name || '',
-      address: project?.address || '',
-      customerName: project?.customerName || '',
-      customerPhone: project?.customerPhone || '',
-      responsibleSeller: project?.responsibleSeller || '',
-      constructionTeam: project?.constructionTeam || '',
-      startDate: project?.startDate || '',
-      deadline: project?.deadline || '',
-      rotStatus: project?.rotStatus || 'No',
-      status: project?.status || 'planned',
-      region: project?.region || 'Stockholm',
-      notes: project?.notes || '',
+      name: '',
+      address: '',
+      customerName: '',
+      customerPhone: '',
+      responsibleSeller: '',
+      constructionTeam: '',
+      startDate: '',
+      deadline: '',
+      rotStatus: 'No',
+      status: 'planned',
+      region: 'Stockholm',
+      notes: '',
     },
   });
+
+  // Reset form when project prop changes
+  React.useEffect(() => {
+    if (project) {
+      form.reset({
+        name: project.name || '',
+        address: project.address || '',
+        customerName: project.customerName || '',
+        customerPhone: project.customerPhone || '',
+        responsibleSeller: project.responsibleSeller || '',
+        constructionTeam: project.constructionTeam || '',
+        startDate: project.startDate || '',
+        deadline: project.deadline || '',
+        rotStatus: project.rotStatus || 'No',
+        status: project.status || 'planned',
+        region: project.region || 'Stockholm',
+        notes: project.notes || '',
+      });
+    } else {
+      form.reset({
+        name: '',
+        address: '',
+        customerName: '',
+        customerPhone: '',
+        responsibleSeller: '',
+        constructionTeam: '',
+        startDate: '',
+        deadline: '',
+        rotStatus: 'No',
+        status: 'planned',
+        region: 'Stockholm',
+        notes: '',
+      });
+    }
+  }, [project, form]);
 
   // Get sales people filtered by selected region
   const selectedRegion = form.watch('region');
@@ -177,7 +212,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   };
 
   const handleClose = () => {
-    form.reset();
+    if (!isEditing) {
+      form.reset();
+    }
     onClose();
   };
 
@@ -214,7 +251,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Region</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj region" />
@@ -368,7 +405,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj status" />
@@ -393,7 +430,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>ROT-avdrag</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Välj ROT-status" />
