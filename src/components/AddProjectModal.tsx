@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -81,20 +81,55 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: project?.name || '',
-      address: project?.address || '',
-      customerName: project?.customerName || '',
-      customerPhone: project?.customerPhone || '',
-      responsibleSeller: project?.responsibleSeller || '',
-      constructionTeam: project?.constructionTeam || '',
-      startDate: project?.startDate || '',
-      deadline: project?.deadline || '',
-      rotStatus: project?.rotStatus || 'No',
-      status: project?.status || 'planned',
-      region: project?.region || 'Stockholm',
-      notes: project?.notes || '',
+      name: '',
+      address: '',
+      customerName: '',
+      customerPhone: '',
+      responsibleSeller: '',
+      constructionTeam: '',
+      startDate: '',
+      deadline: '',
+      rotStatus: 'No',
+      status: 'planned',
+      region: 'Stockholm',
+      notes: '',
     },
   });
+
+  // Reset form when project prop changes (for editing)
+  React.useEffect(() => {
+    if (project && isEditing) {
+      form.reset({
+        name: project.name,
+        address: project.address,
+        customerName: project.customerName,
+        customerPhone: project.customerPhone,
+        responsibleSeller: project.responsibleSeller,
+        constructionTeam: project.constructionTeam,
+        startDate: project.startDate,
+        deadline: project.deadline,
+        rotStatus: project.rotStatus,
+        status: project.status,
+        region: project.region,
+        notes: project.notes || '',
+      });
+    } else if (!isEditing) {
+      form.reset({
+        name: '',
+        address: '',
+        customerName: '',
+        customerPhone: '',
+        responsibleSeller: '',
+        constructionTeam: '',
+        startDate: '',
+        deadline: '',
+        rotStatus: 'No',
+        status: 'planned',
+        region: 'Stockholm',
+        notes: '',
+      });
+    }
+  }, [project, isEditing, form]);
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);
@@ -210,7 +245,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Region</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj region" />
@@ -358,7 +393,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Välj status" />
@@ -383,7 +418,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>ROT-avdrag</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Välj ROT-status" />
