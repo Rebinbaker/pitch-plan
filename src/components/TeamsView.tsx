@@ -20,13 +20,11 @@ interface TeamsViewProps {
 export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: TeamsViewProps) {
   const [filterType, setFilterType] = useState<TeamType | 'all'>('all');
   const [filterAvailability, setFilterAvailability] = useState<AvailabilityStatus | 'all'>('all');
-  const [showSalesOnly, setShowSalesOnly] = useState(false);
 
   const filteredTeams = teams.filter(team => {
     const matchesType = filterType === 'all' || team.type === filterType;
     const matchesAvailability = filterAvailability === 'all' || team.availabilityNextWeek === filterAvailability;
-    const matchesSales = !showSalesOnly || team.type === 'Säljare';
-    return matchesType && matchesAvailability && matchesSales;
+    return matchesType && matchesAvailability;
   });
 
   const getAvailabilityColor = (availability: AvailabilityStatus) => {
@@ -42,7 +40,6 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
     switch (type) {
       case 'Internt': return 'bg-blue-500';
       case 'Underentreprenör': return 'bg-purple-500';
-      case 'Säljare': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
   };
@@ -79,7 +76,6 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
               <SelectItem value="all">Alla typer</SelectItem>
               <SelectItem value="Internt">Internt</SelectItem>
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
-              <SelectItem value="Säljare">Säljare</SelectItem>
             </SelectContent>
           </Select>
           
@@ -94,19 +90,11 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
               <SelectItem value="Upptagen">Upptagen</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button 
-            variant={showSalesOnly ? "default" : "outline"} 
-            onClick={() => setShowSalesOnly(!showSalesOnly)}
-            className="w-[100px]"
-          >
-            Säljare
-          </Button>
         </div>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">
@@ -126,9 +114,9 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">
-              {teams.filter(t => t.type === 'Säljare').length}
+              {teams.reduce((count, team) => count + (team.sellers?.length || 0), 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Säljare</div>
+            <div className="text-sm text-muted-foreground">Säljare totalt</div>
           </CardContent>
         </Card>
         <Card>
@@ -190,33 +178,31 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
                 </div>
               )}
               
-              {/* Sales person details */}
-              {team.type === 'Säljare' && team.firstName && team.lastName && (
+              {/* Sellers for this team */}
+              {team.sellers && team.sellers.length > 0 && (
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Namn</div>
-                  <div className="text-sm text-muted-foreground">{team.firstName} {team.lastName}</div>
-                  {team.region && (
-                    <>
-                      <div className="text-sm font-medium text-foreground">Region</div>
-                      <div className="text-sm text-muted-foreground">{team.region}</div>
-                    </>
-                  )}
-                </div>
-              )}
-              
-              {/* Skills for non-sales teams */}
-              {team.type !== 'Säljare' && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Färdigheter</div>
-                  <div className="flex flex-wrap gap-1">
-                    {team.skills.map((skill, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {skill}
-                      </Badge>
+                  <div className="text-sm font-medium text-foreground">Säljare</div>
+                  <div className="space-y-1">
+                    {team.sellers.map((seller) => (
+                      <div key={seller.id} className="text-sm text-muted-foreground">
+                        {seller.firstName} {seller.lastName} ({seller.region})
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
+              
+              {/* Skills for teams */}
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-foreground">Färdigheter</div>
+                <div className="flex flex-wrap gap-1">
+                  {team.skills.map((skill, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
               
               {team.performanceNotes && (
                 <div className="flex items-start gap-2">
@@ -331,12 +317,6 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     lastName: '',
     skills: ''
   });
-  // For sales people
-  const [salesPerson, setSalesPerson] = useState({
-    firstName: '',
-    lastName: '',
-    region: ''
-  });
 
   const addMember = () => {
     if (newMember.firstName && newMember.lastName) {
@@ -358,35 +338,19 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (teamType === 'Säljare') {
-      if (!teamName || !salesPerson.firstName || !salesPerson.lastName) return;
-      
-      const team: ConstructionTeam = {
-        id: `team-${Date.now()}`,
-        name: teamName,
-        type: teamType,
-        availabilityNextWeek: 'Tillgänglig',
-        skills: [],
-        firstName: salesPerson.firstName,
-        lastName: salesPerson.lastName,
-        region: salesPerson.region
-      };
-      
-      onSave(team);
-    } else {
-      if (!teamName || members.length === 0) return;
+    if (!teamName || members.length === 0) return;
 
-      const team: ConstructionTeam = {
-        id: `team-${Date.now()}`,
-        name: teamName,
-        type: teamType,
-        availabilityNextWeek: 'Tillgänglig',
-        skills: [...new Set(members.flatMap(m => m.skills))],
-        members
-      };
+    const team: ConstructionTeam = {
+      id: `team-${Date.now()}`,
+      name: teamName,
+      type: teamType,
+      availabilityNextWeek: 'Tillgänglig',
+      skills: [...new Set(members.flatMap(m => m.skills))],
+      members,
+      sellers: [] // Initialize empty sellers array
+    };
 
-      onSave(team);
-    }
+    onSave(team);
   };
 
   return (
@@ -410,114 +374,71 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
             <SelectContent>
               <SelectItem value="Internt">Internt</SelectItem>
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
-              <SelectItem value="Säljare">Säljare</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-
-{teamType === 'Säljare' ? (
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Förnamn</label>
+      <div>
+        <label className="text-sm font-medium mb-3 block">Teammedlemmar</label>
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="grid grid-cols-3 gap-2">
             <Input
-              value={salesPerson.firstName}
-              onChange={(e) => setSalesPerson({ ...salesPerson, firstName: e.target.value })}
+              value={newMember.firstName}
+              onChange={(e) => setNewMember({ ...newMember, firstName: e.target.value })}
               placeholder="Förnamn"
-              required
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Efternamn</label>
             <Input
-              value={salesPerson.lastName}
-              onChange={(e) => setSalesPerson({ ...salesPerson, lastName: e.target.value })}
+              value={newMember.lastName}
+              onChange={(e) => setNewMember({ ...newMember, lastName: e.target.value })}
               placeholder="Efternamn"
-              required
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Region</label>
-            <Select 
-              value={salesPerson.region} 
-              onValueChange={(value) => setSalesPerson({ ...salesPerson, region: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Välj region" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
-                <SelectItem value="Stockholm">Stockholm</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <label className="text-sm font-medium mb-3 block">Teammedlemmar</label>
-          <div className="border rounded-lg p-4 space-y-4">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex gap-2">
               <Input
-                value={newMember.firstName}
-                onChange={(e) => setNewMember({ ...newMember, firstName: e.target.value })}
-                placeholder="Förnamn"
+                value={newMember.skills}
+                onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
+                placeholder="Färdigheter (komma-separerat)"
+                className="flex-1"
               />
-              <Input
-                value={newMember.lastName}
-                onChange={(e) => setNewMember({ ...newMember, lastName: e.target.value })}
-                placeholder="Efternamn"
-              />
-              <div className="flex gap-2">
-                <Input
-                  value={newMember.skills}
-                  onChange={(e) => setNewMember({ ...newMember, skills: e.target.value })}
-                  placeholder="Färdigheter (komma-separerat)"
-                  className="flex-1"
-                />
-                <Button type="button" onClick={addMember} size="sm">
-                  <UserPlus className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button type="button" onClick={addMember} size="sm">
+                <UserPlus className="w-4 h-4" />
+              </Button>
             </div>
-
-            {members.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Tillagda medlemmar:</div>
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between bg-muted p-2 rounded">
-                    <div>
-                      <span className="font-medium">{member.firstName} {member.lastName}</span>
-                      {member.skills.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          {member.skills.join(', ')}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeMember(member.id)}
-                    >
-                      Ta bort
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
+
+          {members.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Tillagda medlemmar:</div>
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between bg-muted p-2 rounded">
+                  <div>
+                    <span className="font-medium">{member.firstName} {member.lastName}</span>
+                    {member.skills.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {member.skills.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeMember(member.id)}
+                  >
+                    Ta bort
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={teamType === 'Säljare' ? 
-          (!teamName || !salesPerson.firstName || !salesPerson.lastName) : 
-          (!teamName || members.length === 0)
-        }
+        disabled={!teamName || members.length === 0}
       >
-        Skapa {teamType === 'Säljare' ? 'säljare' : 'team'}
+        Skapa team
       </Button>
     </form>
   );

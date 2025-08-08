@@ -55,15 +55,8 @@ interface AddProjectModalProps {
   onAddProject: (project: Project) => void;
   project?: Project; // Optional project for editing
   onUpdateProject?: (project: Project) => void; // Optional update handler
+  teams?: any[]; // Teams data to get sellers from
 }
-
-const sellersData = [
-  { name: 'Erik Lundström', region: 'Stockholm' },
-  { name: 'Anna Karlsson', region: 'Stockholm' },
-  { name: 'Magnus Svensson', region: 'Västra Götaland' },
-  { name: 'Sofia Andersson', region: 'Västra Götaland' },
-  { name: 'Johan Petersson', region: 'Stockholm' },
-];
 
 const teams = [
   'Team Alpha',
@@ -73,7 +66,7 @@ const teams = [
   'Team Epsilon',
 ];
 
-export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject }: AddProjectModalProps) {
+export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject, teams: teamsData = [] }: AddProjectModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!project;
@@ -98,7 +91,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
 
   // Watch the region field to filter sellers
   const selectedRegion = form.watch('region');
-  const availableSellers = sellersData.filter(seller => seller.region === selectedRegion);
+  
+  // Get all sellers from teams data and filter by region
+  const allSellers = teamsData.flatMap(team => team.sellers || []);
+  const availableSellers = allSellers.filter(seller => seller.region === selectedRegion);
 
   // Reset form when project prop changes (for editing)
   React.useEffect(() => {
@@ -138,7 +134,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   // Clear seller selection when region changes
   React.useEffect(() => {
     const currentSeller = form.getValues('responsibleSeller');
-    const isSellerValidForRegion = availableSellers.some(seller => seller.name === currentSeller);
+    const isSellerValidForRegion = availableSellers.some(seller => `${seller.firstName} ${seller.lastName}` === currentSeller);
     
     if (currentSeller && !isSellerValidForRegion) {
       form.setValue('responsibleSeller', '');
@@ -335,8 +331,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                       </FormControl>
                       <SelectContent>
                         {availableSellers.map((seller) => (
-                          <SelectItem key={seller.name} value={seller.name}>
-                            {seller.name}
+                          <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
+                            {seller.firstName} {seller.lastName}
                           </SelectItem>
                         ))}
                       </SelectContent>
