@@ -92,9 +92,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   // Watch the region field to filter sellers
   const selectedRegion = form.watch('region');
   
-  // Get all sellers from teams data and filter by region
+  // Get all sellers from teams data (both from regular teams and from "Säljare" type teams)
   const allSellers = teamsData.flatMap(team => team.sellers || []);
   const availableSellers = allSellers.filter(seller => seller.region === selectedRegion);
+
 
   // Reset form when project prop changes (for editing)
   React.useEffect(() => {
@@ -329,13 +330,19 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                           <SelectValue placeholder="Välj säljare" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {availableSellers.map((seller) => (
-                          <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
-                            {seller.firstName} {seller.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent>
+                         {availableSellers.length > 0 ? (
+                           availableSellers.map((seller) => (
+                             <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
+                               {seller.firstName} {seller.lastName}
+                             </SelectItem>
+                           ))
+                         ) : (
+                           <SelectItem value="" disabled>
+                             Inga säljare tillgängliga för {selectedRegion}
+                           </SelectItem>
+                         )}
+                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
