@@ -67,6 +67,7 @@ const constructionTeams = [
 ];
 
 export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject, teams = [] }: AddProjectModalProps) {
+  console.log('AddProjectModal rendered, isOpen:', isOpen, 'project:', project, 'teams:', teams);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!project;
@@ -91,6 +92,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
 
   // Reset form when project prop changes
   React.useEffect(() => {
+    console.log('useEffect triggered, project:', project);
     if (project) {
       form.reset({
         name: project.name || '',
@@ -126,14 +128,16 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
 
   // Get sales people filtered by selected region
   const selectedRegion = form.watch('region');
+  console.log('Selected region:', selectedRegion, 'Available teams:', teams);
   const availableSellers = teams
-    .filter(team => team.type === 'Säljare')
-    .filter(team => !selectedRegion || team.region === selectedRegion)
+    .filter(team => team?.type === 'Säljare')
+    .filter(team => !selectedRegion || team?.region === selectedRegion)
     .map(team => ({
-      value: `${team.firstName} ${team.lastName}`,
-      label: `${team.firstName} ${team.lastName}`,
-      region: team.region
-    }));
+      value: `${team?.firstName || ''} ${team?.lastName || ''}`.trim(),
+      label: `${team?.firstName || ''} ${team?.lastName || ''}`.trim(),
+      region: team?.region || ''
+    }))
+    .filter(seller => seller.value && seller.label); // Remove empty entries
 
   const onSubmit = async (data: ProjectFormValues) => {
     setIsSubmitting(true);

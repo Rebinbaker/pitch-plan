@@ -288,6 +288,8 @@ export function ProjectDetailModal({
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
               <Button variant="outline" size="sm" onClick={() => {
+                console.log('Edit button clicked, project:', project);
+                console.log('Teams data:', teams);
                 setIsEditModalOpen(true);
                 onClose(); // Close detail modal when opening edit modal
               }}>
