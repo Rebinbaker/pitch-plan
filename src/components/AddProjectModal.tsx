@@ -292,7 +292,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         {availableSellers.length > 0 ? (
                           availableSellers.map((seller) => (
                             <SelectItem key={seller.value} value={seller.value}>
-                              {seller.label} ({seller.region})
+                              {seller.label}
                             </SelectItem>
                           ))
                         ) : (
