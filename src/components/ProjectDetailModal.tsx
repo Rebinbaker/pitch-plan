@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
 import { ActivityLogView } from './ActivityLogView';
-import { AddProjectModal } from './AddProjectModal';
+import { EditProjectModal } from './EditProjectModal';
 import { Project, ActivityLogEntry } from '@/types/project';
 import { 
   CalendarDays, 
@@ -288,10 +288,8 @@ export function ProjectDetailModal({
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
               <Button variant="outline" size="sm" onClick={() => {
-                console.log('Edit button clicked, project:', project);
-                console.log('Teams data:', teams);
+                console.log('Edit button clicked - using separate modal');
                 setIsEditModalOpen(true);
-                onClose(); // Close detail modal when opening edit modal
               }}>
                 <Edit className="w-4 h-4" />
                 Redigera projekt
@@ -504,14 +502,11 @@ export function ProjectDetailModal({
         </Tabs>
       </DialogContent>
       
-      {/* Edit Project Modal - Conditional rendering */}
+      {/* Edit Project Modal - Simplified separate component */}
       {isEditModalOpen && (
-        <AddProjectModal
+        <EditProjectModal
           isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-          }}
-          onAddProject={() => {}} // Not used for editing
+          onClose={() => setIsEditModalOpen(false)}
           project={project}
           teams={teams}
           onUpdateProject={(updatedProject) => {
