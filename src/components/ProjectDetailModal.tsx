@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectChecklist } from './ProjectChecklist';
 import { ActivityLogView } from './ActivityLogView';
+import { AddProjectModal } from './AddProjectModal';
 import { Project, ActivityLogEntry } from '@/types/project';
 import { 
   CalendarDays, 
@@ -46,6 +47,7 @@ export function ProjectDetailModal({
   teams = []
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   if (!project) return null;
 
@@ -285,7 +287,7 @@ export function ProjectDetailModal({
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
                 <Edit className="w-4 h-4" />
                 Redigera projekt
               </Button>
@@ -496,6 +498,18 @@ export function ProjectDetailModal({
           </TabsContent>
         </Tabs>
       </DialogContent>
+      
+      {/* Edit Project Modal */}
+      <AddProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onAddProject={() => {}} // Not used for editing
+        project={project}
+        onUpdateProject={(updatedProject) => {
+          onUpdateProject(updatedProject);
+          setIsEditModalOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

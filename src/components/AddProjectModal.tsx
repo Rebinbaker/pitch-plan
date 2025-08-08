@@ -53,6 +53,8 @@ interface AddProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddProject: (project: Project) => void;
+  project?: Project; // Optional project for editing
+  onUpdateProject?: (project: Project) => void; // Optional update handler
 }
 
 const sellers = [
@@ -71,25 +73,26 @@ const teams = [
   'Team Epsilon',
 ];
 
-export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectModalProps) {
+export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpdateProject }: AddProjectModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditing = !!project;
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      customerName: '',
-      customerPhone: '',
-      responsibleSeller: '',
-      constructionTeam: '',
-      startDate: '',
-      deadline: '',
-      rotStatus: 'No',
-      status: 'planned',
-      region: 'Stockholm',
-      notes: '',
+      name: project?.name || '',
+      address: project?.address || '',
+      customerName: project?.customerName || '',
+      customerPhone: project?.customerPhone || '',
+      responsibleSeller: project?.responsibleSeller || '',
+      constructionTeam: project?.constructionTeam || '',
+      startDate: project?.startDate || '',
+      deadline: project?.deadline || '',
+      rotStatus: project?.rotStatus || 'No',
+      status: project?.status || 'planned',
+      region: project?.region || 'Stockholm',
+      notes: project?.notes || '',
     },
   });
 
@@ -97,44 +100,71 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
     setIsSubmitting(true);
     
     try {
-      const newProject: Project = {
-        id: `project-${Date.now()}`,
-        name: data.name,
-        address: data.address,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        responsibleSeller: data.responsibleSeller,
-        constructionTeam: data.constructionTeam,
-        startDate: data.startDate,
-        deadline: data.deadline,
-        rotStatus: data.rotStatus,
-        status: data.status,
-        region: data.region,
-        notes: data.notes || '',
-        checklist: defaultChecklist.map((item, index) => ({
-          ...item,
-          id: `checklist-${Date.now()}-${index}`,
-        })),
-        workPhases: defaultWorkPhases.map((item, index) => ({
-          ...item,
-          id: `workphase-${Date.now()}-${index}`,
-        })),
-        completionPercentage: 0,
-      };
+      if (isEditing && project && onUpdateProject) {
+        // Update existing project
+        const updatedProject: Project = {
+          ...project,
+          name: data.name,
+          address: data.address,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          responsibleSeller: data.responsibleSeller,
+          constructionTeam: data.constructionTeam,
+          startDate: data.startDate,
+          deadline: data.deadline,
+          rotStatus: data.rotStatus,
+          status: data.status,
+          region: data.region,
+          notes: data.notes || '',
+        };
 
-      onAddProject(newProject);
-      
-      toast({
-        title: 'Projekt skapat framgångsrikt',
-        description: `${newProject.name} har lagts till i dina projekt.`,
-      });
+        onUpdateProject(updatedProject);
+        
+        toast({
+          title: 'Projekt uppdaterat framgångsrikt',
+          description: `${updatedProject.name} har uppdaterats.`,
+        });
+      } else {
+        // Create new project
+        const newProject: Project = {
+          id: `project-${Date.now()}`,
+          name: data.name,
+          address: data.address,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          responsibleSeller: data.responsibleSeller,
+          constructionTeam: data.constructionTeam,
+          startDate: data.startDate,
+          deadline: data.deadline,
+          rotStatus: data.rotStatus,
+          status: data.status,
+          region: data.region,
+          notes: data.notes || '',
+          checklist: defaultChecklist.map((item, index) => ({
+            ...item,
+            id: `checklist-${Date.now()}-${index}`,
+          })),
+          workPhases: defaultWorkPhases.map((item, index) => ({
+            ...item,
+            id: `workphase-${Date.now()}-${index}`,
+          })),
+          completionPercentage: 0,
+        };
+
+        onAddProject(newProject);
+        
+        toast({
+          title: 'Projekt skapat framgångsrikt',
+          description: `${newProject.name} har lagts till i dina projekt.`,
+        });
+      }
 
       form.reset();
       onClose();
     } catch (error) {
       toast({
-        title: 'Fel vid skapande av projekt',
-        description: 'Det uppstod ett fel vid skapandet av projektet. Försök igen.',
+        title: isEditing ? 'Fel vid uppdatering av projekt' : 'Fel vid skapande av projekt',
+        description: isEditing ? 'Det uppstod ett fel vid uppdateringen av projektet. Försök igen.' : 'Det uppstod ett fel vid skapandet av projektet. Försök igen.',
         variant: 'destructive',
       });
     } finally {
@@ -151,9 +181,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Lägg till nytt projekt</DialogTitle>
+          <DialogTitle>{isEditing ? 'Redigera projekt' : 'Lägg till nytt projekt'}</DialogTitle>
           <DialogDescription>
-            Skapa ett nytt byggprojekt med alla nödvändiga detaljer.
+            {isEditing ? 'Uppdatera projektets detaljer.' : 'Skapa ett nytt byggprojekt med alla nödvändiga detaljer.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -395,7 +425,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject }: AddProjectMod
                 Avbryt
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Skapar...' : 'Skapa projekt'}
+                {isSubmitting ? (isEditing ? 'Uppdaterar...' : 'Skapar...') : (isEditing ? 'Uppdatera projekt' : 'Skapa projekt')}
               </Button>
             </DialogFooter>
           </form>
