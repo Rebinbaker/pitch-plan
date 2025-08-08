@@ -12,50 +12,51 @@ import { Project } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { ConstructionTeam } from '@/types/team';
 import { ProjectFile } from '@/types/files';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { Notification } from '@/types/notification';
+import { mockProjects } from '@/data/mockProjects';
+import { mockScaffolding } from '@/data/mockScaffolding';
+import { mockTeams } from '@/data/mockTeams';
+import { mockNotifications } from '@/data/mockNotifications';
 
 const Index = () => {
-  const {
-    projects,
-    scaffolding,
-    teams,
-    files,
-    notifications,
-    loading,
-    updateProject,
-    createProject,
-    updateScaffolding,
-    createScaffolding,
-    updateTeam,
-    createTeam,
-    uploadFile,
-    markAsRead,
-    dismissNotification
-  } = useSupabaseData();
-  
+  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [scaffolding, setScaffolding] = useState<ScaffoldingTrailer[]>(mockScaffolding);
+  const [teams, setTeams] = useState<ConstructionTeam[]>(mockTeams);
+  const [files, setFiles] = useState<ProjectFile[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
-  const handleUpdateProject = async (updatedProject: Project) => {
-    await updateProject(updatedProject);
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects(prevProjects => 
+      prevProjects.map(project => 
+        project.id === updatedProject.id ? updatedProject : project
+      )
+    );
     
     // If project is completed, free up resources
     if (updatedProject.status === 'completed') {
       // Free up assigned trailer
       if (updatedProject.assignedTrailer) {
-        const trailer = scaffolding.find(t => t.id === updatedProject.assignedTrailer);
-        if (trailer) {
-          await updateScaffolding({ ...trailer, status: 'Tillgänglig' as const });
-        }
+        setScaffolding(prevScaffolding =>
+          prevScaffolding.map(trailer =>
+            trailer.id === updatedProject.assignedTrailer
+              ? { ...trailer, status: 'Tillgänglig' as const }
+              : trailer
+          )
+        );
       }
       
       // Free up assigned team
       if (updatedProject.constructionTeam) {
-        const team = teams.find(t => t.name === updatedProject.constructionTeam);
-        if (team) {
-          await updateTeam({ ...team, availabilityNextWeek: 'Tillgänglig' as const });
-        }
+        setTeams(prevTeams =>
+          prevTeams.map(team =>
+            team.name === updatedProject.constructionTeam
+              ? { ...team, availabilityNextWeek: 'Tillgänglig' as const }
+              : team
+          )
+        );
       }
     }
   };
@@ -64,37 +65,56 @@ const Index = () => {
     setIsAddProjectModalOpen(true);
   };
 
-  const handleCreateProject = async (newProject: Project) => {
-    await createProject(newProject);
+  const handleCreateProject = (newProject: Project) => {
+    setProjects(prev => [newProject, ...prev]);
     setIsAddProjectModalOpen(false);
   };
 
-  const handleUpdateScaffolding = async (updatedTrailer: ScaffoldingTrailer) => {
-    await updateScaffolding(updatedTrailer);
+  const handleUpdateScaffolding = (updatedTrailer: ScaffoldingTrailer) => {
+    setScaffolding(prev => 
+      prev.map(trailer => 
+        trailer.id === updatedTrailer.id ? updatedTrailer : trailer
+      )
+    );
   };
 
-  const handleAddScaffolding = async (newTrailer: ScaffoldingTrailer) => {
-    await createScaffolding(newTrailer);
+  const handleAddScaffolding = (newTrailer: ScaffoldingTrailer) => {
+    setScaffolding(prev => [...prev, newTrailer]);
   };
 
-  const handleUpdateTeam = async (updatedTeam: ConstructionTeam) => {
-    await updateTeam(updatedTeam);
+  const handleUpdateTeam = (updatedTeam: ConstructionTeam) => {
+    setTeams(prev => 
+      prev.map(team => 
+        team.id === updatedTeam.id ? updatedTeam : team
+      )
+    );
   };
 
-  const handleAddTeam = async (newTeam: ConstructionTeam) => {
-    await createTeam(newTeam);
+  const handleAddTeam = (newTeam: ConstructionTeam) => {
+    setTeams(prev => [...prev, newTeam]);
   };
 
-  const handleUploadFile = async (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
-    await uploadFile(file);
+  const handleUploadFile = (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
+    const newFile: ProjectFile = {
+      ...file,
+      id: `file-${Date.now()}`,
+      uploadedAt: new Date().toISOString(),
+    };
+    setFiles(prev => [...prev, newFile]);
   };
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    await markAsRead(notificationId);
+  const handleMarkAsRead = (notificationId: string) => {
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
   };
 
-  const handleDismissNotification = async (notificationId: string) => {
-    await dismissNotification(notificationId);
+  const handleDismissNotification = (notificationId: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
   };
 
   const handleNavigateToProject = (projectId: string) => {
@@ -102,17 +122,6 @@ const Index = () => {
     setActiveTab('projects');
     setSelectedProjectId(projectId);
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Laddar data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle relative">
