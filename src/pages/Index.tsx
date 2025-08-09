@@ -8,7 +8,7 @@ import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const Index = () => {
   const {
@@ -27,7 +27,7 @@ const Index = () => {
     uploadFile,
     markNotificationAsRead,
     dismissNotification
-  } = useSupabaseData();
+  } = useLocalStorage();
 
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
