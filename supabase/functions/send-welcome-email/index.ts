@@ -39,12 +39,9 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Logo -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <h2 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                LOKALA HANTVERKARNA
-              </h2>
-              <p style="color: #cccccc; font-size: 14px; margin: 5px 0 0 0; letter-spacing: 1px;">
-                i Sverige AB
-              </p>
+              <img src="https://i.imgur.com/xGRIStN.png" 
+                   alt="Lokala Hantverkarna" 
+                   style="max-width: 220px; height: auto;">
             </div>
             
             <!-- Main content -->
