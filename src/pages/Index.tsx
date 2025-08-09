@@ -20,7 +20,10 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 const Index = () => {
   const { signOut, user } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, role, loading: roleLoading } = useUserRole();
+  
+  // Debug logging
+  console.log('Current user role:', role, 'isAdmin:', isAdmin, 'roleLoading:', roleLoading);
   const [username, setUsername] = useState<string>('');
   const {
     projects,
