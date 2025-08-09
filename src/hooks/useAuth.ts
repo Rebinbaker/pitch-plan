@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, username: string, displayName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, username: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -55,7 +55,7 @@ export const useAuthState = () => {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, username: string, displayName: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -65,7 +65,6 @@ export const useAuthState = () => {
         emailRedirectTo: redirectUrl,
         data: {
           username,
-          display_name: displayName,
         }
       }
     });

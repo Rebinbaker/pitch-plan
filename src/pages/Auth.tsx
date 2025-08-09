@@ -6,15 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { PasswordStrength } from '@/components/PasswordStrength';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -54,8 +60,13 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !username || !displayName) {
+    if (!email || !password || !confirmPassword || !username) {
       toast.error('Vänligen fyll i alla fält');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Lösenorden matchar inte');
       return;
     }
 
@@ -64,9 +75,19 @@ const Auth = () => {
       return;
     }
 
+    if (!/[A-Z]/.test(password)) {
+      toast.error('Lösenordet måste innehålla minst en stor bokstav');
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      toast.error('Lösenordet måste innehålla minst ett specialtecken');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error } = await signUp(email, password, username, displayName);
+      const { error } = await signUp(email, password, username);
       if (error) {
         if (error.message.includes('User already registered')) {
           toast.error('En användare med denna e-post finns redan');
@@ -83,6 +104,33 @@ const Auth = () => {
       toast.error('Ett oväntat fel uppstod');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail) {
+      toast.error('Vänligen ange din e-postadress');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/auth`
+      });
+      
+      if (error) {
+        toast.error('Fel vid återställning: ' + error.message);
+      } else {
+        toast.success('Återställningslänk skickad till din e-post!');
+        setForgotPasswordOpen(false);
+        setForgotPasswordEmail('');
+      }
+    } catch (error) {
+      toast.error('Ett oväntat fel uppstod');
+    } finally {
+      setForgotPasswordLoading(false);
     }
   };
 
@@ -132,6 +180,40 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Loggar in...' : 'Logga in'}
                 </Button>
+                
+                <div className="text-center">
+                  <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="link" className="text-sm">
+                        Glömt lösenord?
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Återställ lösenord</DialogTitle>
+                        <DialogDescription>
+                          Ange din e-postadress så skickar vi en återställningslänk
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleForgotPassword} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="forgot-email">E-post</Label>
+                          <Input
+                            id="forgot-email"
+                            type="email"
+                            value={forgotPasswordEmail}
+                            onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                            placeholder="din@email.se"
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={forgotPasswordLoading}>
+                          {forgotPasswordLoading ? 'Skickar...' : 'Skicka återställningslänk'}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </form>
             </TabsContent>
             
@@ -160,17 +242,6 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Visningsnamn</Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Ditt namn"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="signup-password">Lösenord</Label>
                   <Input
                     id="signup-password"
@@ -181,6 +252,18 @@ const Auth = () => {
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Bekräfta lösenord</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Upprepa lösenordet"
+                    required
+                  />
+                </div>
+                {password && <PasswordStrength password={password} />}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Skapar konto...' : 'Skapa konto'}
                 </Button>
