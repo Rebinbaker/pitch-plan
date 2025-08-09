@@ -27,15 +27,9 @@ export const AdminPanel: React.FC = () => {
       setLoading(true);
       console.log('Fetching users for admin panel...');
       
-      // Fetch profiles with user roles - we need to get email from auth.users through RPC or view
+      // Use the secure admin function to get user details
       const { data: usersData, error } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          username,
-          created_at,
-          user_roles!inner(role)
-        `);
+        .rpc('get_users_for_admin');
 
       if (error) {
         console.error('Error fetching users:', error);
@@ -46,18 +40,18 @@ export const AdminPanel: React.FC = () => {
       console.log('Fetched users data:', usersData);
 
       if (!usersData || usersData.length === 0) {
-        console.log('No users found in profiles table');
+        console.log('No users found');
         setUsers([]);
         return;
       }
 
-      // Transform the data to include email (we'll need to get this from user metadata or create a function)
-      const transformedUsers: UserData[] = usersData.map(profile => ({
-        id: profile.user_id,
-        email: `user_${profile.user_id.substring(0, 8)}@user.com`, // Placeholder - will fix this
-        username: profile.username || 'Okänd användare',
-        role: (profile.user_roles as any)?.role || 'user',
-        created_at: profile.created_at,
+      // Transform the data to match UserData interface
+      const transformedUsers: UserData[] = usersData.map(user => ({
+        id: user.user_id,
+        email: user.email,
+        username: user.username || 'Okänd användare',
+        role: user.role as UserRole,
+        created_at: user.created_at,
       }));
 
       console.log('Transformed users:', transformedUsers);

@@ -71,6 +71,16 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_users_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          username: string
+          role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
