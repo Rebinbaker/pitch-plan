@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -169,10 +170,10 @@ export function ProjectDetailModal({
               <DialogTitle className="text-2xl font-bold">
                 {project.name}
               </DialogTitle>
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <DialogDescription className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>{project.address}</span>
-              </div>
+              </DialogDescription>
             </div>
             <div className="flex flex-col gap-2">
               <Badge variant={getStatusVariant(project.status)}>
