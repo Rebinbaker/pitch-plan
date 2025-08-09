@@ -41,7 +41,7 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="text-align: center; margin-bottom: 40px;">
               <img src="https://pitch-plan.lovable.app/lovable-uploads/77f2bb38-c679-4daf-b9ae-070c12f7a608.png" 
                    alt="Lokala Hantverkarna" 
-                   style="max-width: 220px; height: auto;">
+                   style="max-width: 220px; height: auto; filter: brightness(0) invert(1);">
             </div>
             
             <!-- Main content -->
