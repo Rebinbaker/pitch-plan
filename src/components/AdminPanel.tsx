@@ -99,6 +99,31 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  const testEmail = async () => {
+    try {
+      console.log('Testing welcome email...');
+      const { data, error } = await supabase.functions.invoke('send-welcome-email', {
+        body: {
+          email: 'rebin@lokalahantverkarna.se', // Din email för test
+          confirmationUrl: `${window.location.origin}/auth?confirmed=true`,
+          username: 'Test Användare'
+        }
+      });
+
+      if (error) {
+        console.error('Error sending test email:', error);
+        toast.error('Fel vid skickning av test-email: ' + error.message);
+        return;
+      }
+
+      console.log('Test email sent successfully:', data);
+      toast.success('Test-email skickat! Kontrollera din inkorg.');
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      toast.error('Fel vid skickning av test-email');
+    }
+  };
+
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const { error } = await supabase
@@ -158,14 +183,25 @@ export const AdminPanel: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Crown className="h-5 w-5" />
-          Administratörspanel
-        </CardTitle>
-        <CardDescription>
-          Hantera användare och roller i systemet
-        </CardDescription>
+      <CardHeader className="pb-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5" />
+              Administratörspanel
+            </CardTitle>
+            <CardDescription>
+              Hantera användare och roller i systemet
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={testEmail}
+            variant="outline"
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            📧 Testa Email-design
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
