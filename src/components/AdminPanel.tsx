@@ -70,15 +70,27 @@ export const AdminPanel: React.FC = () => {
 
   const deleteUser = async (userId: string, email: string) => {
     try {
-      // Delete user from auth.users (this will cascade to profiles and user_roles)
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      console.log('Attempting to delete user:', userId, email);
       
+      // Use the secure admin function to delete user data
+      const { data, error } = await supabase
+        .rpc('delete_user_as_admin', { target_user_id: userId });
+
       if (error) {
         console.error('Error deleting user:', error);
-        toast.error('Fel vid radering av användare');
+        if (error.message.includes('Cannot delete admin users')) {
+          toast.error('Kan inte radera administratörer');
+        } else if (error.message.includes('Cannot delete your own account')) {
+          toast.error('Du kan inte radera ditt eget konto');
+        } else if (error.message.includes('Access denied')) {
+          toast.error('Ingen behörighet att radera användare');
+        } else {
+          toast.error('Fel vid radering av användare: ' + error.message);
+        }
         return;
       }
 
+      console.log('User deleted successfully:', data);
       toast.success(`Användare ${email} har raderats`);
       fetchUsers(); // Refresh the list
     } catch (error) {
