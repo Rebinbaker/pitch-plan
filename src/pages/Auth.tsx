@@ -97,6 +97,21 @@ const Auth = () => {
           toast.error('Fel vid registrering: ' + error.message);
         }
       } else {
+        // Send custom welcome email
+        try {
+          const confirmationUrl = `${window.location.origin}/auth?confirmed=true`;
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email,
+              confirmationUrl,
+              username
+            }
+          });
+        } catch (emailError) {
+          console.log('Welcome email error:', emailError);
+          // Don't fail the signup if email fails
+        }
+        
         toast.success('Konto skapat! Kontrollera din e-post för att verifiera kontot.');
         setActiveTab('signin');
       }
