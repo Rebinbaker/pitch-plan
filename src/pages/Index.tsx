@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { ProjectDashboard } from '@/components/ProjectDashboard';
 import { AddProjectModal } from '@/components/AddProjectModal';
 import { ScaffoldingView } from '@/components/ScaffoldingView';
@@ -15,6 +16,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const Index = () => {
   const { signOut, user } = useAuth();
+  const [username, setUsername] = useState<string>('');
   const {
     projects,
     scaffolding,
@@ -36,6 +38,25 @@ const Index = () => {
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Fetch username from profile
+  useEffect(() => {
+    const fetchUsername = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data && !error) {
+          setUsername(data.username);
+        }
+      }
+    };
+
+    fetchUsername();
+  }, [user]);
 
   const handleAddProject = () => {
     setIsAddProjectModalOpen(true);
@@ -78,8 +99,7 @@ const Index = () => {
         {/* Header with user info and logout */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Takentreprenad Dashboard</h1>
-            <p className="text-muted-foreground">Välkommen, {user?.email}</p>
+            <p className="text-muted-foreground">Välkommen, {username || 'Användare'}</p>
           </div>
           <Button 
             variant="outline" 
