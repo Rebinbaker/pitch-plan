@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <!-- Logo -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <img src="https://pitch-plan.lovable.app/lovable-uploads/a307de5a-68a3-4f26-a9bf-268893a8e6fb.png" 
+              <img src="https://pitch-plan.lovable.app/lovable-uploads/77f2bb38-c679-4daf-b9ae-070c12f7a608.png" 
                    alt="Lokala Hantverkarna" 
                    style="max-width: 220px; height: auto;">
             </div>
