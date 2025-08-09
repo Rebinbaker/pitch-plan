@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import logo from '@/assets/logo.png';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -92,7 +91,7 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logo} alt="Logotyp" className="h-16 w-auto" />
+            <img src="/lovable-uploads/e784bfba-aa1d-4a91-a9f6-01f29efadff2.png" alt="Lokala Hantverkarna Logotyp" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-2xl font-bold">Välkommen</CardTitle>
           <CardDescription>
