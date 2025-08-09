@@ -47,16 +47,16 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Main content -->
             <div style="color: #ffffff; line-height: 1.7; text-align: center;">
               <h1 style="color: #ffffff; margin-bottom: 30px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                🎉 Hej och välkommen!
+                Hej och välkommen!
               </h1>
               
               <p style="margin-bottom: 25px; font-size: 18px; color: #e0e0e0; font-weight: 300;">
-                Vi är <strong style="color: #ffffff;">otroligt glada</strong> att du vill vara en del av <br>
+                Vi är <strong style="color: #ffffff;">glada</strong> att du vill vara en del av <br>
                 <span style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; font-size: 20px;">Lokala Hantverkarna</span>
               </p>
               
               <p style="margin-bottom: 35px; font-size: 16px; color: #cccccc;">
-                Det är bara <strong style="color: #ffffff;">ett steg kvar</strong> - bekräfta din e-postadress genom att klicka på knappen nedan:
+                Det är bara <strong style="color: #ffffff;">ett steg kvar</strong> - bekräfta din e-postadress genom att klicka här:
               </p>
               
               <!-- CTA Button -->
@@ -74,14 +74,14 @@ const handler = async (req: Request): Promise<Response> => {
                           letter-spacing: 1px;
                           box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
                           transition: all 0.3s ease;">
-                  ✨ Bekräfta min e-post ✨
+                  Bekräfta min e-post
                 </a>
               </div>
               
               <div style="margin: 40px 0; height: 1px; background: linear-gradient(90deg, transparent, #333333, transparent);"></div>
               
               <p style="margin-bottom: 20px; font-size: 16px; color: #cccccc;">
-                Har du frågor? <strong style="color: #ffffff;">Kontakta oss gärna</strong> - vi hjälper dig alltid! 💬
+                Har du frågor? <strong style="color: #ffffff;">Kontakta oss gärna.</strong>
               </p>
               
               <p style="margin-bottom: 30px; font-size: 16px; color: #e0e0e0;">
