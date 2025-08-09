@@ -23,6 +23,8 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { email, confirmationUrl, username }: WelcomeEmailRequest = await req.json();
+    
+    console.log('Sending welcome email to:', email, 'with URL:', confirmationUrl);
 
     const emailHtml = `
       <!DOCTYPE html>

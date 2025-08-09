@@ -97,16 +97,20 @@ const Auth = () => {
           toast.error('Fel vid registrering: ' + error.message);
         }
       } else {
-        // Send custom welcome email
+        // Get confirmation token from signup response and send custom welcome email
         try {
-          const confirmationUrl = `${window.location.origin}/auth?confirmed=true`;
+          // First, get the user to get confirmation token
+          const { data: authData } = await supabase.auth.getSession();
+          console.log('Sending custom welcome email after signup');
+          
           await supabase.functions.invoke('send-welcome-email', {
             body: {
               email,
-              confirmationUrl,
+              confirmationUrl: `${window.location.origin}/auth?confirmed=true`,
               username
             }
           });
+          console.log('Custom welcome email sent successfully');
         } catch (emailError) {
           console.log('Welcome email error:', emailError);
           // Don't fail the signup if email fails

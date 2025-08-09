@@ -58,7 +58,8 @@ export const useAuthState = () => {
   const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    // Sign up without sending Supabase's default email
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -68,6 +69,27 @@ export const useAuthState = () => {
         }
       }
     });
+
+    // If signup was successful, send our custom email
+    if (!error && data.user && !data.user.email_confirmed_at) {
+      try {
+        // For now, use a placeholder URL since we can't access the token directly
+        // The user will need to manually configure the email template in Supabase dashboard
+        const confirmationUrl = `${redirectUrl}?email_confirmed=true`;
+        
+        await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email,
+            confirmationUrl,
+            username
+          }
+        });
+        console.log('Custom welcome email sent successfully');
+      } catch (emailError) {
+        console.log('Welcome email error:', emailError);
+      }
+    }
+    
     return { error };
   };
 
