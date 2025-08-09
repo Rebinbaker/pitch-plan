@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { ProjectDashboard } from '@/components/ProjectDashboard';
 import { AddProjectModal } from '@/components/AddProjectModal';
 import { ScaffoldingView } from '@/components/ScaffoldingView';
@@ -11,6 +14,7 @@ import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const Index = () => {
+  const { signOut, user } = useAuth();
   const {
     projects,
     scaffolding,
@@ -71,6 +75,22 @@ const Index = () => {
         }}
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header with user info and logout */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Takentreprenad Dashboard</h1>
+            <p className="text-muted-foreground">Välkommen, {user?.email}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={signOut}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Logga ut
+          </Button>
+        </div>
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <TabsTrigger value="projects">Projekt</TabsTrigger>
