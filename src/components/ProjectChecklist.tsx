@@ -443,7 +443,7 @@ export function ProjectChecklist({
                       {itemLocked && (
                         <Lock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
-                      {isDailyInspections && !isItemComplete && (
+                      {isDailyInspections && !isItemComplete && !allWorkPhasesConfirmed && (
                         <Clock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
                     </div>
@@ -474,7 +474,7 @@ export function ProjectChecklist({
                           (Låst tills alla arbetsmoment bekräftade)
                         </span>
                       )}
-                      {isDailyInspections && !isItemComplete && (
+                      {isDailyInspections && !isItemComplete && !allWorkPhasesConfirmed && (
                         <span className="ml-2 text-xs text-muted-foreground">
                           (Slutförs automatiskt när alla egenkontroller bekräftade)
                         </span>
