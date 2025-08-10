@@ -67,7 +67,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
   };
 
   // Filter projects for the selected week
-  const thisWeekProjects = projects.filter(project => {
+  const allWeekProjects = projects.filter(project => {
     const startDate = new Date(project.startDate);
     const deadline = new Date(project.deadline);
     const isThisWeek = (startDate >= startOfWeek && startDate <= endOfWeek) ||
@@ -78,40 +78,28 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
     return isThisWeek && matchesRegion;
   });
 
-  // Categorize projects (ensure each project appears in only one category)
-  const categorizedProjects = new Set<string>();
-  
-  const startingThisWeek = thisWeekProjects.filter(project => {
+  // Categorize projects - each project appears in exactly one category
+  const startingThisWeek: Project[] = [];
+  const ongoingProjects: Project[] = [];
+  const completingThisWeek: Project[] = [];
+
+  allWeekProjects.forEach(project => {
     const startDate = new Date(project.startDate);
-    const isStartingThisWeek = startDate >= startOfWeek && startDate <= endOfWeek;
-    if (isStartingThisWeek) {
-      categorizedProjects.add(project.id);
-      return true;
+    const deadline = new Date(project.deadline);
+    
+    // Priority order: starting > completing > ongoing
+    if (startDate >= startOfWeek && startDate <= endOfWeek) {
+      startingThisWeek.push(project);
+    } else if (deadline >= startOfWeek && deadline <= endOfWeek && 
+               (project.status === 'ongoing' || project.status === 'completed')) {
+      completingThisWeek.push(project);
+    } else if (project.status === 'ongoing') {
+      ongoingProjects.push(project);
     }
-    return false;
   });
 
-  const ongoingProjects = thisWeekProjects.filter(project => {
-    if (categorizedProjects.has(project.id)) return false;
-    const isOngoing = project.status === 'ongoing';
-    if (isOngoing) {
-      categorizedProjects.add(project.id);
-      return true;
-    }
-    return false;
-  });
-  
-  const completingThisWeek = thisWeekProjects.filter(project => {
-    if (categorizedProjects.has(project.id)) return false;
-    const deadline = new Date(project.deadline);
-    const isCompletingThisWeek = deadline >= startOfWeek && deadline <= endOfWeek && 
-           (project.status === 'ongoing' || project.status === 'completed');
-    if (isCompletingThisWeek) {
-      categorizedProjects.add(project.id);
-      return true;
-    }
-    return false;
-  });
+  // Total categorized projects (should equal allWeekProjects.length)
+  const thisWeekProjects = [...startingThisWeek, ...ongoingProjects, ...completingThisWeek];
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
