@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar as CalendarIcon, Clock, MapPin, User, Truck, Users, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
-import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMonth, startOfWeek as startWeek, endOfWeek as endWeek } from 'date-fns';
+import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMonth, startOfWeek as startWeek, endOfWeek as endWeek, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface WeeklyPlanningViewProps {
@@ -19,7 +19,14 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>('board');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [monthlyDateRange, setMonthlyDateRange] = useState<{from: Date | undefined, to: Date | undefined} | undefined>(undefined);
+  const [monthlyDateRange, setMonthlyDateRange] = useState<{from: Date | undefined, to: Date | undefined} | undefined>(() => {
+    // Default to current month
+    const now = new Date();
+    return {
+      from: startOfMonth(now),
+      to: endOfMonth(now)
+    };
+  });
 
   // Calculate dates for the selected week
   const getWeekDates = (date: Date) => {
@@ -144,29 +151,57 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
         <div className="flex items-center gap-4 justify-center">
           {viewMode === 'monthly' ? (
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold">Välj datumintervall för månadsvy:</h3>
+              <h3 className="text-lg font-semibold">Månadsvy:</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const currentFrom = monthlyDateRange?.from || startOfMonth(new Date());
+                  const prevMonth = addMonths(currentFrom, -1);
+                  setMonthlyDateRange({
+                    from: startOfMonth(prevMonth),
+                    to: endOfMonth(prevMonth)
+                  });
+                }}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Föregående månad
+              </Button>
+              
+              <span className="font-medium min-w-[200px] text-center">
+                {monthlyDateRange?.from && monthlyDateRange?.to ? (
+                  `${format(monthlyDateRange.from, "MMMM yyyy")}`
+                ) : (
+                  format(new Date(), "MMMM yyyy")
+                )}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const currentFrom = monthlyDateRange?.from || startOfMonth(new Date());
+                  const nextMonth = addMonths(currentFrom, 1);
+                  setMonthlyDateRange({
+                    from: startOfMonth(nextMonth),
+                    to: endOfMonth(nextMonth)
+                  });
+                }}
+                className="flex items-center gap-2"
+              >
+                Nästa månad
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal",
-                      !monthlyDateRange?.from && "text-muted-foreground"
-                    )}
+                    className="flex items-center gap-2"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {monthlyDateRange?.from ? (
-                      monthlyDateRange.to ? (
-                        <>
-                          {format(monthlyDateRange.from, "LLL dd, y")} -{" "}
-                          {format(monthlyDateRange.to, "LLL dd, y")}
-                        </>
-                      ) : (
-                        format(monthlyDateRange.from, "LLL dd, y")
-                      )
-                    ) : (
-                      <span>Välj datumintervall</span>
-                    )}
+                    Anpassat intervall
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="center">
