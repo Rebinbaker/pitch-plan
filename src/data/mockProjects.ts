@@ -119,8 +119,9 @@ export const mockProjects: Project[] = [
     scaffoldingResponsible: 'Lars Nilsson',
     checklist: generateChecklist().map((item, index) => ({
       ...item,
-      completed: index < 6, // First 6 items completed
-      completedAt: index < 6 ? '2025-08-03' : undefined,
+      // Don't auto-complete "Dagliga egenkontroller" (index 5) - it should be completed automatically
+      completed: index < 5, // First 5 items completed, but NOT "Dagliga egenkontroller"
+      completedAt: index < 5 ? '2025-08-03' : undefined,
     })),
     workPhases: generateWorkPhases(4), // 4 of 10 work phases completed
     completionPercentage: 55,
