@@ -526,7 +526,7 @@ function DraggableProjectCard({ project }: DraggableProjectCardProps) {
         {...attributes}
         className={cn(
           "cursor-move transition-opacity",
-          isDragging ? "opacity-50" : "opacity-100"
+          isDragging ? "opacity-0" : "opacity-100"
         )}
       >
         <ProjectWeeklyCard project={project} />
@@ -919,7 +919,7 @@ function MonthlyProjectCard({ project }: MonthlyProjectCardProps) {
         {...attributes}
         className={cn(
           "border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing transition-all",
-          isDragging && "opacity-50 shadow-lg z-50"
+          isDragging && "opacity-0"
         )}
       >
         <div className="flex items-start justify-between">
