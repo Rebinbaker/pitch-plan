@@ -36,29 +36,58 @@ export const useLocalStorage = () => {
     
     // Migration function to fix work phases missing properties
     const migrateWorkPhases = (projects: Project[]): Project[] => {
-      return projects.map(project => ({
-        ...project,
-        workPhases: project.workPhases?.map((phase, index) => {
-          const defaultPhase = defaultWorkPhases[index];
-          return {
-            ...phase,
-            requiresDailyInspection: phase.requiresDailyInspection ?? defaultPhase?.requiresDailyInspection ?? true,
-            imagesReceived: phase.imagesReceived ?? false,
-            inspectionConfirmed: phase.inspectionConfirmed ?? false,
-          };
-        }) || []
-      }));
+      console.log('MIGRATION: Starting migration of projects:', projects.length);
+      return projects.map(project => {
+        console.log('MIGRATION: Processing project:', project.name);
+        console.log('MIGRATION: Original workPhases:', project.workPhases?.map(p => ({ 
+          label: p.label, 
+          requiresDailyInspection: p.requiresDailyInspection 
+        })));
+        
+        const updatedProject = {
+          ...project,
+          workPhases: project.workPhases?.map((phase, index) => {
+            const defaultPhase = defaultWorkPhases[index];
+            const updatedPhase = {
+              ...phase,
+              requiresDailyInspection: phase.requiresDailyInspection ?? defaultPhase?.requiresDailyInspection ?? true,
+              imagesReceived: phase.imagesReceived ?? false,
+              inspectionConfirmed: phase.inspectionConfirmed ?? false,
+            };
+            console.log('MIGRATION: Phase migrated:', { 
+              label: updatedPhase.label, 
+              requiresDailyInspection: updatedPhase.requiresDailyInspection,
+              from: phase.requiresDailyInspection,
+              to: updatedPhase.requiresDailyInspection
+            });
+            return updatedPhase;
+          }) || []
+        };
+        
+        console.log('MIGRATION: Updated workPhases:', updatedProject.workPhases?.map(p => ({ 
+          label: p.label, 
+          requiresDailyInspection: p.requiresDailyInspection 
+        })));
+        
+        return updatedProject;
+      });
     };
     
     // Load projects
     const savedProjects = localStorage.getItem(STORAGE_KEYS.PROJECTS);
+    console.log('LOADING: localStorage data exists:', !!savedProjects);
+    
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
+      console.log('LOADING: Parsed projects from localStorage:', parsedProjects.length);
       const migratedProjects = migrateWorkPhases(parsedProjects);
+      console.log('LOADING: Setting migrated projects:', migratedProjects.length);
       setProjects(migratedProjects);
       // Save migrated data back to localStorage
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(migratedProjects));
+      console.log('LOADING: Saved migrated data back to localStorage');
     } else {
+      console.log('LOADING: No localStorage data, using mock projects');
       setProjects(mockProjects);
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(mockProjects));
     }
