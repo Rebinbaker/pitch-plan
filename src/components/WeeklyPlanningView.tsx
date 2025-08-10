@@ -172,10 +172,24 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
     const newDeadline = new Date(newStartDate);
     newDeadline.setDate(newStartDate.getDate() + projectDuration);
 
+    // Create activity log entry
+    const oldStartDateObj = new Date(project.startDate);
+    const newActivityEntry = {
+      id: `activity-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      user: 'System', // In a real app, this would be the current user
+      action: 'Projekt omplanerat',
+      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
+      category: 'general' as const,
+      oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
+      newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
+    };
+
     // Update project
     onUpdateProject(projectId, {
       startDate: newStartDate.toISOString().split('T')[0],
-      deadline: newDeadline.toISOString().split('T')[0]
+      deadline: newDeadline.toISOString().split('T')[0],
+      activityLog: [...(project.activityLog || []), newActivityEntry]
     });
 
     setActiveId(null);
@@ -437,7 +451,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
       ) : viewMode === 'calendar' ? (
         <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} />
       ) : (
-        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} />
+        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} />
       )}
     </div>
   );
@@ -708,7 +722,7 @@ interface MonthlyViewProps {
   regionFilter: Region | 'all';
 }
 
-function MonthlyView({ projects, dateRange, regionFilter }: MonthlyViewProps) {
+function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void }) {
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -768,7 +782,7 @@ function MonthlyView({ projects, dateRange, regionFilter }: MonthlyViewProps) {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id || !onUpdateProject) return;
     
     const projectId = active.id as string;
     const newWeekId = over.id as string;
@@ -779,11 +793,36 @@ function MonthlyView({ projects, dateRange, regionFilter }: MonthlyViewProps) {
     
     if (!targetWeek) return;
     
-    // Calculate new start date based on the target week
-    const newStartDate = format(targetWeek.startDate, 'yyyy-MM-dd');
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
     
-    console.log(`Moving project ${projectId} to week ${weekNumber}, new start date: ${newStartDate}`);
-    // Here you would typically update the project's start date
+    const oldStartDate = new Date(project.startDate);
+    const oldDeadline = new Date(project.deadline);
+    const projectDuration = Math.ceil((oldDeadline.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate new start date based on the target week (start on Monday)
+    const newStartDate = new Date(targetWeek.startDate);
+    const newDeadline = new Date(newStartDate);
+    newDeadline.setDate(newStartDate.getDate() + projectDuration);
+    
+    // Create activity log entry
+    const newActivityEntry = {
+      id: `activity-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      user: 'System', // In a real app, this would be the current user
+      action: 'Projekt omplanerat',
+      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')}) till vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`,
+      category: 'general' as const,
+      oldValue: `Vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')})`,
+      newValue: `Vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`
+    };
+    
+    // Update project with new dates and activity log
+    onUpdateProject(projectId, {
+      startDate: format(newStartDate, 'yyyy-MM-dd'),
+      deadline: format(newDeadline, 'yyyy-MM-dd'),
+      activityLog: [...(project.activityLog || []), newActivityEntry]
+    });
   };
 
   return (
