@@ -643,7 +643,9 @@ Tack!`);
                         ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
                         : isWhatsApp
                           ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
-                          : item.label
+                          : isScheduleTeam
+                            ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
+                            : item.label
                       }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
