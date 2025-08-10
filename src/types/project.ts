@@ -87,6 +87,10 @@ export interface WorkPhaseItem {
   comment?: string;
   weight: number; // Percentage weight for progress calculation
   estimatedDays: number; // Estimated days to complete this phase
+  requiresDailyInspection?: boolean; // If this phase requires daily self-inspection
+  imagesReceived?: boolean; // If project leader has confirmed receiving images
+  inspectionConfirmed?: boolean; // True when completed AND imagesReceived (for phases requiring inspection)
+  lastReminderSent?: string; // Date when last reminder was sent
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
@@ -104,15 +108,26 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
 ];
 
 export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
-  { label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10, estimatedDays: 1 },
-  { label: 'Montering av ny råspont', completed: false, weight: 10, estimatedDays: 1 },
-  { label: 'Montering av nockregel + trekantslist', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Montering av underlagsduk', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Montering av strö- & bärläkt', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Montering av nockband, fotplåt', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Montering av nya pannor', completed: false, weight: 15, estimatedDays: 1.5 },
-  { label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Montering av snörasskydd', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5 },
-  { label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5 },
+  { label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10, estimatedDays: 1, requiresDailyInspection: true },
+  { label: 'Montering av ny råspont', completed: false, weight: 10, estimatedDays: 1, requiresDailyInspection: true },
+  { label: 'Montering av nockregel + trekantslist', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Montering av underlagsduk', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Montering av strö- & bärläkt', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Montering av nockband, fotplåt', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Montering av nya pannor', completed: false, weight: 15, estimatedDays: 1.5, requiresDailyInspection: true },
+  { label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Montering av snörasskydd', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
+  { label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
 ];
+
+// Helper function to check if all work phases are confirmed (completed + inspections confirmed)
+export const areAllWorkPhasesConfirmed = (workPhases: WorkPhaseItem[]): boolean => {
+  if (!workPhases || workPhases.length === 0) return false;
+  
+  return workPhases.every(phase => {
+    if (!phase.completed) return false;
+    if (phase.requiresDailyInspection && !phase.inspectionConfirmed) return false;
+    return true;
+  });
+};

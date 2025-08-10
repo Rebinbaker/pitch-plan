@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy } from 'lucide-react';
+import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -36,6 +36,20 @@ export function ProjectChecklist({
     project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
     project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null
   );
+
+  // Check if all work phases are confirmed (completed + inspection confirmed)
+  const allWorkPhasesConfirmed = project ? areAllWorkPhasesConfirmed(project.workPhases || []) : false;
+
+  // Find the index of "Dagliga egenkontroller" to determine which items to lock
+  const dailyInspectionIndex = checklist.findIndex(item => item.label === 'Dagliga egenkontroller');
+
+  const isItemLocked = (index: number): boolean => {
+    // Lock items from "Dagliga egenkontroller" onwards if work phases are not all confirmed
+    if (dailyInspectionIndex >= 0 && index >= dailyInspectionIndex && !allWorkPhasesConfirmed) {
+      return true;
+    }
+    return false;
+  };
   
   // WhatsApp state management
   const [whatsappStates, setWhatsappStates] = useState<{[key: string]: {
@@ -276,6 +290,17 @@ export function ProjectChecklist({
   const handleItemToggle = (itemId: string) => {
     if (!isEditable) return;
     
+    // Check if item is locked
+    const itemIndex = checklist.findIndex(item => item.id === itemId);
+    if (itemIndex >= 0 && isItemLocked(itemIndex)) {
+      toast({
+        title: "Låst",
+        description: "Alla arbetsmoment måste vara färdiga med bekräftade egenkontroller först",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const updatedChecklist = checklist.map(item => 
       item.id === itemId 
         ? { 
@@ -368,6 +393,7 @@ export function ProjectChecklist({
             const isWhatsApp = isWhatsAppItem(item.label);
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
+            const itemLocked = isItemLocked(index);
             
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
@@ -386,26 +412,35 @@ export function ProjectChecklist({
                   className={`flex items-center space-x-3 p-3 rounded-lg border transition-smooth ${
                     isItemComplete 
                       ? 'bg-success/5 border-success/20' 
-                      : 'bg-card border-border hover:bg-accent/50'
-                  } ${isEditable && !isAvvaratMaterial ? 'cursor-pointer' : ''}`}
+                      : itemLocked 
+                        ? 'bg-muted/30 border-muted cursor-not-allowed opacity-60'
+                        : 'bg-card border-border hover:bg-accent/50'
+                  } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
+                    if (itemLocked) return; // Locked items disabled for click
                     if (isBookScaffolding || isAvvaratMaterial) return; // Book scaffolding and avvarat material disabled for click
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
                   }}
                 >
                   {!isAvvaratMaterial ? (
-                    <Checkbox 
-                      id={item.id}
-                      checked={!!isItemComplete}
-                      onCheckedChange={() => {
-                        if (isBookScaffolding) return; // Book scaffolding disabled
-                        if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
-                        handleItemToggle(item.id);
-                      }}
-                      disabled={!isEditable || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
-                      className="data-[state=checked]:bg-success data-[state=checked]:border-success"
-                    />
+                    <div className="flex items-center">
+                      <Checkbox 
+                        id={item.id}
+                        checked={!!isItemComplete}
+                        onCheckedChange={() => {
+                          if (itemLocked) return; // Locked items disabled
+                          if (isBookScaffolding) return; // Book scaffolding disabled
+                          if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
+                          handleItemToggle(item.id);
+                        }}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
+                        className="data-[state=checked]:bg-success data-[state=checked]:border-success"
+                      />
+                      {itemLocked && (
+                        <Lock className="w-3 h-3 text-muted-foreground ml-1" />
+                      )}
+                    </div>
                   ) : (
                     <div className="w-4 h-4 flex items-center justify-center">
                       {materialAnswer === 'yes' && <CheckCircle2 className="w-4 h-4 text-success" />}
@@ -418,14 +453,21 @@ export function ProjectChecklist({
                     <label 
                       htmlFor={item.id}
                       className={`text-sm font-medium leading-none ${
-                        (!isBookScaffolding && (!isScheduleTeam || hasTeamAssigned) && !isAvvaratMaterial) ? 'cursor-pointer' : ''
+                        (!itemLocked && !isBookScaffolding && (!isScheduleTeam || hasTeamAssigned) && !isAvvaratMaterial) ? 'cursor-pointer' : ''
                       } ${
                         isItemComplete 
                           ? 'text-success line-through' 
-                          : 'text-card-foreground'
+                          : itemLocked 
+                            ? 'text-muted-foreground'
+                            : 'text-card-foreground'
                       }`}
                     >
                       {item.label}
+                      {itemLocked && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (Låst tills alla arbetsmoment bekräftade)
+                        </span>
+                      )}
                     </label>
                     {isItemComplete && item.completedAt && (
                       <p className="text-xs text-muted-foreground">

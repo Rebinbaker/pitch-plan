@@ -4,8 +4,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project, ActivityLogEntry } from '@/types/project';
-import { Hammer, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, AlertTriangle, Copy } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const createActivityLogEntry = (
   action: string,
@@ -36,6 +38,7 @@ interface WorkPhasesSectionProps {
 
 export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, teams = [], trailers = [], onUpdateTeam, onUpdateTrailer }: WorkPhasesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toast } = useToast();
 
   const workPhases = project.workPhases || [];
   const completedPhases = workPhases.filter(phase => phase.completed).length;
@@ -104,6 +107,126 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
     }
   }, [project.id, completedPhases, completionPercentage, project.status, project.constructionTeam, project.assignedTrailer]);
 
+  const handleImagesReceived = (phaseId: string) => {
+    const updatedPhases = workPhases.map(phase => {
+      if (phase.id === phaseId) {
+        const updatedPhase = {
+          ...phase,
+          imagesReceived: true,
+          inspectionConfirmed: phase.completed && true // Only confirmed if already completed
+        };
+        return updatedPhase;
+      }
+      return phase;
+    });
+
+    const updatedProject = {
+      ...project,
+      workPhases: updatedPhases,
+      activityLog: [
+        ...(project.activityLog || []),
+        createActivityLogEntry(
+          'Bilder mottagna',
+          `Projektledaren bekräftade bilder för "${workPhases.find(p => p.id === phaseId)?.label}"`,
+          'workphase'
+        )
+      ]
+    };
+
+    onUpdateProject(updatedProject);
+    
+    toast({
+      title: "Bilder bekräftade",
+      description: "Arbetsmoment kan nu markeras som klart",
+    });
+  };
+
+  const copyReminderText = async (phaseLabel: string) => {
+    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
+📍 ${project.address}
+
+Pågående: ${phaseLabel}
+
+⚠️ VIKTIGT: Skicka minst 20 bilder idag!
+📸 Fotografera arbetsområdet, säkerhet och kvalitet
+📱 Skicka bilderna direkt till projektledaren
+
+Tack! 👷‍♂️`;
+
+    try {
+      await navigator.clipboard.writeText(reminderText);
+      toast({
+        title: "Kopierat!",
+        description: "Påminnelsetexten har kopierats till urklipp",
+        duration: 2000,
+      });
+    } catch (err) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte kopiera till urklipp",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
+  const getPhaseStatusIcon = (phase: any) => {
+    if (!phase.requiresDailyInspection) return null;
+    
+    if (phase.completed && phase.inspectionConfirmed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <CheckCircle className="w-3 h-3 text-success" />
+          </TooltipTrigger>
+          <TooltipContent>Klart och bekräftat</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (phase.completed && !phase.imagesReceived) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <AlertTriangle className="w-3 h-3 text-destructive" />
+          </TooltipTrigger>
+          <TooltipContent>Klart men saknar bildbekräftelse</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (!phase.completed && phase.imagesReceived) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <CheckCircle className="w-3 h-3 text-success" />
+          </TooltipTrigger>
+          <TooltipContent>Bilder mottagna</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (phase.lastReminderSent) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <Mail className="w-3 h-3 text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent>Påminnelse skickad</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    return (
+      <Tooltip>
+        <TooltipTrigger>
+          <Camera className="w-3 h-3 text-warning" />
+        </TooltipTrigger>
+        <TooltipContent>Väntar på bilder</TooltipContent>
+      </Tooltip>
+    );
+  };
+
   const handlePhaseToggle = (phaseId: string) => {
     const activityEntries: ActivityLogEntry[] = [];
     
@@ -114,6 +237,9 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
           ...phase,
           completed: !phase.completed,
           completedAt: !phase.completed ? new Date().toISOString().split('T')[0] : undefined,
+          inspectionConfirmed: !phase.completed && phase.requiresDailyInspection 
+            ? (phase.imagesReceived || false) // Set confirmed only if images already received
+            : (!phase.completed ? false : phase.inspectionConfirmed), // Reset if unchecking
         };
         
         // Log the work phase change
@@ -302,6 +428,7 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
               id={phase.id}
               checked={phase.completed}
               onCheckedChange={() => handlePhaseToggle(phase.id)}
+              disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
               className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
             />
             <label 
@@ -314,6 +441,39 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
             >
               {index + 1}. {phase.label}
             </label>
+            
+            {/* Status icon and action buttons for inspection phases */}
+            {phase.requiresDailyInspection && (
+              <div className="flex items-center gap-1">
+                {getPhaseStatusIcon(phase)}
+                
+                {/* Copy reminder button for ongoing phases */}
+                {!phase.completed && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0"
+                    onClick={() => copyReminderText(phase.label)}
+                    title="Kopiera påminnelse"
+                  >
+                    <Copy className="h-2 w-2" />
+                  </Button>
+                )}
+                
+                {/* Images received button for completed phases */}
+                {phase.completed && !phase.imagesReceived && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 px-1 text-xs"
+                    onClick={() => handleImagesReceived(phase.id)}
+                  >
+                    Bilder mottagna
+                  </Button>
+                )}
+              </div>
+            )}
+            
             {phase.completedAt && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Calendar className="w-2 h-2" />
@@ -341,6 +501,7 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
                   id={phase.id}
                   checked={phase.completed}
                   onCheckedChange={() => handlePhaseToggle(phase.id)}
+                  disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
                   className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
                 />
                 <label 
@@ -353,6 +514,39 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
                 >
                   {index + 4}. {phase.label}
                 </label>
+                
+                {/* Status icon and action buttons for inspection phases */}
+                {phase.requiresDailyInspection && (
+                  <div className="flex items-center gap-1">
+                    {getPhaseStatusIcon(phase)}
+                    
+                    {/* Copy reminder button for ongoing phases */}
+                    {!phase.completed && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0"
+                        onClick={() => copyReminderText(phase.label)}
+                        title="Kopiera påminnelse"
+                      >
+                        <Copy className="h-2 w-2" />
+                      </Button>
+                    )}
+                    
+                    {/* Images received button for completed phases */}
+                    {phase.completed && !phase.imagesReceived && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1 text-xs"
+                        onClick={() => handleImagesReceived(phase.id)}
+                      >
+                        Bilder mottagna
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
                 {phase.completedAt && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="w-2 h-2" />
