@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -174,6 +174,25 @@ export function ProjectChecklist({
         customGroupName: groupName
       }
     }));
+  };
+
+  
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Kopierat!",
+        description: "Adressen har kopierats till urklipp",
+        duration: 2000,
+      });
+    } catch (err) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte kopiera till urklipp",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
   };
 
   const isWhatsAppItem = (itemLabel: string) => {
@@ -518,11 +537,21 @@ export function ProjectChecklist({
                               onChange={(e) => updateGroupName(item.id, e.target.value)}
                               placeholder="Ange gruppnamn"
                             />
-                          ) : (
-                            <div className="p-2 bg-background/50 rounded text-xs font-medium">
-                              {whatsappStates[item.id]?.customGroupName || project.address}
-                            </div>
-                          )}
+                           ) : (
+                             <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                               <span className="text-xs font-medium">
+                                 {whatsappStates[item.id]?.customGroupName || project.address}
+                               </span>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 className="h-6 w-6 p-0 ml-2"
+                                 onClick={() => copyToClipboard(whatsappStates[item.id]?.customGroupName || project.address)}
+                               >
+                                 <Copy className="h-3 w-3" />
+                               </Button>
+                             </div>
+                           )}
                         </div>
 
                         {/* Status and actions */}
