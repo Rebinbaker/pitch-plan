@@ -514,48 +514,9 @@ Tack! 👷‍♂️`;
               )}
             </div>
             
-            {/* Action buttons for inspection phases */}
+            {/* Action buttons for inspection phases - only show status on front page */}
             {phase.requiresDailyInspection && (
               <div className="flex gap-2 mt-2">
-                {/* Copy reminder button or WhatsApp button for ongoing phases */}
-                {!phase.completed && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={copiedPhases.has(phase.id) ? "default" : "outline"}
-                        size="sm"
-                        className={`h-7 px-3 text-xs gap-2 flex-1 transition-all ${
-                          copiedPhases.has(phase.id) 
-                            ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
-                            : ""
-                        }`}
-                        onClick={() => copiedPhases.has(phase.id) 
-                          ? openWhatsApp(phase.label)
-                          : copyReminderText(phase.label, phase.id)
-                        }
-                      >
-                        {copiedPhases.has(phase.id) ? (
-                          <>
-                            <MessageCircle className="h-3 w-3" />
-                            Öppna WhatsApp
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            Kopiera påminnelsetext
-                          </>
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {copiedPhases.has(phase.id) 
-                        ? "Öppna WhatsApp för att skicka påminnelse"
-                        : "Kopiera påminnelsetext för arbetare"
-                      }
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                
                 {/* Warning for completed phases without images */}
                 {phase.completed && !phase.imagesReceived && (
                   <div className="flex items-center gap-2 text-warning text-xs px-3 py-1 bg-warning/10 border border-warning/20 rounded flex-1 justify-center">
