@@ -8,6 +8,7 @@ import { mockProjects } from '@/data/mockProjects';
 import { mockScaffolding } from '@/data/mockScaffolding';
 import { mockTeams } from '@/data/mockTeams';
 import { mockNotifications } from '@/data/mockNotifications';
+import { defaultWorkPhases } from '@/types/project';
 
 const STORAGE_KEYS = {
   PROJECTS: 'lovable_projects',
@@ -33,10 +34,30 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
+    // Migration function to fix work phases missing properties
+    const migrateWorkPhases = (projects: Project[]): Project[] => {
+      return projects.map(project => ({
+        ...project,
+        workPhases: project.workPhases?.map((phase, index) => {
+          const defaultPhase = defaultWorkPhases[index];
+          return {
+            ...phase,
+            requiresDailyInspection: phase.requiresDailyInspection ?? defaultPhase?.requiresDailyInspection ?? true,
+            imagesReceived: phase.imagesReceived ?? false,
+            inspectionConfirmed: phase.inspectionConfirmed ?? false,
+          };
+        }) || []
+      }));
+    };
+    
     // Load projects
     const savedProjects = localStorage.getItem(STORAGE_KEYS.PROJECTS);
     if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+      const parsedProjects = JSON.parse(savedProjects);
+      const migratedProjects = migrateWorkPhases(parsedProjects);
+      setProjects(migratedProjects);
+      // Save migrated data back to localStorage
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(migratedProjects));
     } else {
       setProjects(mockProjects);
       localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(mockProjects));
