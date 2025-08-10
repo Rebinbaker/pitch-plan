@@ -78,18 +78,39 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
     return isThisWeek && matchesRegion;
   });
 
-  // Categorize projects
+  // Categorize projects (ensure each project appears in only one category)
+  const categorizedProjects = new Set<string>();
+  
   const startingThisWeek = thisWeekProjects.filter(project => {
     const startDate = new Date(project.startDate);
-    return startDate >= startOfWeek && startDate <= endOfWeek;
+    const isStartingThisWeek = startDate >= startOfWeek && startDate <= endOfWeek;
+    if (isStartingThisWeek) {
+      categorizedProjects.add(project.id);
+      return true;
+    }
+    return false;
   });
 
-  const ongoingProjects = thisWeekProjects.filter(project => project.status === 'ongoing');
+  const ongoingProjects = thisWeekProjects.filter(project => {
+    if (categorizedProjects.has(project.id)) return false;
+    const isOngoing = project.status === 'ongoing';
+    if (isOngoing) {
+      categorizedProjects.add(project.id);
+      return true;
+    }
+    return false;
+  });
   
   const completingThisWeek = thisWeekProjects.filter(project => {
+    if (categorizedProjects.has(project.id)) return false;
     const deadline = new Date(project.deadline);
-    return deadline >= startOfWeek && deadline <= endOfWeek && 
+    const isCompletingThisWeek = deadline >= startOfWeek && deadline <= endOfWeek && 
            (project.status === 'ongoing' || project.status === 'completed');
+    if (isCompletingThisWeek) {
+      categorizedProjects.add(project.id);
+      return true;
+    }
+    return false;
   });
 
   const getStatusColor = (status: ProjectStatus) => {
