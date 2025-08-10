@@ -21,6 +21,9 @@ const Auth = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [showResendEmail, setShowResendEmail] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -117,6 +120,8 @@ const Auth = () => {
         }
         
         toast.success('Konto skapat! Kontrollera din e-post för att verifiera kontot.');
+        setShowResendEmail(true);
+        setResendEmail(email);
         setActiveTab('signin');
       }
     } catch (error) {
@@ -150,6 +155,34 @@ const Auth = () => {
       toast.error('Ett oväntat fel uppstod');
     } finally {
       setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!resendEmail) {
+      toast.error('Ingen email-adress att skicka till');
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: resendEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast.error('Fel vid skickning av email: ' + error.message);
+      } else {
+        toast.success('Bekräftelseemail skickat på nytt! Kontrollera din inkorg.');
+      }
+    } catch (error) {
+      toast.error('Ett oväntat fel uppstod');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -286,6 +319,23 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Skapar konto...' : 'Skapa konto'}
                 </Button>
+                
+                {showResendEmail && (
+                  <div className="mt-4 p-3 bg-muted rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Fick du inget bekräftelseemail?
+                    </p>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleResendEmail}
+                      disabled={resendLoading}
+                    >
+                      {resendLoading ? 'Skickar...' : 'Skicka om bekräftelseemail'}
+                    </Button>
+                  </div>
+                )}
               </form>
             </TabsContent>
           </Tabs>
