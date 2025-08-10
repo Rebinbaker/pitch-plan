@@ -726,14 +726,20 @@ export function ProjectChecklist({
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder="Välj tillgängligt team..." />
                           </SelectTrigger>
-                          <SelectContent className="bg-background border border-border shadow-lg z-50">
-                            <SelectItem value="none">Inget team valt</SelectItem>
+                          <SelectContent className="bg-popover border border-border shadow-md z-[100] max-h-60 overflow-auto">
+                            <SelectItem value="none" className="hover:bg-accent">
+                              Inget team valt
+                            </SelectItem>
                             {teams
                               .filter(team => team.availabilityNextWeek === 'Available' || team.name === project.constructionTeam)
                               .map(team => (
-                                <SelectItem key={team.id} value={team.name}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{team.name}</span>
+                                <SelectItem 
+                                  key={team.id} 
+                                  value={team.name}
+                                  className="hover:bg-accent cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 w-full">
+                                    <span className="flex-1">{team.name}</span>
                                     <Badge variant="secondary" className="text-xs bg-success/20 text-success border-success/30">
                                       {team.availabilityNextWeek}
                                     </Badge>
