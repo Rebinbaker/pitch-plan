@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Filter } from 'lucide-react';
 import { ProjectStatus, Region } from '@/types/project';
+import logo from '../assets/logo.png';
 
 interface ProjectHeaderProps {
   searchTerm: string;
@@ -28,11 +29,6 @@ export function ProjectHeader({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-4">
-          <img 
-            src="/lovable-uploads/77f2bb38-c679-4daf-b9ae-070c12f7a608.png" 
-            alt="Lokala Hantverkarna" 
-            className="h-12 w-auto hover:scale-105 transition-transform duration-300"
-          />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Byggprojekt</h1>
             <p className="text-muted-foreground">Hantera och följ upp alla byggprojekt</p>
@@ -42,6 +38,15 @@ export function ProjectHeader({
           <Plus className="w-4 h-4" />
           Nytt projekt
         </Button>
+      </div>
+
+      {/* Black logo positioned above projects */}
+      <div className="flex justify-center mb-6">
+        <img 
+          src={logo} 
+          alt="Lokala Hantverkarna" 
+          className="h-16 w-auto hover:scale-105 transition-transform duration-300"
+        />
       </div>
 
       {/* Search and Filters */}
