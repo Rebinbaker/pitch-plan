@@ -641,7 +641,9 @@ Tack!`);
                     >
                       {isContainerBooking 
                         ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
-                        : item.label
+                        : isWhatsApp
+                          ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
+                          : item.label
                       }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
