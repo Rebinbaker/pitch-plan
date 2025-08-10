@@ -167,6 +167,26 @@ const Auth = () => {
     }
   };
 
+  const sendWelcomeEmail = async () => {
+    if (!email || !username) {
+      toast.error('Fyll i email och användarnamn först');
+      return;
+    }
+
+    try {
+      await supabase.functions.invoke('send-welcome-email', {
+        body: {
+          email,
+          confirmationUrl: 'https://pitch-plan.lovable.app/',
+          username
+        }
+      });
+      toast.success('Välkomstmejl skickat från Lokala Hantverkarna!');
+    } catch (error) {
+      toast.error('Kunde inte skicka välkomstmejl');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -299,6 +319,15 @@ const Auth = () => {
                 {password && <PasswordStrength password={password} />}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Skapar konto...' : 'Skapa konto'}
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full mt-2" 
+                  onClick={sendWelcomeEmail}
+                >
+                  🏠 Skicka välkomstmejl från Lokala Hantverkarna
                 </Button>
                 
                 {showResendEmail && (
