@@ -88,16 +88,16 @@ export function ProjectChecklist({
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
 
   // WhatsApp helper functions
-  const generateWhatsAppURL = (projectName: string, customName?: string) => {
-    const groupName = customName || `Projekt ${projectName} - Team`;
-    const groupInstructions = encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för ${projectName} projektet. Bjud in alla teammedlemmar.`);
+  const generateWhatsAppURL = (project: Project, customName?: string) => {
+    const groupName = customName || project.address;
+    const groupInstructions = encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för projektet ${project.address}. Bjud in alla teammedlemmar.`);
     return `https://wa.me/?text=${groupInstructions}`;
   };
 
-  const openWhatsApp = (itemId: string, projectName: string) => {
+  const openWhatsApp = (itemId: string, project: Project) => {
     const state = whatsappStates[itemId];
-    const groupName = state?.customGroupName || `Projekt ${projectName} - Team`;
-    const url = generateWhatsAppURL(projectName, groupName);
+    const groupName = state?.customGroupName || project.address;
+    const url = generateWhatsAppURL(project, groupName);
     
     // Update state to show WhatsApp has been opened
     setWhatsappStates(prev => ({
@@ -514,13 +514,13 @@ export function ProjectChecklist({
                           {showGroupNameEdit[item.id] ? (
                             <Input
                               className="h-7 text-xs"
-                              value={whatsappStates[item.id]?.customGroupName || `Projekt ${project.name} - Team`}
+                              value={whatsappStates[item.id]?.customGroupName || project.address}
                               onChange={(e) => updateGroupName(item.id, e.target.value)}
                               placeholder="Ange gruppnamn"
                             />
                           ) : (
                             <div className="p-2 bg-background/50 rounded text-xs font-medium">
-                              {whatsappStates[item.id]?.customGroupName || `Projekt ${project.name} - Team`}
+                              {whatsappStates[item.id]?.customGroupName || project.address}
                             </div>
                           )}
                         </div>
@@ -539,7 +539,7 @@ export function ProjectChecklist({
                                   </p>
                                   <Button
                                     size="sm"
-                                    onClick={() => openWhatsApp(item.id, project.name)}
+                                    onClick={() => openWhatsApp(item.id, project)}
                                     className="w-full h-8 text-xs bg-[#25D366] hover:bg-[#25D366]/80 text-white"
                                   >
                                     <MessageCircle className="w-3 h-3 mr-1" />
