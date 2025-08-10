@@ -11,6 +11,7 @@ import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalcula
 import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMonth, startOfWeek as startWeek, endOfWeek as endWeek, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ProjectHoverCard } from './ProjectHoverCard';
+import { ProjectDetailModal } from './ProjectDetailModal';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
@@ -33,6 +34,8 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
     };
   });
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -126,6 +129,23 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+  };
+
+  const handleViewDetails = (project: Project) => {
+    setSelectedProject(project);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleUpdateProjectFromModal = (updatedProject: Project) => {
+    if (onUpdateProject) {
+      onUpdateProject(updatedProject.id, updatedProject);
+      setSelectedProject(updatedProject);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -408,7 +428,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
             {/* Starting This Week */}
             <DroppableColumn id="starting" title="Starting This Week" count={startingThisWeek.length} color="text-blue-600" icon={CalendarDays}>
               {startingThisWeek.map(project => (
-                <DraggableProjectCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
               ))}
               {startingThisWeek.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
@@ -420,7 +440,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
             {/* Ongoing Projects */}
             <DroppableColumn id="ongoing" title="Ongoing Projects" count={ongoingProjects.length} color="text-orange-600" icon={Clock}>
               {ongoingProjects.map(project => (
-                <DraggableProjectCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
               ))}
               {ongoingProjects.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
@@ -432,7 +452,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
             {/* Completing This Week */}
             <DroppableColumn id="completing" title="Due This Week" count={completingThisWeek.length} color="text-green-600" icon={CalendarDays}>
               {completingThisWeek.map(project => (
-                <DraggableProjectCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
               ))}
               {completingThisWeek.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
@@ -446,14 +466,22 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
       ) : viewMode === 'calendar' ? (
         <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} />
       ) : (
-        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} />
+        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} onViewDetails={handleViewDetails} />
       )}
+
+      <ProjectDetailModal
+        project={selectedProject}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onUpdateProject={handleUpdateProjectFromModal}
+      />
     </div>
   );
 }
 
 interface ProjectWeeklyCardProps {
   project: Project;
+  onViewDetails?: (project: Project) => void;
 }
 
 // Droppable Column Component
@@ -495,9 +523,10 @@ function DroppableColumn({ id, title, count, color, icon: Icon, children }: Drop
 // Draggable Project Card Component
 interface DraggableProjectCardProps {
   project: Project;
+  onViewDetails?: (project: Project) => void;
 }
 
-function DraggableProjectCard({ project }: DraggableProjectCardProps) {
+function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardProps) {
   const {
     attributes,
     listeners,
@@ -521,13 +550,13 @@ function DraggableProjectCard({ project }: DraggableProjectCardProps) {
         {...attributes}
         className="cursor-move"
       >
-        <ProjectWeeklyCard project={project} />
+        <ProjectWeeklyCard project={project} onViewDetails={onViewDetails} />
       </div>
     </ProjectHoverCard>
   );
 }
 
-function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
+function ProjectWeeklyCard({ project, onViewDetails }: ProjectWeeklyCardProps) {
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-blue-500';
@@ -580,7 +609,15 @@ function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
   };
 
   return (
-    <Card className="shadow-card">
+    <Card 
+      className="shadow-card cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onViewDetails) {
+          onViewDetails(project);
+        }
+      }}
+    >
       <CardContent className="p-4 space-y-2">
         <div className="flex items-start justify-between">
           <h4 className="font-medium text-sm">{project.name}</h4>
@@ -712,9 +749,10 @@ interface MonthlyViewProps {
   projects: Project[];
   dateRange: {from: Date | undefined, to: Date | undefined} | undefined;
   regionFilter: Region | 'all';
+  onViewDetails?: (project: Project) => void;
 }
 
-function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void }) {
+function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void }) {
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -834,7 +872,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject }: Mon
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {weeks.map((week, index) => (
-            <MonthlyWeekCard key={index} week={week} />
+            <MonthlyWeekCard key={index} week={week} onViewDetails={onViewDetails} />
           ))}
         </div>
       </div>
@@ -844,9 +882,10 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject }: Mon
 
 interface MonthlyWeekCardProps {
   week: {weekNumber: number, year: number, startDate: Date, endDate: Date, projects: Project[]};
+  onViewDetails?: (project: Project) => void;
 }
 
-function MonthlyWeekCard({ week }: MonthlyWeekCardProps) {
+function MonthlyWeekCard({ week, onViewDetails }: MonthlyWeekCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `week-${week.weekNumber}`,
   });
@@ -871,7 +910,7 @@ function MonthlyWeekCard({ week }: MonthlyWeekCardProps) {
       <CardContent className="space-y-3">
         {week.projects.length > 0 ? (
           week.projects.map(project => (
-            <MonthlyProjectCard key={project.id} project={project} />
+            <MonthlyProjectCard key={project.id} project={project} onViewDetails={onViewDetails} />
           ))
         ) : (
           <div className="text-center py-4 text-muted-foreground text-sm">
@@ -885,9 +924,10 @@ function MonthlyWeekCard({ week }: MonthlyWeekCardProps) {
 
 interface MonthlyProjectCardProps {
   project: Project;
+  onViewDetails?: (project: Project) => void;
 }
 
-function MonthlyProjectCard({ project }: MonthlyProjectCardProps) {
+function MonthlyProjectCard({ project, onViewDetails }: MonthlyProjectCardProps) {
   const {
     attributes,
     listeners,
@@ -910,6 +950,13 @@ function MonthlyProjectCard({ project }: MonthlyProjectCardProps) {
         {...listeners}
         {...attributes}
         className="border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing"
+        onClick={(e) => {
+          // Only trigger click if not dragging
+          if (!isDragging && onViewDetails) {
+            e.stopPropagation();
+            onViewDetails(project);
+          }
+        }}
       >
         <div className="flex items-start justify-between">
           <h5 className="font-medium text-sm">{project.name}</h5>
