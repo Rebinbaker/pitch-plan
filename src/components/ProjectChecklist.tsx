@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -30,6 +31,7 @@ export function ProjectChecklist({
   teams = [],
   onUpdateProject
 }: ProjectChecklistProps) {
+  const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(
     project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
     project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null
@@ -112,8 +114,11 @@ export function ProjectChecklist({
     setTimeout(() => {
       setWhatsappStates(current => {
         if (current[itemId]?.status === 'opened') {
-          // Could show a notification here
-          console.log('Påminnelse: Glöm inte att bekräfta att WhatsApp-gruppen är skapad');
+          toast({
+            title: "WhatsApp påminnelse",
+            description: "Glöm inte att bekräfta att WhatsApp-gruppen är skapad!",
+            duration: 5000,
+          });
         }
         return current;
       });
