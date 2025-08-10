@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProjectChecklist } from './ProjectChecklist';
 import { ActivityLogView } from './ActivityLogView';
 import { AddProjectModal } from './AddProjectModal';
@@ -26,7 +26,12 @@ import {
   ExternalLink,
   Download,
   Calendar,
-  ScrollText
+  ScrollText,
+  Copy,
+  Camera,
+  CheckCircle,
+  AlertTriangle,
+  Mail
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -161,6 +166,125 @@ export function ProjectDetailModal({
         variant: "destructive",
       });
     }
+  };
+
+  const copyReminderText = async (phaseLabel: string) => {
+    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
+📍 ${project.address}
+
+Pågående: ${phaseLabel}
+
+⚠️ VIKTIGT: Skicka minst 20 bilder idag!
+📸 Fotografera arbetsområdet, säkerhet och kvalitet
+📱 Skicka bilderna direkt till projektledaren
+
+Tack! 👷‍♂️`;
+
+    try {
+      await navigator.clipboard.writeText(reminderText);
+      toast({
+        title: "Kopierat!",
+        description: "Påminnelsetexten har kopierats till urklipp",
+        duration: 2000,
+      });
+    } catch (err) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte kopiera till urklipp",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleImagesReceived = (phaseId: string) => {
+    const updatedPhases = project.workPhases?.map(phase => {
+      if (phase.id === phaseId) {
+        return {
+          ...phase,
+          imagesReceived: true,
+          inspectionConfirmed: phase.completed && true
+        };
+      }
+      return phase;
+    });
+
+    const updatedProject = {
+      ...project,
+      workPhases: updatedPhases,
+      activityLog: [
+        ...(project.activityLog || []),
+        createActivityLogEntry(
+          'Bilder mottagna',
+          `Projektledaren bekräftade bilder för "${project.workPhases?.find(p => p.id === phaseId)?.label}"`,
+          'workphase'
+        )
+      ]
+    };
+
+    onUpdateProject(updatedProject);
+    
+    toast({
+      title: "Bilder bekräftade",
+      description: "Arbetsmoment kan nu markeras som klart",
+    });
+  };
+
+  const getPhaseStatusIcon = (phase: any) => {
+    if (!phase.requiresDailyInspection) return null;
+    
+    if (phase.completed && phase.inspectionConfirmed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <CheckCircle className="w-3 h-3 text-success" />
+          </TooltipTrigger>
+          <TooltipContent>Klart och bekräftat</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (phase.completed && !phase.imagesReceived) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <AlertTriangle className="w-3 h-3 text-destructive" />
+          </TooltipTrigger>
+          <TooltipContent>Klart men saknar bildbekräftelse</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (!phase.completed && phase.imagesReceived) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <CheckCircle className="w-3 h-3 text-success" />
+          </TooltipTrigger>
+          <TooltipContent>Bilder mottagna</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    if (phase.lastReminderSent) {
+      return (
+        <Tooltip>
+          <TooltipTrigger>
+            <Mail className="w-3 h-3 text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent>Påminnelse skickad</TooltipContent>
+        </Tooltip>
+      );
+    }
+    
+    return (
+      <Tooltip>
+        <TooltipTrigger>
+          <Camera className="w-3 h-3 text-warning" />
+        </TooltipTrigger>
+        <TooltipContent>Väntar på bilder</TooltipContent>
+      </Tooltip>
+    );
   };
 
   return (
@@ -434,7 +558,7 @@ export function ProjectDetailModal({
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success mt-1"
                       />
                       
-                      <div className="flex-1 space-y-2">
+                      <div className="flex-1 space-y-3">
                         <div className="flex items-start justify-between">
                           <label 
                             htmlFor={`modal-${phase.id}`}
@@ -446,35 +570,67 @@ export function ProjectDetailModal({
                           >
                             {index + 1}. {phase.label}
                           </label>
-                          {phase.completedAt && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Calendar className="w-3 h-3" />
-                              <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {/* Status icon */}
+                            {phase.requiresDailyInspection && getPhaseStatusIcon(phase)}
+                            
+                            {phase.completedAt && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
-                        {/* Comment section for detailed view */}
-                        <div className="space-y-2">
-                          <textarea
-                            placeholder="Kommentar (frivillig)..."
-                            value={phase.comment || ''}
-                            onChange={(e) => {
-                              const updatedPhases = project.workPhases?.map(p => {
-                                if (p.id === phase.id) {
-                                  return { ...p, comment: e.target.value };
-                                }
-                                return p;
-                              });
-                              onUpdateProject({
-                                ...project,
-                                workPhases: updatedPhases,
-                              });
-                            }}
-                            className="w-full text-xs p-2 bg-background border rounded resize-none"
-                            rows={2}
-                          />
-                        </div>
+                        {/* Action buttons for inspection phases */}
+                        {phase.requiresDailyInspection && (
+                          <div className="flex gap-2">
+                            {/* Copy reminder button for ongoing phases */}
+                            {!phase.completed && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs gap-2 flex-1"
+                                    onClick={() => copyReminderText(phase.label)}
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                    Kopiera påminnelsetext
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
+                              </Tooltip>
+                            )}
+                            
+                            {/* Images received button for completed phases */}
+                            {phase.completed && !phase.imagesReceived && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 px-3 text-xs gap-2 border-success text-success hover:bg-success/10 flex-1"
+                                    onClick={() => handleImagesReceived(phase.id)}
+                                  >
+                                    <Camera className="h-3 w-3" />
+                                    Markera bilder mottagna
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
+                              </Tooltip>
+                            )}
+                            
+                            {/* Show confirmation when all is done */}
+                            {phase.completed && phase.imagesReceived && (
+                              <div className="flex items-center gap-2 text-success text-xs px-3 py-2 bg-success/10 rounded flex-1 justify-center">
+                                <CheckCircle className="h-3 w-3" />
+                                Klart och bekräftat
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
