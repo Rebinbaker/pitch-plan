@@ -730,11 +730,11 @@ export function ProjectChecklist({
                             <SelectItem value="none" className="hover:bg-accent">
                               Inget team valt
                             </SelectItem>
-                            {(() => {
-                              console.log('ALL TEAMS:', teams);
-                              console.log('AVAILABLE TEAMS:', teams.filter(team => team.availabilityNextWeek === 'Available'));
-                              return teams.filter(team => team.availabilityNextWeek === 'Available' || team.name === project.constructionTeam);
-                            })()
+                            {teams.filter(team => 
+                              team.availabilityNextWeek === 'Available' || 
+                              team.availabilityNextWeek === 'Tillgänglig' || 
+                              team.name === project.constructionTeam
+                            )
                               .map(team => (
                                 <SelectItem 
                                   key={team.id} 
