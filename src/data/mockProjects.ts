@@ -14,6 +14,8 @@ const generateWorkPhases = (completedCount = 0) =>
     id: `workphase-${index + 1}`,
     completed: index < completedCount,
     completedAt: index < completedCount ? '2024-01-14' : undefined,
+    imagesReceived: false, // Initialize as not received
+    inspectionConfirmed: false, // Initialize as not confirmed
   }));
 
 // Generate sample activity log entries
