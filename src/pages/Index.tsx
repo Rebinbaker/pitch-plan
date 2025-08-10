@@ -229,6 +229,7 @@ const Index = () => {
             <WeeklyPlanningView 
               projects={projects}
               onUpdateProject={handleUpdateProject}
+              trailers={scaffolding}
             />
           </TabsContent>
 

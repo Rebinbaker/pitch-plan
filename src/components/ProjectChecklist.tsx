@@ -763,31 +763,83 @@ Tack!`);
                           <Truck className="w-4 h-4 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">Tilldela släpvagn:</span>
                         </div>
-                         <Select 
-                           value={project.assignedTrailer || ''} 
-                           onValueChange={(trailerId) => {
-                             const updatedProject = {
-                               ...project,
-                               assignedTrailer: trailerId === 'none' ? undefined : trailerId,
-                             };
-                             onUpdateProject(updatedProject);
-                             
-                             // Also mark the scaffolding item as complete if trailer is assigned and not already completed
-                             if (trailerId !== 'none' && !item.completed) {
-                               const updatedChecklist = checklist.map(checkItem => {
-                                 if (checkItem.id === item.id) {
-                                   return {
-                                     ...checkItem,
-                                     completed: true,
-                                     completedAt: new Date().toISOString().split('T')[0],
-                                   };
-                                 }
-                                 return checkItem;
-                               });
-                               onChecklistUpdate(updatedChecklist);
-                             }
-                           }}
-                         >
+                          <Select 
+                            value={project.assignedTrailer || ''} 
+                            onValueChange={(trailerId) => {
+                              if (trailerId === 'none') {
+                                // Releasing current trailer
+                                if (project.assignedTrailer && onUpdateTrailer) {
+                                  const currentTrailer = trailers.find(t => t.id === project.assignedTrailer);
+                                  if (currentTrailer) {
+                                    onUpdateTrailer({
+                                      ...currentTrailer,
+                                      status: 'Tillgänglig',
+                                      assignedProject: undefined,
+                                      lastUpdated: new Date().toISOString().split('T')[0]
+                                    });
+                                  }
+                                }
+                                
+                                const updatedProject = {
+                                  ...project,
+                                  assignedTrailer: undefined,
+                                };
+                                onUpdateProject(updatedProject);
+                              } else {
+                                // Assigning new trailer
+                                const selectedTrailer = trailers.find(t => t.id === trailerId);
+                                if (selectedTrailer && onUpdateTrailer) {
+                                  // Release old trailer if exists
+                                  if (project.assignedTrailer && project.assignedTrailer !== trailerId) {
+                                    const oldTrailer = trailers.find(t => t.id === project.assignedTrailer);
+                                    if (oldTrailer) {
+                                      onUpdateTrailer({
+                                        ...oldTrailer,
+                                        status: 'Tillgänglig',
+                                        assignedProject: undefined,
+                                        lastUpdated: new Date().toISOString().split('T')[0]
+                                      });
+                                    }
+                                  }
+                                  
+                                  // Update new trailer
+                                  onUpdateTrailer({
+                                    ...selectedTrailer,
+                                    status: 'I bruk',
+                                    assignedProject: project.id,
+                                    lastUpdated: new Date().toISOString().split('T')[0]
+                                  });
+                                }
+                                
+                                const updatedProject = {
+                                  ...project,
+                                  assignedTrailer: trailerId,
+                                };
+                                onUpdateProject(updatedProject);
+                                
+                                // Mark the scaffolding item as complete if not already completed
+                                if (!item.completed) {
+                                  const updatedChecklist = checklist.map(checkItem => {
+                                    if (checkItem.id === item.id) {
+                                      return {
+                                        ...checkItem,
+                                        completed: true,
+                                        completedAt: new Date().toISOString().split('T')[0],
+                                      };
+                                    }
+                                    return checkItem;
+                                  });
+                                  onChecklistUpdate(updatedChecklist);
+                                  
+                                  toast({
+                                    title: "Ställningsvagn tilldelad",
+                                    description: `${selectedTrailer?.name} är nu tilldelad detta projekt`,
+                                    duration: 3000,
+                                  });
+                                }
+                              }
+                            }}
+                          >
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder="Välj tillgänglig släpvagn..." />
                           </SelectTrigger>
