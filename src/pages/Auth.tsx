@@ -149,19 +149,9 @@ const Auth = () => {
 
     setResendLoading(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: resendEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        toast.error('Fel vid skickning av email: ' + error.message);
-      } else {
-        toast.success('Bekräftelseemail skickat på nytt! Kontrollera din inkorg.');
-      }
+      // Use our custom welcome email instead of Supabase's resend
+      await sendWelcomeEmail();
+      toast.success('Välkomstmail skickat på nytt från Lokala Hantverkarna! Kontrollera din inkorg.');
     } catch (error) {
       toast.error('Ett oväntat fel uppstod');
     } finally {
