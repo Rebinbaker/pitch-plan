@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, confirmationUrl, username }: WelcomeEmailRequest = await req.json();
     
-    console.log('Sending welcome email to:', email, 'with URL:', confirmationUrl);
+    console.log('Sending welcome email to:', email, 'with URL:', confirmationUrl, 'and username:', username);
 
     const emailHtml = `
       <!DOCTYPE html>
