@@ -102,7 +102,7 @@ const Auth = () => {
       } else {
         // Send our custom welcome email instead of relying on trigger
         await sendWelcomeEmail();
-        toast.success('Konto skapat! Du har fått ett välkomstmail från Lokala Hantverkarna.');
+        toast.success("Konto skapat! Du har fått ett bekräftelsemail från Lokala Hantverkarna.");
         setShowResendEmail(true);
         setResendEmail(email);
         setActiveTab('signin');
@@ -151,7 +151,7 @@ const Auth = () => {
     try {
       // Use our custom welcome email instead of Supabase's resend
       await sendWelcomeEmail();
-      toast.success('Välkomstmail skickat på nytt från Lokala Hantverkarna! Kontrollera din inkorg.');
+      toast.success("Bekräftelsemail skickat på nytt från Lokala Hantverkarna! Kontrollera din inkorg.");
     } catch (error) {
       toast.error('Ett oväntat fel uppstod');
     } finally {
