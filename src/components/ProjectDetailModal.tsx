@@ -676,7 +676,7 @@ Tack! 👷‍♂️`;
                             {phase.completed && phase.imagesReceived && (
                               <div className="flex items-center gap-2 text-success text-xs px-3 py-2 bg-success/10 rounded flex-1 justify-center">
                                 <CheckCircle className="h-3 w-3" />
-                                Klart och bekräftat
+                                Klart och egenkontroller bekräftat
                               </div>
                             )}
                           </div>

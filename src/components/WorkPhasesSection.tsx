@@ -280,9 +280,9 @@ Tack! 👷‍♂️`;
     return (
       <Tooltip>
         <TooltipTrigger>
-          <Camera className="w-3 h-3 text-warning" />
+          <AlertTriangle className="w-3 h-3 text-warning" />
         </TooltipTrigger>
-        <TooltipContent>Väntar på bilder</TooltipContent>
+        <TooltipContent>Bilder inte mottagna</TooltipContent>
       </Tooltip>
     );
   };
@@ -576,9 +576,9 @@ Tack! 👷‍♂️`;
                 
                 {/* Show confirmation when all is done */}
                 {phase.completed && phase.imagesReceived && (
-                  <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded">
+                  <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded flex-1 justify-center">
                     <CheckCircle className="h-3 w-3" />
-                    Klart och bekräftat
+                    Klart och egenkontroller bekräftat
                   </div>
                 )}
               </div>
@@ -692,9 +692,9 @@ Tack! 👷‍♂️`;
                     
                     {/* Show confirmation when all is done */}
                     {phase.completed && phase.imagesReceived && (
-                      <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded">
+                      <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded flex-1 justify-center">
                         <CheckCircle className="h-3 w-3" />
-                        Klart och bekräftat
+                        Klart och egenkontroller bekräftat
                       </div>
                     )}
                   </div>
