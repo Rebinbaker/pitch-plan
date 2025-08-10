@@ -727,15 +727,17 @@ Tack!`);
                             : 'text-card-foreground'
                       }`}
                     >
-                      {isContainerBooking 
-                        ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
-                        : isWhatsApp
-                          ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
-                          : isScheduleTeam
-                            ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
-                            : isContainerOrder
-                              ? (isItemComplete ? "Bokad Container" : "Boka Container")
-                              : item.label
+                       {isContainerBooking 
+                         ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
+                         : isWhatsApp
+                           ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
+                           : isScheduleTeam
+                             ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
+                             : isContainerOrder
+                               ? (isItemComplete ? "Bokad Container" : "Boka Container")
+                               : isBookScaffolding
+                                 ? "Boka ställningsvagn"
+                                 : item.label
                       }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
