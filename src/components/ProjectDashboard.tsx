@@ -135,6 +135,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
   };
 
   const handleViewDetails = (project: Project) => {
+    console.log('handleViewDetails called:', project.name);
     setSelectedProject(project);
     setIsDetailModalOpen(true);
   };

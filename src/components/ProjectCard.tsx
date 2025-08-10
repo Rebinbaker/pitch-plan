@@ -61,7 +61,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
   };
 
   return (
-    <Card className="hover:shadow-hover hover:bg-background/90 hover:scale-[1.02] transition-all duration-300 cursor-pointer group" onClick={() => onViewDetails(project)}>
+    <Card className="hover:shadow-hover hover:bg-background/90 hover:scale-[1.02] transition-all duration-300 cursor-pointer group" onClick={(e) => { console.log('ProjectCard clicked:', project.name); onViewDetails(project); }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
