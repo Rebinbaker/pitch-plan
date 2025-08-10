@@ -266,6 +266,31 @@ Tack!`);
       }
     }));
     
+    // Start countdown timer for container booking (same as WhatsApp)
+    setTimers(prev => ({ ...prev, [itemId]: 120 })); // 2 minutes = 120 seconds
+    
+    const countdownInterval = setInterval(() => {
+      setTimers(current => {
+        const newTime = (current[itemId] || 0) - 1;
+        if (newTime <= 0) {
+          clearInterval(countdownInterval);
+          // Show reminder when timer reaches 0
+          setContainerStates(currentStates => {
+            if (currentStates[itemId]?.status === 'opened') {
+              toast({
+                title: "Container påminnelse",
+                description: "Glöm inte att bekräfta att du har bokat hemtag av container!",
+                duration: 5000,
+              });
+            }
+            return currentStates;
+          });
+          return { ...current, [itemId]: 0 };
+        }
+        return { ...current, [itemId]: newTime };
+      });
+    }, 1000);
+    
     // Try different methods to open email client
     const url = generateOutlookURL(project);
     
@@ -288,6 +313,13 @@ Tack!`);
   };
 
   const confirmContainerBooking = (itemId: string) => {
+    // Clear timer
+    setTimers(prev => {
+      const newTimers = { ...prev };
+      delete newTimers[itemId];
+      return newTimers;
+    });
+    
     setContainerStates(prev => ({
       ...prev,
       [itemId]: {
@@ -301,6 +333,13 @@ Tack!`);
   };
 
   const resetContainerStatus = (itemId: string) => {
+    // Clear timer
+    setTimers(prev => {
+      const newTimers = { ...prev };
+      delete newTimers[itemId];
+      return newTimers;
+    });
+    
     setContainerStates(prev => ({
       ...prev,
       [itemId]: {
@@ -841,6 +880,11 @@ Tack!`);
                               );
                             
                             case 'opened':
+                              const timeLeft = timers[item.id] || 0;
+                              const minutes = Math.floor(timeLeft / 60);
+                              const seconds = timeLeft % 60;
+                              const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                              
                               return (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-xs text-amber-600">
@@ -849,6 +893,11 @@ Tack!`);
                                   </div>
                                   <p className="text-xs text-muted-foreground">
                                     Har du skickat emailet för container hemtag? Bekräfta när du är klar.
+                                    {timeLeft > 0 && (
+                                      <span className="block mt-1 text-amber-600">
+                                        Påminnelse om {timeDisplay}
+                                      </span>
+                                    )}
                                   </p>
                                   <div className="flex gap-2">
                                     <Button
