@@ -977,52 +977,65 @@ function MonthlyProjectCard({ project, onViewDetails }: MonthlyProjectCardProps)
       <div
         ref={setNodeRef}
         style={style}
-        {...listeners}
         {...attributes}
-        className="border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing"
-        onClick={(e) => {
-          // Only trigger click if not dragging
-          if (!isDragging && onViewDetails) {
-            e.stopPropagation();
-            onViewDetails(project);
-          }
-        }}
+        className="border rounded p-3 space-y-2 relative"
       >
-        <div className="flex items-start justify-between">
-          <h5 className="font-medium text-sm">{project.name}</h5>
-          <Badge 
-            variant="secondary" 
-            className={`${project.status === 'planned' ? 'bg-blue-500' : 
-                       project.status === 'ongoing' ? 'bg-orange-500' : 
-                       project.status === 'completed' ? 'bg-green-500' : 
-                       'bg-purple-500'} text-white text-xs`}
-          >
-            {project.status}
-          </Badge>
+        {/* Drag handle - small area at top right */}
+        <div 
+          {...listeners}
+          className="absolute top-2 right-2 w-6 h-6 bg-muted/20 hover:bg-muted/40 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-xs opacity-0 hover:opacity-100 transition-opacity"
+          title="Drag to move project"
+        >
+          ⋮⋮
         </div>
         
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <MapPin className="w-3 h-3" />
-          {project.region}
-        </div>
-        
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Users className="w-3 h-3" />
-          {project.constructionTeam}
-        </div>
-        
-        <div className="text-xs text-muted-foreground">
-          {format(new Date(project.startDate), "d/M")} - {format(new Date(project.deadline), "d/M")}
-        </div>
-        
-        <div className="w-full bg-gray-200 rounded-full h-1.5">
-          <div 
-            className="bg-primary h-1.5 rounded-full transition-all duration-300" 
-            style={{ width: `${project.completionPercentage}%` }}
-          />
-        </div>
-        <div className="text-xs text-muted-foreground text-right">
-          {project.completionPercentage}%
+        {/* Click area - everywhere else */}
+        <div 
+          className="cursor-pointer"
+          onClick={(e) => {
+            console.log('Monthly project card clicked:', project.name);
+            e.stopPropagation();
+            if (onViewDetails) {
+              onViewDetails(project);
+            }
+          }}
+        >
+          <div className="flex items-start justify-between">
+            <h5 className="font-medium text-sm">{project.name}</h5>
+            <Badge 
+              variant="secondary" 
+              className={`${project.status === 'planned' ? 'bg-blue-500' : 
+                         project.status === 'ongoing' ? 'bg-orange-500' : 
+                         project.status === 'completed' ? 'bg-green-500' : 
+                         'bg-purple-500'} text-white text-xs`}
+            >
+              {project.status}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            {project.region}
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Users className="w-3 h-3" />
+            {project.constructionTeam}
+          </div>
+          
+          <div className="text-xs text-muted-foreground">
+            {format(new Date(project.startDate), "d/M")} - {format(new Date(project.deadline), "d/M")}
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-primary h-1.5 rounded-full transition-all duration-300" 
+              style={{ width: `${project.completionPercentage}%` }}
+            />
+          </div>
+          <div className="text-xs text-muted-foreground text-right">
+            {project.completionPercentage}%
+          </div>
         </div>
       </div>
     </ProjectHoverCard>
