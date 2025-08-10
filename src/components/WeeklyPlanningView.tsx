@@ -473,7 +473,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
 
         </DndContext>
       ) : viewMode === 'calendar' ? (
-        <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} />
+        <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} onViewDetails={handleViewDetails} />
       ) : (
         <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} onViewDetails={handleViewDetails} />
       )}
@@ -704,9 +704,10 @@ function ProjectWeeklyCard({ project, onViewDetails }: ProjectWeeklyCardProps) {
 interface CalendarViewProps {
   projects: Project[];
   startOfWeek: Date;
+  onViewDetails?: (project: Project) => void;
 }
 
-function CalendarView({ projects, startOfWeek }: CalendarViewProps) {
+function CalendarView({ projects, startOfWeek, onViewDetails }: CalendarViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(startOfWeek);
     date.setDate(startOfWeek.getDate() + i);
@@ -742,7 +743,14 @@ function CalendarView({ projects, startOfWeek }: CalendarViewProps) {
             </CardHeader>
             <CardContent className="space-y-2">
               {dayProjects.map(project => (
-                <div key={project.id} className="p-2 bg-muted rounded text-xs">
+                <div
+                  key={project.id}
+                  className="p-2 bg-muted rounded text-xs cursor-pointer hover:bg-muted/80"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetails && onViewDetails(project);
+                  }}
+                >
                   <div className="font-medium truncate">{project.name}</div>
                   <div className="text-muted-foreground">{project.constructionTeam}</div>
                 </div>
