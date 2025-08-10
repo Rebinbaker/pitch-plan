@@ -450,35 +450,45 @@ Tack! 👷‍♂️`;
         {workPhases.slice(0, 3).map((phase, index) => (
           <div 
             key={phase.id}
-            className={`flex items-center gap-2 p-2 rounded text-xs ${
+            className={`p-3 rounded-lg border ${
               phase.completed 
-                ? 'bg-success/5 border border-success/20' 
-                : 'bg-card border border-border'
+                ? 'bg-success/5 border-success/20' 
+                : 'bg-card border-border'
             }`}
           >
-            <Checkbox 
-              id={phase.id}
-              checked={phase.completed}
-              onCheckedChange={() => handlePhaseToggle(phase.id)}
-              disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
-              className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
-            />
-            <label 
-              htmlFor={phase.id}
-              className={`flex-1 cursor-pointer ${
-                phase.completed 
-                  ? 'text-success line-through' 
-                  : 'text-card-foreground'
-              }`}
-            >
-              {index + 1}. {phase.label}
-            </label>
+            <div className="flex items-center gap-2 mb-2">
+              <Checkbox 
+                id={phase.id}
+                checked={phase.completed}
+                onCheckedChange={() => handlePhaseToggle(phase.id)}
+                disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
+                className="data-[state=checked]:bg-success data-[state=checked]:border-success h-4 w-4"
+              />
+              <label 
+                htmlFor={phase.id}
+                className={`flex-1 cursor-pointer text-sm font-medium ${
+                  phase.completed 
+                    ? 'text-success line-through' 
+                    : 'text-card-foreground'
+                }`}
+              >
+                {index + 1}. {phase.label}
+              </label>
+              
+              {/* Status icon */}
+              {phase.requiresDailyInspection && getPhaseStatusIcon(phase)}
+              
+              {phase.completedAt && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="w-3 h-3" />
+                  <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                </div>
+              )}
+            </div>
             
-            {/* Status icon and action buttons for inspection phases */}
+            {/* Action buttons for inspection phases */}
             {phase.requiresDailyInspection && (
-              <div className="flex items-center gap-1">
-                {getPhaseStatusIcon(phase)}
-                
+              <div className="flex gap-2 mt-2">
                 {/* Copy reminder button for ongoing phases */}
                 {!phase.completed && (
                   <Tooltip>
@@ -486,11 +496,11 @@ Tack! 👷‍♂️`;
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-xs gap-1"
+                        className="h-7 px-3 text-xs gap-2 flex-1"
                         onClick={() => copyReminderText(phase.label)}
                       >
                         <Copy className="h-3 w-3" />
-                        Påminnelse
+                        Kopiera påminnelsetext
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
@@ -504,23 +514,24 @@ Tack! 👷‍♂️`;
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-xs gap-1 border-success text-success hover:bg-success/10"
+                        className="h-7 px-3 text-xs gap-2 border-success text-success hover:bg-success/10 flex-1"
                         onClick={() => handleImagesReceived(phase.id)}
                       >
                         <Camera className="h-3 w-3" />
-                        Bilder mottagna
+                        Markera bilder mottagna
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
                   </Tooltip>
                 )}
-              </div>
-            )}
-            
-            {phase.completedAt && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="w-2 h-2" />
-                <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                
+                {/* Show confirmation when all is done */}
+                {phase.completed && phase.imagesReceived && (
+                  <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded">
+                    <CheckCircle className="h-3 w-3" />
+                    Klart och bekräftat
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -534,35 +545,45 @@ Tack! 👷‍♂️`;
             {workPhases.slice(3).map((phase, index) => (
               <div 
                 key={phase.id}
-                className={`flex items-center gap-2 p-2 rounded text-xs ${
+                className={`p-3 rounded-lg border ${
                   phase.completed 
-                    ? 'bg-success/5 border border-success/20' 
-                    : 'bg-card border border-border'
+                    ? 'bg-success/5 border-success/20' 
+                    : 'bg-card border-border'
                 }`}
               >
-                <Checkbox 
-                  id={phase.id}
-                  checked={phase.completed}
-                  onCheckedChange={() => handlePhaseToggle(phase.id)}
-                  disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
-                  className="data-[state=checked]:bg-success data-[state=checked]:border-success h-3 w-3"
-                />
-                <label 
-                  htmlFor={phase.id}
-                  className={`flex-1 cursor-pointer ${
-                    phase.completed 
-                      ? 'text-success line-through' 
-                      : 'text-card-foreground'
-                  }`}
-                >
-                  {index + 4}. {phase.label}
-                </label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Checkbox 
+                    id={phase.id}
+                    checked={phase.completed}
+                    onCheckedChange={() => handlePhaseToggle(phase.id)}
+                    disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
+                    className="data-[state=checked]:bg-success data-[state=checked]:border-success h-4 w-4"
+                  />
+                  <label 
+                    htmlFor={phase.id}
+                    className={`flex-1 cursor-pointer text-sm font-medium ${
+                      phase.completed 
+                        ? 'text-success line-through' 
+                        : 'text-card-foreground'
+                    }`}
+                  >
+                    {index + 4}. {phase.label}
+                  </label>
+                  
+                  {/* Status icon */}
+                  {phase.requiresDailyInspection && getPhaseStatusIcon(phase)}
+                  
+                  {phase.completedAt && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" />
+                      <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                    </div>
+                  )}
+                </div>
                 
-                {/* Status icon and action buttons for inspection phases */}
+                {/* Action buttons for inspection phases */}
                 {phase.requiresDailyInspection && (
-                  <div className="flex items-center gap-1">
-                    {getPhaseStatusIcon(phase)}
-                    
+                  <div className="flex gap-2 mt-2">
                     {/* Copy reminder button for ongoing phases */}
                     {!phase.completed && (
                       <Tooltip>
@@ -570,11 +591,11 @@ Tack! 👷‍♂️`;
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-xs gap-1"
+                            className="h-7 px-3 text-xs gap-2 flex-1"
                             onClick={() => copyReminderText(phase.label)}
                           >
                             <Copy className="h-3 w-3" />
-                            Påminnelse
+                            Kopiera påminnelsetext
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
@@ -588,23 +609,24 @@ Tack! 👷‍♂️`;
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-6 px-2 text-xs gap-1 border-success text-success hover:bg-success/10"
+                            className="h-7 px-3 text-xs gap-2 border-success text-success hover:bg-success/10 flex-1"
                             onClick={() => handleImagesReceived(phase.id)}
                           >
                             <Camera className="h-3 w-3" />
-                            Bilder mottagna
+                            Markera bilder mottagna
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
                       </Tooltip>
                     )}
-                  </div>
-                )}
-                
-                {phase.completedAt && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="w-2 h-2" />
-                    <span>{new Date(phase.completedAt).toLocaleDateString('sv-SE')}</span>
+                    
+                    {/* Show confirmation when all is done */}
+                    {phase.completed && phase.imagesReceived && (
+                      <div className="flex items-center gap-2 text-success text-xs px-3 py-1 bg-success/10 rounded">
+                        <CheckCircle className="h-3 w-3" />
+                        Klart och bekräftat
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
