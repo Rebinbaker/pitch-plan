@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Lokala Hantverkarna <onboarding@resend.dev>",
+      from: "Lokala Hantverkarna <noreply@lokalahantverkarna.se>",
       to: [email],
       subject: "Välkommen till Lokala Hantverkarna - Bekräfta din e-post",
       html: emailHtml,
