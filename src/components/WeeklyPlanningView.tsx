@@ -795,13 +795,10 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       const weekNumber = getWeek(current);
       const year = getYear(current);
       
-      const weekProjects = monthlyProjects.filter(project => {
-        const startDate = new Date(project.startDate);
-        const deadline = new Date(project.deadline);
-        return (startDate >= current && startDate <= weekEnd) ||
-               (deadline >= current && deadline <= weekEnd) ||
-               (startDate <= current && deadline >= weekEnd);
-      });
+        const weekProjects = monthlyProjects.filter(project => {
+          const startDate = new Date(project.startDate);
+          return getWeek(startDate) === weekNumber && getYear(startDate) === year;
+        });
 
       weeks.push({
         weekNumber,
