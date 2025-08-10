@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Main content -->
             <div style="color: #ffffff; line-height: 1.7; text-align: center;">
               <h1 style="color: #ffffff; margin-bottom: 30px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                Hej och välkommen!
+                Hej och välkommen ${username ? username : ''}!
               </h1>
               
               <p style="margin-bottom: 25px; font-size: 18px; color: #e0e0e0; font-weight: 300;">
