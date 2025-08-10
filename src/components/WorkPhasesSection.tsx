@@ -45,6 +45,9 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
   const totalPhases = workPhases.length;
   const completionPercentage = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
 
+  // Debug logging
+  console.log('WorkPhases:', workPhases.map(p => ({ label: p.label, requiresDailyInspection: p.requiresDailyInspection })));
+
   // Check if resources need status update on component mount
   React.useEffect(() => {
     if (!onUpdateTeam || !onUpdateTrailer) return;

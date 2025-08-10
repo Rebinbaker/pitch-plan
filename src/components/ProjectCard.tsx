@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Project } from '@/types/project';
 import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
@@ -188,15 +189,17 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
 
         {/* Work Phases Section */}
         {onUpdateProject && (
-          <WorkPhasesSection 
-            project={project}
-            onUpdateProject={onUpdateProject}
-            onOpenDetails={() => onViewDetails(project)}
-            teams={teams}
-            trailers={trailers}
-            onUpdateTeam={onUpdateTeam}
-            onUpdateTrailer={onUpdateTrailer}
-          />
+          <TooltipProvider>
+            <WorkPhasesSection 
+              project={project}
+              onUpdateProject={onUpdateProject}
+              onOpenDetails={() => onViewDetails(project)}
+              teams={teams}
+              trailers={trailers}
+              onUpdateTeam={onUpdateTeam}
+              onUpdateTrailer={onUpdateTrailer}
+            />
+          </TooltipProvider>
         )}
 
         <div className="flex gap-2">

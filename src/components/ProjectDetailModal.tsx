@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProjectChecklist } from './ProjectChecklist';
 import { ActivityLogView } from './ActivityLogView';
 import { AddProjectModal } from './AddProjectModal';
