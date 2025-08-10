@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -231,6 +231,13 @@ export function ProjectChecklist({
            itemLabel.toLowerCase().includes('container hemtag');
   };
 
+  // Container order helper functions
+  const isContainerOrderItem = (itemLabel: string) => {
+    return itemLabel.toLowerCase().includes('containerbeställning') || 
+           itemLabel.toLowerCase().includes('boka container') ||
+           itemLabel.toLowerCase().includes('bokad container');
+  };
+
   const generateOutlookURL = (project: Project) => {
     const subject = encodeURIComponent(`Boka hemtag av container - ${project.name}`);
     const body = encodeURIComponent(`Hej!
@@ -241,6 +248,18 @@ Projektnamn: ${project.name}
 Adress: ${project.address}
 
 Kopiera adressen för att hitta rätt mail tråd för att boka hem container.
+
+Tack!`);
+    
+    return `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const generateContainerOrderOutlookURL = (project: Project) => {
+    const subject = encodeURIComponent(`Boka container - ${project.name}`);
+    const body = encodeURIComponent(`Hej vi skulle vilja boka container till ${project.address}
+
+Projektnamn: ${project.name}
+Adress: ${project.address}
 
 Tack!`);
     
@@ -295,6 +314,74 @@ Tack!`);
     
     // Try different methods to open email client
     const url = generateOutlookURL(project);
+    
+    // Method 1: Try to open mailto link
+    try {
+      window.location.href = url;
+    } catch (error) {
+      // Method 2: Try using window.open as fallback
+      try {
+        window.open(url, '_blank');
+      } catch (fallbackError) {
+        // Method 3: Show manual instructions
+        toast({
+          title: "Öppna din e-postapp manuellt",
+          description: "Kopiera länken och öppna din e-postapp för att skicka mailet",
+          duration: 5000,
+        });
+      }
+    }
+  };
+
+  const openContainerOrderOutlook = (itemId: string, project: Project) => {
+    // First copy the message text
+    const messageText = `Hej vi skulle vilja boka container till ${project.address}`;
+    copyToClipboard(messageText);
+    
+    // Show toast about copied text
+    toast({
+      title: "Text kopierad!",
+      description: "Meddelandet har kopierats",
+      duration: 3000,
+    });
+    
+    // Update state to show Outlook has been opened
+    setContainerStates(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        status: 'opened',
+        openedAt: Date.now()
+      }
+    }));
+    
+    // Start countdown timer for container order (same as WhatsApp)
+    setTimers(prev => ({ ...prev, [itemId]: 120 })); // 2 minutes = 120 seconds
+    
+    const countdownInterval = setInterval(() => {
+      setTimers(current => {
+        const newTime = (current[itemId] || 0) - 1;
+        if (newTime <= 0) {
+          clearInterval(countdownInterval);
+          // Show reminder when timer reaches 0
+          setContainerStates(currentStates => {
+            if (currentStates[itemId]?.status === 'opened') {
+              toast({
+                title: "Container påminnelse",
+                description: "Glöm inte att bekräfta att du har bokat container!",
+                duration: 5000,
+              });
+            }
+            return currentStates;
+          });
+          return { ...current, [itemId]: 0 };
+        }
+        return { ...current, [itemId]: newTime };
+      });
+    }, 1000);
+    
+    // Try different methods to open email client
+    const url = generateContainerOrderOutlookURL(project);
     
     // Method 1: Try to open mailto link
     try {
@@ -562,6 +649,7 @@ Tack!`);
             const isAvvaratMaterial = item.label === 'Avvarat material?';
             const isWhatsApp = isWhatsAppItem(item.label);
             const isContainerBooking = isContainerBookingItem(item.label);
+            const isContainerOrder = isContainerOrderItem(item.label);
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
@@ -590,7 +678,7 @@ Tack!`);
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder) return; // These items disabled for manual click
                     if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
@@ -645,7 +733,9 @@ Tack!`);
                           ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
                           : isScheduleTeam
                             ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
-                            : item.label
+                            : isContainerOrder
+                              ? (isItemComplete ? "Bokad Container" : "Boka Container")
+                              : item.label
                       }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -978,10 +1068,119 @@ Tack!`);
                               return null;
                           }
                         })()}
-                      </div>
-                    )}
-                      
-                      {/* Show team dropdown for Schedule construction team */}
+                       </div>
+                     )}
+
+                     {/* Enhanced Container Order Integration */}
+                     {isContainerOrder && project && (
+                       <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
+                         <div className="flex items-center gap-2">
+                           <Package className="w-4 h-4 text-primary" />
+                           <span className="text-xs font-medium text-primary">Container Beställning</span>
+                         </div>
+                         
+                         {/* Message text preview */}
+                         <div className="space-y-2">
+                           <span className="text-xs text-muted-foreground">Meddelande att skicka:</span>
+                           <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                             <span className="text-xs font-medium">
+                               Hej vi skulle vilja boka container till {project.address}
+                             </span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0 ml-2"
+                               onClick={() => copyToClipboard(`Hej vi skulle vilja boka container till ${project.address}`)}
+                             >
+                               <Copy className="h-3 w-3" />
+                             </Button>
+                           </div>
+                         </div>
+
+                         {/* Status and actions */}
+                         {(() => {
+                           const state = containerStates[item.id];
+                           const status = state?.status || 'idle';
+                           
+                           switch (status) {
+                             case 'idle':
+                               return (
+                                 <div className="space-y-2">
+                                   <p className="text-xs text-muted-foreground">
+                                     Klicka för att öppna Outlook och skicka containerbeställning.
+                                   </p>
+                                   <Button
+                                     size="sm"
+                                     onClick={() => {
+                                       // Open Outlook web app
+                                       window.open('https://outlook.office.com', '_blank');
+                                       openContainerOrderOutlook(item.id, project);
+                                     }}
+                                     className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
+                                   >
+                                     <Mail className="w-3 h-3 mr-1" />
+                                     Öppna Outlook
+                                   </Button>
+                                 </div>
+                               );
+                             
+                             case 'opened':
+                               const timeLeft = timers[item.id] || 0;
+                               const minutes = Math.floor(timeLeft / 60);
+                               const seconds = timeLeft % 60;
+                               const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                               
+                               return (
+                                 <div className="space-y-2">
+                                   <div className="flex items-center gap-2 text-xs text-amber-600">
+                                     <Clock className="w-3 h-3" />
+                                     <span>Outlook öppnad - väntar på bekräftelse</span>
+                                   </div>
+                                   <p className="text-xs text-muted-foreground">
+                                     Har du skickat emailet för container beställning? Bekräfta när du är klar.
+                                     {timeLeft > 0 && (
+                                       <span className="block mt-1 text-amber-600">
+                                         Påminnelse om {timeDisplay}
+                                       </span>
+                                     )}
+                                   </p>
+                                   <div className="flex gap-2">
+                                     <Button
+                                       size="sm"
+                                       onClick={() => confirmContainerBooking(item.id)}
+                                       className="flex-1 h-8 text-xs"
+                                     >
+                                       <Check className="w-3 h-3 mr-1" />
+                                       Email skickat
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => resetContainerStatus(item.id)}
+                                       className="h-8 text-xs"
+                                     >
+                                       Börja om
+                                     </Button>
+                                   </div>
+                                 </div>
+                               );
+                             
+                             case 'confirmed':
+                               return (
+                                 <div className="flex items-center gap-2 text-xs text-success">
+                                   <CheckCircle2 className="w-3 h-3" />
+                                   <span>Container beställning skickad och bekräftad</span>
+                                 </div>
+                               );
+                             
+                             default:
+                               return null;
+                           }
+                         })()}
+                       </div>
+                     )}
+                       
+                       {/* Show team dropdown for Schedule construction team */}
                     {isScheduleTeam && teams.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center gap-2">
