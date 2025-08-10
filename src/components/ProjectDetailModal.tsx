@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -270,6 +271,9 @@ export function ProjectDetailModal({
                     className="bg-gradient-primary h-4 rounded-full transition-smooth" 
                     style={{ width: `${project.completionPercentage}%` }}
                   />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {formatDaysRemaining(calculateRemainingTime(project).workersRemainingDays)}
                 </div>
               </div>
             </div>

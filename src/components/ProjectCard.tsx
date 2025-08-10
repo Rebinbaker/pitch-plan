@@ -5,6 +5,7 @@ import { Project } from '@/types/project';
 import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 // import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Not needed anymore
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
@@ -113,6 +114,9 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
               className="bg-gradient-primary h-2 rounded-full transition-smooth" 
               style={{ width: `${project.completionPercentage}%` }}
             />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {formatDaysRemaining(calculateRemainingTime(project).workersRemainingDays)}
           </div>
         </div>
 
