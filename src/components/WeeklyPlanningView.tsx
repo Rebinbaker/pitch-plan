@@ -539,6 +539,7 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
 
   const style = {
     transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -940,7 +941,8 @@ function MonthlyProjectCard({ project, onViewDetails }: MonthlyProjectCardProps)
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
+    opacity: isDragging ? 0.5 : 1,
+  } : { opacity: isDragging ? 0.5 : 1 };
 
   return (
     <ProjectHoverCard project={project}>
