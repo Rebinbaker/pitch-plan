@@ -12,6 +12,7 @@ import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMon
 import { cn } from '@/lib/utils';
 import { ProjectHoverCard } from './ProjectHoverCard';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
+import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 
 interface WeeklyPlanningViewProps {
@@ -764,80 +765,161 @@ function MonthlyView({ projects, dateRange, regionFilter }: MonthlyViewProps) {
 
   const weeks = getWeeksInRange();
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-bold">
-          Månadsplanering: {format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}
-        </h3>
-        <p className="text-muted-foreground mt-2">
-          {monthlyProjects.length} projekt funna i datumintervallet
-        </p>
-      </div>
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const projectId = active.id as string;
+    const newWeekId = over.id as string;
+    
+    // Extract week number from the drop zone ID
+    const weekNumber = parseInt(newWeekId.replace('week-', ''));
+    const targetWeek = weeks.find(w => w.weekNumber === weekNumber);
+    
+    if (!targetWeek) return;
+    
+    // Calculate new start date based on the target week
+    const newStartDate = format(targetWeek.startDate, 'yyyy-MM-dd');
+    
+    console.log(`Moving project ${projectId} to week ${weekNumber}, new start date: ${newStartDate}`);
+    // Here you would typically update the project's start date
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {weeks.map((week, index) => (
-          <Card key={index} className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Vecka {week.weekNumber}</span>
-                <Badge variant="outline">{week.year}</Badge>
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {format(week.startDate, "d MMM")} - {format(week.endDate, "d MMM")}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {week.projects.length > 0 ? (
-                week.projects.map(project => (
-                  <div key={project.id} className="border rounded p-3 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <h5 className="font-medium text-sm">{project.name}</h5>
-                      <Badge 
-                        variant="secondary" 
-                        className={`${project.status === 'planned' ? 'bg-blue-500' : 
-                                   project.status === 'ongoing' ? 'bg-orange-500' : 
-                                   project.status === 'completed' ? 'bg-green-500' : 
-                                   'bg-purple-500'} text-white text-xs`}
-                      >
-                        {project.status}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      {project.region}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Users className="w-3 h-3" />
-                      {project.constructionTeam}
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(project.startDate), "d/M")} - {format(new Date(project.deadline), "d/M")}
-                    </div>
-                    
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-primary h-1.5 rounded-full transition-all duration-300" 
-                        style={{ width: `${project.completionPercentage}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-muted-foreground text-right">
-                      {project.completionPercentage}%
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-muted-foreground text-sm">
-                  Inga projekt denna vecka
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+  return (
+    <DndContext
+      onDragEnd={handleDragEnd}
+      modifiers={[restrictToWindowEdges]}
+    >
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-xl font-bold">
+            Månadsplanering: {format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}
+          </h3>
+          <p className="text-muted-foreground mt-2">
+            {monthlyProjects.length} projekt funna i datumintervallet
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {weeks.map((week, index) => (
+            <MonthlyWeekCard key={index} week={week} />
+          ))}
+        </div>
       </div>
-    </div>
+    </DndContext>
+  );
+}
+
+interface MonthlyWeekCardProps {
+  week: {weekNumber: number, year: number, startDate: Date, endDate: Date, projects: Project[]};
+}
+
+function MonthlyWeekCard({ week }: MonthlyWeekCardProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `week-${week.weekNumber}`,
+  });
+
+  return (
+    <Card 
+      ref={setNodeRef}
+      className={cn(
+        "shadow-card transition-colors",
+        isOver && "ring-2 ring-primary/50 bg-primary/5"
+      )}
+    >
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Vecka {week.weekNumber}</span>
+          <Badge variant="outline">{week.year}</Badge>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {format(week.startDate, "d MMM")} - {format(week.endDate, "d MMM")}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {week.projects.length > 0 ? (
+          week.projects.map(project => (
+            <MonthlyProjectCard key={project.id} project={project} />
+          ))
+        ) : (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            Inga projekt denna vecka
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface MonthlyProjectCardProps {
+  project: Project;
+}
+
+function MonthlyProjectCard({ project }: MonthlyProjectCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: project.id,
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+  return (
+    <ProjectHoverCard project={project}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        className={cn(
+          "border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing transition-all",
+          isDragging && "opacity-50 shadow-lg z-50"
+        )}
+      >
+        <div className="flex items-start justify-between">
+          <h5 className="font-medium text-sm">{project.name}</h5>
+          <Badge 
+            variant="secondary" 
+            className={`${project.status === 'planned' ? 'bg-blue-500' : 
+                       project.status === 'ongoing' ? 'bg-orange-500' : 
+                       project.status === 'completed' ? 'bg-green-500' : 
+                       'bg-purple-500'} text-white text-xs`}
+          >
+            {project.status}
+          </Badge>
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3" />
+          {project.region}
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="w-3 h-3" />
+          {project.constructionTeam}
+        </div>
+        
+        <div className="text-xs text-muted-foreground">
+          {format(new Date(project.startDate), "d/M")} - {format(new Date(project.deadline), "d/M")}
+        </div>
+        
+        <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div 
+            className="bg-primary h-1.5 rounded-full transition-all duration-300" 
+            style={{ width: `${project.completionPercentage}%` }}
+          />
+        </div>
+        <div className="text-xs text-muted-foreground text-right">
+          {project.completionPercentage}%
+        </div>
+      </div>
+    </ProjectHoverCard>
   );
 }
