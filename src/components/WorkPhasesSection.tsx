@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project, ActivityLogEntry } from '@/types/project';
-import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, AlertTriangle, Copy } from 'lucide-react';
+import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, AlertTriangle, Copy, MessageCircle } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -38,6 +38,7 @@ interface WorkPhasesSectionProps {
 
 export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, teams = [], trailers = [], onUpdateTeam, onUpdateTrailer }: WorkPhasesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [copiedPhases, setCopiedPhases] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const workPhases = project.workPhases || [];
@@ -173,7 +174,7 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
     });
   };
 
-  const copyReminderText = async (phaseLabel: string) => {
+  const copyReminderText = async (phaseLabel: string, phaseId: string) => {
     const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
 📍 ${project.address}
 
@@ -187,11 +188,22 @@ Tack! 👷‍♂️`;
 
     try {
       await navigator.clipboard.writeText(reminderText);
+      setCopiedPhases(prev => new Set([...prev, phaseId]));
+      
       toast({
         title: "Kopierat!",
         description: "Påminnelsetexten har kopierats till urklipp",
         duration: 2000,
       });
+      
+      // Reset button after 3 seconds
+      setTimeout(() => {
+        setCopiedPhases(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(phaseId);
+          return newSet;
+        });
+      }, 3000);
     } catch (err) {
       toast({
         title: "Fel",
@@ -200,6 +212,22 @@ Tack! 👷‍♂️`;
         duration: 2000,
       });
     }
+  };
+
+  const openWhatsApp = (phaseLabel: string) => {
+    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
+📍 ${project.address}
+
+Pågående: ${phaseLabel}
+
+⚠️ VIKTIGT: Skicka minst 20 bilder idag!
+📸 Fotografera arbetsområdet, säkerhet och kvalitet
+📱 Skicka bilderna direkt till projektledaren
+
+Tack! 👷‍♂️`;
+    
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reminderText)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const getPhaseStatusIcon = (phase: any) => {
@@ -489,21 +517,42 @@ Tack! 👷‍♂️`;
             {/* Action buttons for inspection phases */}
             {phase.requiresDailyInspection && (
               <div className="flex gap-2 mt-2">
-                {/* Copy reminder button for ongoing phases */}
+                {/* Copy reminder button or WhatsApp button for ongoing phases */}
                 {!phase.completed && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant={copiedPhases.has(phase.id) ? "default" : "outline"}
                         size="sm"
-                        className="h-7 px-3 text-xs gap-2 flex-1"
-                        onClick={() => copyReminderText(phase.label)}
+                        className={`h-7 px-3 text-xs gap-2 flex-1 transition-all ${
+                          copiedPhases.has(phase.id) 
+                            ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                            : ""
+                        }`}
+                        onClick={() => copiedPhases.has(phase.id) 
+                          ? openWhatsApp(phase.label)
+                          : copyReminderText(phase.label, phase.id)
+                        }
                       >
-                        <Copy className="h-3 w-3" />
-                        Kopiera påminnelsetext
+                        {copiedPhases.has(phase.id) ? (
+                          <>
+                            <MessageCircle className="h-3 w-3" />
+                            Öppna WhatsApp
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Kopiera påminnelsetext
+                          </>
+                        )}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
+                    <TooltipContent>
+                      {copiedPhases.has(phase.id) 
+                        ? "Öppna WhatsApp för att skicka påminnelse"
+                        : "Kopiera påminnelsetext för arbetare"
+                      }
+                    </TooltipContent>
                   </Tooltip>
                 )}
                 
@@ -584,21 +633,42 @@ Tack! 👷‍♂️`;
                 {/* Action buttons for inspection phases */}
                 {phase.requiresDailyInspection && (
                   <div className="flex gap-2 mt-2">
-                    {/* Copy reminder button for ongoing phases */}
+                    {/* Copy reminder button or WhatsApp button for ongoing phases */}
                     {!phase.completed && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
+                            variant={copiedPhases.has(phase.id) ? "default" : "outline"}
                             size="sm"
-                            className="h-7 px-3 text-xs gap-2 flex-1"
-                            onClick={() => copyReminderText(phase.label)}
+                            className={`h-7 px-3 text-xs gap-2 flex-1 transition-all ${
+                              copiedPhases.has(phase.id) 
+                                ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                                : ""
+                            }`}
+                            onClick={() => copiedPhases.has(phase.id) 
+                              ? openWhatsApp(phase.label)
+                              : copyReminderText(phase.label, phase.id)
+                            }
                           >
-                            <Copy className="h-3 w-3" />
-                            Kopiera påminnelsetext
+                            {copiedPhases.has(phase.id) ? (
+                              <>
+                                <MessageCircle className="h-3 w-3" />
+                                Öppna WhatsApp
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Kopiera påminnelsetext
+                              </>
+                            )}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
+                        <TooltipContent>
+                          {copiedPhases.has(phase.id) 
+                            ? "Öppna WhatsApp för att skicka påminnelse"
+                            : "Kopiera påminnelsetext för arbetare"
+                          }
+                        </TooltipContent>
                       </Tooltip>
                     )}
                     
