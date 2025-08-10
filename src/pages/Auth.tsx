@@ -102,21 +102,21 @@ const Auth = () => {
       } else {
         // Get confirmation token from signup response and send custom welcome email
         try {
-          // First, get the user to get confirmation token
-          const { data: authData } = await supabase.auth.getSession();
-          console.log('Sending custom welcome email after signup');
-          
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              email,
-              confirmationUrl: `${window.location.origin}/auth?confirmed=true`,
-              username
-            }
-          });
-          console.log('Custom welcome email sent successfully');
-        } catch (emailError) {
-          console.log('Welcome email error:', emailError);
-          // Don't fail the signup if email fails
+        // First, get the user to get confirmation token
+        const { data: authData } = await supabase.auth.getSession();
+        console.log('Sending custom welcome email after signup with username:', username);
+        
+        const emailResult = await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email,
+            confirmationUrl: `${window.location.origin}/auth?confirmed=true`,
+            username
+          }
+        });
+        console.log('Custom welcome email result:', emailResult);
+      } catch (emailError) {
+        console.log('Welcome email error:', emailError);
+        // Don't fail the signup if email fails
         }
         
         toast.success('Konto skapat! Kontrollera din e-post för att verifiera kontot.');
