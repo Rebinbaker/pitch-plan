@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle } from 'lucide-react';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -74,6 +74,32 @@ export function ProjectChecklist({
   );
 
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
+
+  // WhatsApp helper functions
+  const generateWhatsAppURL = (projectName: string) => {
+    const groupName = `Projekt ${projectName} - Team`;
+    const encodedGroupName = encodeURIComponent(groupName);
+    
+    // Try WhatsApp desktop app first, fallback to web
+    const whatsappDesktop = `whatsapp://send?text=${encodedGroupName}`;
+    const whatsappWeb = `https://wa.me/?text=${encodedGroupName}`;
+    
+    // For creating a group, we'll use the text parameter with instructions
+    const groupInstructions = encodeURIComponent(`Hej! Skapa en WhatsApp-grupp för "${projectName}" projektet. Bjud in alla teammedlemmar.`);
+    return `https://wa.me/?text=${groupInstructions}`;
+  };
+
+  const openWhatsApp = (projectName: string) => {
+    const url = generateWhatsAppURL(projectName);
+    window.open(url, '_blank');
+  };
+
+  const isWhatsAppItem = (itemLabel: string) => {
+    return itemLabel.toLowerCase().includes('whatsapp') || 
+           itemLabel.toLowerCase().includes('whats app') ||
+           itemLabel.toLowerCase().includes('chat') ||
+           itemLabel.toLowerCase().includes('grupp');
+  };
 
   const addMaterialItem = () => {
     if (!project || !onUpdateProject) return;
@@ -238,6 +264,7 @@ export function ProjectChecklist({
             const isBookScaffolding = item.label === 'Ställningshantering';
             const isScheduleTeam = item.label === 'Schedule construction team';
             const isAvvaratMaterial = item.label === 'Avvarat material?';
+            const isWhatsApp = isWhatsAppItem(item.label);
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
             
@@ -375,9 +402,47 @@ export function ProjectChecklist({
                            />
                          </div>
                        </div>
-                     )}
-                    
-                    {/* Show team dropdown for Schedule construction team */}
+                      )}
+                      
+                      {/* Show WhatsApp button for WhatsApp items */}
+                      {isWhatsApp && project && (
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Öppna WhatsApp för att skapa grupp:</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs flex items-center gap-2 hover:bg-green-50 hover:border-green-300 dark:hover:bg-green-950"
+                            onClick={() => {
+                              openWhatsApp(project.name);
+                              // Mark item as completed when WhatsApp is opened
+                              if (!item.completed) {
+                                const updatedChecklist = checklist.map(checkItem => {
+                                  if (checkItem.id === item.id) {
+                                    return {
+                                      ...checkItem,
+                                      completed: true,
+                                      completedAt: new Date().toISOString().split('T')[0],
+                                    };
+                                  }
+                                  return checkItem;
+                                });
+                                onChecklistUpdate(updatedChecklist);
+                              }
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            Öppna WhatsApp
+                          </Button>
+                          <p className="text-xs text-muted-foreground italic">
+                            Föreslaget gruppnamn: "Projekt {project.name} - Team"
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Show team dropdown for Schedule construction team */}
                     {isScheduleTeam && teams.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center gap-2">
