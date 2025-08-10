@@ -198,7 +198,7 @@ const Auth = () => {
         <img 
           src="/lovable-uploads/663de771-3c57-4835-b1a3-ba1e171d7dc9.png" 
           alt="Lokala Hantverkarna" 
-          className="w-32 h-auto drop-shadow-lg"
+          className="w-64 h-auto drop-shadow-lg"
         />
       </div>
 
