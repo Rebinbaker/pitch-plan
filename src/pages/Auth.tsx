@@ -166,31 +166,30 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-black">
-      {/* Animated background effects */}
+      {/* Background video */}
       <div className="absolute inset-0">
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-black"></div>
-        <div className="absolute inset-0 bg-gradient-to-tl from-blue-800/10 via-transparent to-purple-800/10"></div>
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          preload="metadata"
+          className="w-full h-full object-cover"
+          poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwZjBmMjMiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwMDAwMDAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg=="
+        >
+          <source 
+            src="https://mskdohetwbbkuexcolcl.supabase.co/storage/v1/object/public/videos/AdobeStock_1138651004.mov" 
+            type="video/mp4"
+          />
+          {/* Fallback for browsers that don't support video */}
+          <div className="w-full h-full bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-black"></div>
+        </video>
         
-        {/* Animated particles/bubbles */}
-        <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400 rounded-full animate-pulse opacity-60"></div>
-        <div className="absolute top-32 right-20 w-1 h-1 bg-purple-400 rounded-full animate-ping opacity-40"></div>
-        <div className="absolute bottom-20 left-1/4 w-3 h-3 bg-blue-300 rounded-full animate-bounce opacity-30"></div>
-        <div className="absolute top-1/2 right-10 w-1.5 h-1.5 bg-purple-300 rounded-full animate-pulse opacity-50"></div>
-        <div className="absolute bottom-32 right-1/3 w-2 h-2 bg-blue-500 rounded-full animate-ping opacity-25"></div>
-        <div className="absolute top-20 left-1/3 w-1 h-1 bg-purple-500 rounded-full animate-bounce opacity-40"></div>
+        {/* Video overlay for darkening effect */}
+        <div className="absolute inset-0 bg-black/40"></div>
         
-        {/* Floating geometric shapes */}
-        <div className="absolute top-1/4 left-1/4 w-8 h-8 border border-blue-400/20 rotate-45 animate-spin opacity-30" style={{animationDuration: '8s'}}></div>
-        <div className="absolute bottom-1/3 right-1/4 w-6 h-6 border border-purple-400/20 rotate-12 animate-spin opacity-20" style={{animationDuration: '12s'}}></div>
-        
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="h-full w-full" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-            backgroundSize: '50px 50px'
-          }}></div>
-        </div>
+        {/* Gradient overlays for additional styling */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-transparent to-blue-900/30"></div>
       </div>
 
       {/* Logo in top left corner */}
