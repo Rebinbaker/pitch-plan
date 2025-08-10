@@ -20,9 +20,10 @@ interface WeeklyPlanningViewProps {
   projects: Project[];
   onUpdateProject?: (projectId: string, updates: Partial<Project>) => void;
   trailers?: any[];
+  onUpdateTrailer?: (trailer: any) => void;
 }
 
-export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [] }: WeeklyPlanningViewProps) {
+export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>('board');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -485,6 +486,9 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [] }:
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         onUpdateProject={handleUpdateProjectFromModal}
+        trailers={trailers}
+        teams={[]}
+        onUpdateTrailer={onUpdateTrailer}
       />
     </div>
   );

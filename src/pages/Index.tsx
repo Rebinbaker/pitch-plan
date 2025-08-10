@@ -230,6 +230,7 @@ const Index = () => {
               projects={projects}
               onUpdateProject={handleUpdateProject}
               trailers={scaffolding}
+              onUpdateTrailer={updateScaffolding}
             />
           </TabsContent>
 
