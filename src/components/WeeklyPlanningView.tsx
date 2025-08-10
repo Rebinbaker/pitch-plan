@@ -980,10 +980,10 @@ function MonthlyProjectCard({ project, onViewDetails }: MonthlyProjectCardProps)
         {...attributes}
         className="border rounded p-3 space-y-2 relative"
       >
-        {/* Drag handle - small area at top right */}
+        {/* Drag handle - larger and more visible */}
         <div 
           {...listeners}
-          className="absolute top-2 right-2 w-6 h-6 bg-muted/20 hover:bg-muted/40 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-xs opacity-0 hover:opacity-100 transition-opacity"
+          className="absolute top-1 right-1 w-8 h-8 bg-muted/30 hover:bg-muted/60 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-sm opacity-60 hover:opacity-100 transition-all border border-muted"
           title="Drag to move project"
         >
           ⋮⋮
