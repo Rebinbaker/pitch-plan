@@ -670,10 +670,10 @@ function ProjectWeeklyCard({ project, onViewDetails }: ProjectWeeklyCardProps) {
             <span>Släp: {project.assignedTrailer}</span>
           </div>
         )}
-        
-        <div className="text-xs text-muted-foreground">
-          Start: {new Date(project.startDate).toLocaleDateString('sv-SE')}
-        </div>
+         
+           <div className="text-xs text-muted-foreground">
+             Start: {new Date(project.startDate).toLocaleDateString('sv-SE')}
+           </div>
         
         <div className="text-xs text-muted-foreground">
           Deadline: {new Date(project.deadline).toLocaleDateString('sv-SE')}
