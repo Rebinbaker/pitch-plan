@@ -481,27 +481,38 @@ Tack! 👷‍♂️`;
                 
                 {/* Copy reminder button for ongoing phases */}
                 {!phase.completed && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0"
-                    onClick={() => copyReminderText(phase.label)}
-                    title="Kopiera påminnelse"
-                  >
-                    <Copy className="h-2 w-2" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs gap-1"
+                        onClick={() => copyReminderText(phase.label)}
+                      >
+                        <Copy className="h-3 w-3" />
+                        Påminnelse
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
+                  </Tooltip>
                 )}
                 
                 {/* Images received button for completed phases */}
                 {phase.completed && !phase.imagesReceived && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1 text-xs"
-                    onClick={() => handleImagesReceived(phase.id)}
-                  >
-                    Bilder mottagna
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs gap-1 border-success text-success hover:bg-success/10"
+                        onClick={() => handleImagesReceived(phase.id)}
+                      >
+                        <Camera className="h-3 w-3" />
+                        Bilder mottagna
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             )}
@@ -554,27 +565,38 @@ Tack! 👷‍♂️`;
                     
                     {/* Copy reminder button for ongoing phases */}
                     {!phase.completed && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 w-5 p-0"
-                        onClick={() => copyReminderText(phase.label)}
-                        title="Kopiera påminnelse"
-                      >
-                        <Copy className="h-2 w-2" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-xs gap-1"
+                            onClick={() => copyReminderText(phase.label)}
+                          >
+                            <Copy className="h-3 w-3" />
+                            Påminnelse
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Kopiera påminnelsetext för arbetare</TooltipContent>
+                      </Tooltip>
                     )}
                     
                     {/* Images received button for completed phases */}
                     {phase.completed && !phase.imagesReceived && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => handleImagesReceived(phase.id)}
-                      >
-                        Bilder mottagna
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2 text-xs gap-1 border-success text-success hover:bg-success/10"
+                            onClick={() => handleImagesReceived(phase.id)}
+                          >
+                            <Camera className="h-3 w-3" />
+                            Bilder mottagna
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                 )}
