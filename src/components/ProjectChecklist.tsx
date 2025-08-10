@@ -419,7 +419,8 @@ export function ProjectChecklist({
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial || isDailyInspections) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial) return; // These items disabled for manual click
+                    if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
                   }}
@@ -431,11 +432,12 @@ export function ProjectChecklist({
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding || isDailyInspections) return; // These items disabled for manual completion
+                          if (isBookScaffolding) return; // Scaffolding disabled for manual completion
+                          if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || isDailyInspections || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
