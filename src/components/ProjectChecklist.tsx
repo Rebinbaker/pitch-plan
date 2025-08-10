@@ -230,7 +230,7 @@ export function ProjectChecklist({
   };
 
   const generateOutlookURL = (project: Project) => {
-    const subject = encodeURIComponent(`Bokad hemtag av container - ${project.name}`);
+    const subject = encodeURIComponent(`Boka hemtag av container - ${project.name}`);
     const body = encodeURIComponent(`Hej!
 
 Jag behöver boka hemtag av container för följande projekt:
@@ -249,6 +249,13 @@ Tack!`);
     // First copy the address
     copyToClipboard(project.address);
     
+    // Show toast about copied address
+    toast({
+      title: "Adress kopierad!",
+      description: "Projektadressen har kopierats för att hitta rätt mailtråd",
+      duration: 3000,
+    });
+    
     // Update state to show Outlook has been opened
     setContainerStates(prev => ({
       ...prev,
@@ -259,11 +266,25 @@ Tack!`);
       }
     }));
     
-    // Open Outlook after a short delay to ensure address is copied first
-    setTimeout(() => {
-      const url = generateOutlookURL(project);
-      window.open(url, '_blank');
-    }, 100);
+    // Try different methods to open email client
+    const url = generateOutlookURL(project);
+    
+    // Method 1: Try to open mailto link
+    try {
+      window.location.href = url;
+    } catch (error) {
+      // Method 2: Try using window.open as fallback
+      try {
+        window.open(url, '_blank');
+      } catch (fallbackError) {
+        // Method 3: Show manual instructions
+        toast({
+          title: "Öppna din e-postapp manuellt",
+          description: "Kopiera länken och öppna din e-postapp för att skicka mailet",
+          duration: 5000,
+        });
+      }
+    }
   };
 
   const confirmContainerBooking = (itemId: string) => {
@@ -517,6 +538,9 @@ Tack!`);
                         <Lock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
                       {isDailyInspections && !isItemComplete && !allWorkPhasesConfirmed && (
+                        <Clock className="w-3 h-3 text-muted-foreground ml-1" />
+                      )}
+                      {isContainerBooking && !isItemComplete && (
                         <Clock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
                     </div>
