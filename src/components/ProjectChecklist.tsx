@@ -601,7 +601,10 @@ Tack!`);
                             : 'text-card-foreground'
                       }`}
                     >
-                      {item.label}
+                      {isContainerBooking 
+                        ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
+                        : item.label
+                      }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
                           (Låst tills alla arbetsmoment bekräftade)
