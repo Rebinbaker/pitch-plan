@@ -579,9 +579,6 @@ Tack!`);
                       {isDailyInspections && !isItemComplete && !allWorkPhasesConfirmed && (
                         <Clock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
-                      {isContainerBooking && !isItemComplete && (
-                        <Clock className="w-3 h-3 text-muted-foreground ml-1" />
-                      )}
                     </div>
                   ) : (
                     <div className="w-4 h-4 flex items-center justify-center">
