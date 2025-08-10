@@ -110,7 +110,7 @@ const Index = () => {
           {/* Logo on the left */}
           <div className="flex items-center">
             <img 
-              src={logo} 
+              src="/lovable-uploads/c09b6995-d03a-4e86-b925-942212af5d38.png" 
               alt="Lokala Hantverkarna" 
               className="h-12 w-auto hover:scale-105 transition-transform duration-300"
             />
