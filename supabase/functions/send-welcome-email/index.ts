@@ -24,7 +24,10 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, confirmationUrl, username }: WelcomeEmailRequest = await req.json();
     
-    console.log('Sending welcome email to:', email, 'with URL:', confirmationUrl, 'and username:', username);
+    // Använd fallback för test-emails
+    const displayUsername = username || 'Test Användare';
+    
+    console.log('Sending welcome email to:', email, 'with URL:', confirmationUrl, 'and username:', displayUsername);
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -47,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Main content -->
             <div style="color: #ffffff; line-height: 1.7; text-align: center;">
               <h1 style="color: #ffffff; margin-bottom: 30px; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                Hej och välkommen${username ? ' ' + username : ''}!
+                Hej och välkommen ${displayUsername}!
               </h1>
               
               <p style="margin-bottom: 25px; font-size: 18px; color: #e0e0e0; font-weight: 300;">
@@ -102,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Lokala Hantverkarna <onboarding@resend.dev>", // Använd verifierad domän tillfälligt
+      from: "Lokala Hantverkarna <onboarding@lokalahantverkarna.se>", // Använd din verifierade domän
       to: [email],
       subject: "Välkommen till Lokala Hantverkarna - Bekräfta din e-post",
       html: emailHtml,
