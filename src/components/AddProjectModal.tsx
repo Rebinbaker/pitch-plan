@@ -339,7 +339,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                              </SelectItem>
                            ))
                          ) : (
-                           <SelectItem value="" disabled>
+                           <SelectItem value="no-sellers-available" disabled>
                              Inga säljare tillgängliga för {selectedRegion}
                            </SelectItem>
                          )}
