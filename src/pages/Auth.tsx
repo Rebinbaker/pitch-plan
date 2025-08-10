@@ -196,7 +196,7 @@ const Auth = () => {
       {/* Logo in top left corner */}
       <div className="absolute top-8 left-8 z-20">
         <img 
-          src={logo} 
+          src="/lovable-uploads/663de771-3c57-4835-b1a3-ba1e171d7dc9.png" 
           alt="Lokala Hantverkarna" 
           className="w-32 h-auto drop-shadow-lg"
         />
