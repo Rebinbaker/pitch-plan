@@ -19,6 +19,7 @@ interface ProjectChecklistProps {
   trailers?: any[];
   teams?: any[];
   onUpdateProject?: (project: Project) => void;
+  onUpdateTrailer?: (trailer: any) => void; // Add this prop to handle scaffolding updates
 }
 
 export function ProjectChecklist({ 
@@ -29,7 +30,8 @@ export function ProjectChecklist({
   project,
   trailers = [],
   teams = [],
-  onUpdateProject
+  onUpdateProject,
+  onUpdateTrailer // Add this prop
 }: ProjectChecklistProps) {
   const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(
@@ -473,6 +475,42 @@ Tack!`);
         completionPercentage: newCompletionPercentage,
       };
       onUpdateProject(updatedProject);
+    }
+    
+    // Handle scaffolding release when "Nedmontering av ställningar" is checked
+    const updatedItem = updatedChecklist.find(item => item.id === itemId);
+    const isScaffoldingDismantling = updatedItem?.label === 'Nedmontering av ställningar';
+    
+    if (isScaffoldingDismantling && updatedItem?.completed && project?.assignedTrailer && onUpdateTrailer) {
+      // Find the assigned trailer and release it
+      const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+      if (assignedTrailer) {
+        const updatedTrailer = {
+          ...assignedTrailer,
+          status: 'Tillgänglig',
+          assignedProject: undefined,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+        onUpdateTrailer(updatedTrailer);
+        
+        // Also clear the trailer assignment from the project
+        if (onUpdateProject) {
+          const updatedProjectWithoutTrailer = {
+            ...project,
+            assignedTrailer: undefined,
+            checklist: updatedChecklist,
+            completionPercentage: newCompletionPercentage,
+          };
+          onUpdateProject(updatedProjectWithoutTrailer);
+        }
+        
+        // Show success message
+        toast({
+          title: "Ställningsvagn friggjord",
+          description: `${assignedTrailer.name} är nu tillgänglig för nya projekt`,
+          duration: 3000,
+        });
+      }
     }
     
     onChecklistUpdate(updatedChecklist);

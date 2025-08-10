@@ -140,6 +140,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         onUpdateProject={handleUpdateProjectFromModal}
         trailers={trailers}
         teams={teams}
+        onUpdateTrailer={onUpdateTrailer}
       />
     </div>
   );

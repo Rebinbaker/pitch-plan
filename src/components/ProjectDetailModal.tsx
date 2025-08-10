@@ -45,6 +45,7 @@ interface ProjectDetailModalProps {
   onUpdateProject: (updatedProject: Project) => void;
   trailers?: any[];
   teams?: any[];
+  onUpdateTrailer?: (trailer: any) => void; // Add this prop
 }
 
 export function ProjectDetailModal({ 
@@ -53,7 +54,8 @@ export function ProjectDetailModal({
   onClose, 
   onUpdateProject,
   trailers = [],
-  teams = []
+  teams = [],
+  onUpdateTrailer // Add this prop
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -470,6 +472,7 @@ Tack! 👷‍♂️`;
               trailers={trailers}
               teams={teams}
               onUpdateProject={onUpdateProject}
+              onUpdateTrailer={onUpdateTrailer}
             />
           </TabsContent>
 
