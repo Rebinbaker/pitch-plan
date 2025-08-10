@@ -141,6 +141,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
   };
 
   const handleViewDetails = (project: Project) => {
+    console.log('handleViewDetails called in WeeklyPlanningView:', project.name);
     setSelectedProject(project);
     setIsDetailModalOpen(true);
   };
@@ -557,16 +558,16 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
         ref={setNodeRef}
         style={style}
         {...attributes}
-        className="relative cursor-grab active:cursor-grabbing"
+        className="relative"
       >
         <div 
           {...listeners} 
           className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
-          style={{ pointerEvents: isDragging ? 'auto' : 'none' }}
         />
         <div 
-          className="relative z-20"
+          className="relative z-20 cursor-pointer"
           onClick={(e) => {
+            console.log('WeeklyPlanningView card clicked:', project.name, 'isDragging:', isDragging);
             if (!isDragging && onViewDetails) {
               e.stopPropagation();
               onViewDetails(project);
