@@ -556,17 +556,25 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
       <div
         ref={setNodeRef}
         style={style}
-        {...listeners}
         {...attributes}
-        className="cursor-grab active:cursor-grabbing"
-        onClick={(e) => {
-          if (!isDragging && onViewDetails) {
-            e.stopPropagation();
-            onViewDetails(project);
-          }
-        }}
-     >
-        <ProjectWeeklyCard project={project} onViewDetails={onViewDetails} />
+        className="relative cursor-grab active:cursor-grabbing"
+      >
+        <div 
+          {...listeners} 
+          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+          style={{ pointerEvents: isDragging ? 'auto' : 'none' }}
+        />
+        <div 
+          className="relative z-20"
+          onClick={(e) => {
+            if (!isDragging && onViewDetails) {
+              e.stopPropagation();
+              onViewDetails(project);
+            }
+          }}
+        >
+          <ProjectWeeklyCard project={project} onViewDetails={undefined} />
+        </div>
       </div>
     </ProjectHoverCard>
   );
