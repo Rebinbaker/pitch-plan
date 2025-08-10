@@ -45,6 +45,7 @@ export function ProjectChecklist({
   }}>({});
   
   const [showGroupNameEdit, setShowGroupNameEdit] = useState<{[key: string]: boolean}>({});
+  const [timers, setTimers] = useState<{ [key: string]: number }>({});
 
   const materialTypes: MaterialType[] = [
     'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
@@ -108,21 +109,32 @@ export function ProjectChecklist({
       }
     }));
     
-    window.open(url, '_blank');
+    // Start countdown timer
+    setTimers(prev => ({ ...prev, [itemId]: 120 })); // 2 minutes = 120 seconds
     
-    // Show reminder after 2 minutes if not confirmed
-    setTimeout(() => {
-      setWhatsappStates(current => {
-        if (current[itemId]?.status === 'opened') {
-          toast({
-            title: "WhatsApp påminnelse",
-            description: "Glöm inte att bekräfta att WhatsApp-gruppen är skapad!",
-            duration: 5000,
+    const countdownInterval = setInterval(() => {
+      setTimers(current => {
+        const newTime = (current[itemId] || 0) - 1;
+        if (newTime <= 0) {
+          clearInterval(countdownInterval);
+          // Show reminder when timer reaches 0
+          setWhatsappStates(currentStates => {
+            if (currentStates[itemId]?.status === 'opened') {
+              toast({
+                title: "WhatsApp påminnelse",
+                description: "Glöm inte att bekräfta att WhatsApp-gruppen är skapad!",
+                duration: 5000,
+              });
+            }
+            return currentStates;
           });
+          return { ...current, [itemId]: 0 };
         }
-        return current;
+        return { ...current, [itemId]: newTime };
       });
-    }, 2 * 60 * 1000);
+    }, 1000);
+    
+    window.open(url, '_blank');
   };
 
   const confirmWhatsAppGroup = (itemId: string) => {
@@ -133,6 +145,9 @@ export function ProjectChecklist({
         status: 'confirmed'
       }
     }));
+    
+    // Clear timer when confirmed
+    setTimers(prev => ({ ...prev, [itemId]: 0 }));
     
     // Mark checklist item as completed
     handleItemToggle(itemId);
@@ -146,6 +161,9 @@ export function ProjectChecklist({
         customGroupName: prev[itemId]?.customGroupName
       }
     }));
+    
+    // Clear timer when reset
+    setTimers(prev => ({ ...prev, [itemId]: 0 }));
   };
 
   const updateGroupName = (itemId: string, groupName: string) => {
@@ -531,14 +549,31 @@ export function ProjectChecklist({
                               );
                             
                             case 'opened':
+                              const timeLeft = timers[item.id] || 0;
+                              const minutes = Math.floor(timeLeft / 60);
+                              const seconds = timeLeft % 60;
+                              const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                              
                               return (
                                 <div className="space-y-2">
-                                  <div className="flex items-center gap-2 text-xs text-amber-600">
-                                    <Clock className="w-3 h-3" />
-                                    <span>WhatsApp öppnad - väntar på bekräftelse</span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-amber-600">
+                                      <Clock className="w-3 h-3" />
+                                      <span>WhatsApp öppnad - väntar på bekräftelse</span>
+                                    </div>
+                                    {timeLeft > 0 && (
+                                      <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                                        {timeDisplay}
+                                      </div>
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground">
                                     Har du skapat gruppen? Bekräfta när du är klar.
+                                    {timeLeft > 0 && (
+                                      <span className="block mt-1 text-amber-600">
+                                        Påminnelse om {timeDisplay}
+                                      </span>
+                                    )}
                                   </p>
                                   <div className="flex gap-2">
                                     <Button
