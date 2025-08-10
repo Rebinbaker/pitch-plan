@@ -17,6 +17,7 @@ import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Project } from '@/types/project';
 import logo from '../assets/logo.png';
 
 const Index = () => {
@@ -80,6 +81,13 @@ const Index = () => {
     // Switch to projects tab and set selected project
     setActiveTab('projects');
     setSelectedProjectId(projectId);
+  };
+
+  const handleUpdateProject = (projectId: string, updates: Partial<Project>) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      updateProject({ ...project, ...updates });
+    }
   };
 
   if (loading) {
@@ -220,6 +228,7 @@ const Index = () => {
           <TabsContent value="planning" className="space-y-6">
             <WeeklyPlanningView 
               projects={projects}
+              onUpdateProject={handleUpdateProject}
             />
           </TabsContent>
 

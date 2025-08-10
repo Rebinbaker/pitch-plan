@@ -10,12 +10,16 @@ import { Project, ProjectStatus, Region } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMonth, startOfWeek as startWeek, endOfWeek as endWeek, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ProjectHoverCard } from './ProjectHoverCard';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
+  onUpdateProject?: (projectId: string, updates: Partial<Project>) => void;
 }
 
-export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
+export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>('board');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -27,6 +31,15 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
       to: endOfMonth(now)
     };
   });
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Calculate dates for the selected week
   const getWeekDates = (date: Date) => {
@@ -108,6 +121,63 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
     const today = new Date();
     const { startOfWeek: currentStart, endOfWeek: currentEnd } = getWeekDates(today);
     return startOfWeek.getTime() === currentStart.getTime();
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || !onUpdateProject) {
+      setActiveId(null);
+      return;
+    }
+
+    const projectId = active.id as string;
+    const targetWeek = over.id as string;
+    
+    // Calculate new start date based on target week
+    const project = projects.find(p => p.id === projectId);
+    if (!project) {
+      setActiveId(null);
+      return;
+    }
+
+    let newStartDate: Date;
+    const currentStartDate = new Date(project.startDate);
+    const currentDeadline = new Date(project.deadline);
+    const projectDuration = Math.ceil((currentDeadline.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (targetWeek === 'starting') {
+      // Move to current selected week
+      newStartDate = new Date(startOfWeek);
+    } else if (targetWeek === 'ongoing') {
+      // Keep in ongoing (no date change needed)
+      setActiveId(null);
+      return;
+    } else if (targetWeek === 'completing') {
+      // Set deadline to end of current week, calculate backwards
+      const newDeadline = new Date(endOfWeek);
+      newStartDate = new Date(newDeadline);
+      newStartDate.setDate(newDeadline.getDate() - projectDuration);
+    } else {
+      setActiveId(null);
+      return;
+    }
+
+    // Calculate new deadline
+    const newDeadline = new Date(newStartDate);
+    newDeadline.setDate(newStartDate.getDate() + projectDuration);
+
+    // Update project
+    onUpdateProject(projectId, {
+      startDate: newStartDate.toISOString().split('T')[0],
+      deadline: newDeadline.toISOString().split('T')[0]
+    });
+
+    setActiveId(null);
   };
 
   return (
@@ -314,67 +384,55 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
       </div>
 
       {viewMode === 'board' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Starting This Week */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-600">
-                <CalendarDays className="w-5 h-5" />
-                Starting This Week ({startingThisWeek.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Starting This Week */}
+            <DroppableColumn id="starting" title="Starting This Week" count={startingThisWeek.length} color="text-blue-600" icon={CalendarDays}>
               {startingThisWeek.map(project => (
-                <ProjectWeeklyCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} />
               ))}
               {startingThisWeek.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
                   No projects starting this week
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </DroppableColumn>
 
-          {/* Ongoing Projects */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-600">
-                <Clock className="w-5 h-5" />
-                Ongoing Projects ({ongoingProjects.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            {/* Ongoing Projects */}
+            <DroppableColumn id="ongoing" title="Ongoing Projects" count={ongoingProjects.length} color="text-orange-600" icon={Clock}>
               {ongoingProjects.map(project => (
-                <ProjectWeeklyCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} />
               ))}
               {ongoingProjects.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
                   No ongoing projects
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </DroppableColumn>
 
-          {/* Completing This Week */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-600">
-                <CalendarDays className="w-5 h-5" />
-                Due This Week ({completingThisWeek.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            {/* Completing This Week */}
+            <DroppableColumn id="completing" title="Due This Week" count={completingThisWeek.length} color="text-green-600" icon={CalendarDays}>
               {completingThisWeek.map(project => (
-                <ProjectWeeklyCard key={project.id} project={project} />
+                <DraggableProjectCard key={project.id} project={project} />
               ))}
               {completingThisWeek.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
                   No projects due this week
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </DroppableColumn>
+          </div>
+
+          <DragOverlay>
+            {activeId ? (
+              <ProjectWeeklyCard project={projects.find(p => p.id === activeId)!} />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       ) : viewMode === 'calendar' ? (
         <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} />
       ) : (
@@ -386,6 +444,80 @@ export function WeeklyPlanningView({ projects }: WeeklyPlanningViewProps) {
 
 interface ProjectWeeklyCardProps {
   project: Project;
+}
+
+// Droppable Column Component
+interface DroppableColumnProps {
+  id: string;
+  title: string;
+  count: number;
+  color: string;
+  icon: React.ComponentType<any>;
+  children: React.ReactNode;
+}
+
+function DroppableColumn({ id, title, count, color, icon: Icon, children }: DroppableColumnProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+  });
+
+  return (
+    <Card 
+      ref={setNodeRef}
+      className={cn(
+        "transition-colors duration-200",
+        isOver ? "bg-primary/10 border-primary" : "hover:bg-muted/50"
+      )}
+    >
+      <CardHeader>
+        <CardTitle className={`flex items-center gap-2 ${color}`}>
+          <Icon className="w-5 h-5" />
+          {title} ({count})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 min-h-[200px]">
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Draggable Project Card Component
+interface DraggableProjectCardProps {
+  project: Project;
+}
+
+function DraggableProjectCard({ project }: DraggableProjectCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: project.id,
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+  };
+
+  return (
+    <ProjectHoverCard project={project}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...listeners}
+        {...attributes}
+        className={cn(
+          "cursor-move transition-opacity",
+          isDragging ? "opacity-50" : "opacity-100"
+        )}
+      >
+        <ProjectWeeklyCard project={project} />
+      </div>
+    </ProjectHoverCard>
+  );
 }
 
 function ProjectWeeklyCard({ project }: ProjectWeeklyCardProps) {
