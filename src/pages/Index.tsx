@@ -15,7 +15,6 @@ import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useUserRole } from '@/hooks/useUserRole';
 import logo from '../assets/logo.png';
@@ -95,8 +94,7 @@ const Index = () => {
   }
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gradient-subtle relative">
+    <div className="min-h-screen bg-gradient-subtle relative">
       {/* Background image */}
       <div 
         className="fixed inset-0 bg-contain bg-center bg-no-repeat opacity-50 z-0"
@@ -249,7 +247,6 @@ const Index = () => {
         />
       </div>
     </div>
-    </TooltipProvider>
   );
 };
 

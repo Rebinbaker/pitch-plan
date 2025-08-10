@@ -189,15 +189,17 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
 
         {/* Work Phases Section */}
         {onUpdateProject && (
-          <WorkPhasesSection 
-            project={project}
-            onUpdateProject={onUpdateProject}
-            onOpenDetails={() => onViewDetails(project)}
-            teams={teams}
-            trailers={trailers}
-            onUpdateTeam={onUpdateTeam}
-            onUpdateTrailer={onUpdateTrailer}
-          />
+          <TooltipProvider>
+            <WorkPhasesSection 
+              project={project}
+              onUpdateProject={onUpdateProject}
+              onOpenDetails={() => onViewDetails(project)}
+              teams={teams}
+              trailers={trailers}
+              onUpdateTeam={onUpdateTeam}
+              onUpdateTrailer={onUpdateTrailer}
+            />
+          </TooltipProvider>
         )}
 
         <div className="flex gap-2">
