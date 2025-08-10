@@ -736,7 +736,7 @@ Tack!`);
                              : isContainerOrder
                                ? (isItemComplete ? "Bokad Container" : "Boka Container")
                                : isBookScaffolding
-                                 ? "Boka ställningsvagn"
+                                 ? (isItemComplete ? "Ställningsvagn bokad" : "Boka ställningsvagn")
                                  : item.label
                       }
                       {itemLocked && (
