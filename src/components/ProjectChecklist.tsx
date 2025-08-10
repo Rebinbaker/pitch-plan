@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -60,6 +60,12 @@ export function ProjectChecklist({
   
   const [showGroupNameEdit, setShowGroupNameEdit] = useState<{[key: string]: boolean}>({});
   const [timers, setTimers] = useState<{ [key: string]: number }>({});
+
+  // Container booking state management  
+  const [containerStates, setContainerStates] = useState<{[key: string]: {
+    status: 'idle' | 'opened' | 'confirmed';
+    openedAt?: number;
+  }}>({});
 
   const materialTypes: MaterialType[] = [
     'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
@@ -214,6 +220,72 @@ export function ProjectChecklist({
            itemLabel.toLowerCase().includes('whats app') ||
            itemLabel.toLowerCase().includes('chat') ||
            itemLabel.toLowerCase().includes('grupp');
+  };
+
+  // Container booking helper functions
+  const isContainerBookingItem = (itemLabel: string) => {
+    return itemLabel.toLowerCase().includes('boka hemtag av container') || 
+           itemLabel.toLowerCase().includes('bokad hemtag av container') ||
+           itemLabel.toLowerCase().includes('container hemtag');
+  };
+
+  const generateOutlookURL = (project: Project) => {
+    const subject = encodeURIComponent(`Bokad hemtag av container - ${project.name}`);
+    const body = encodeURIComponent(`Hej!
+
+Jag behöver boka hemtag av container för följande projekt:
+
+Projektnamn: ${project.name}
+Adress: ${project.address}
+
+Kopiera adressen för att hitta rätt mail tråd för att boka hem container.
+
+Tack!`);
+    
+    return `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const openOutlook = (itemId: string, project: Project) => {
+    // First copy the address
+    copyToClipboard(project.address);
+    
+    // Update state to show Outlook has been opened
+    setContainerStates(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        status: 'opened',
+        openedAt: Date.now()
+      }
+    }));
+    
+    // Open Outlook after a short delay to ensure address is copied first
+    setTimeout(() => {
+      const url = generateOutlookURL(project);
+      window.open(url, '_blank');
+    }, 100);
+  };
+
+  const confirmContainerBooking = (itemId: string) => {
+    setContainerStates(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        status: 'confirmed'
+      }
+    }));
+    
+    // Mark checklist item as completed
+    handleItemToggle(itemId);
+  };
+
+  const resetContainerStatus = (itemId: string) => {
+    setContainerStates(prev => ({
+      ...prev,
+      [itemId]: {
+        status: 'idle'
+      }
+    }));
   };
 
   const addMaterialItem = () => {
@@ -391,6 +463,7 @@ export function ProjectChecklist({
             const isScheduleTeam = item.label === 'Schedule construction team';
             const isAvvaratMaterial = item.label === 'Avvarat material?';
             const isWhatsApp = isWhatsAppItem(item.label);
+            const isContainerBooking = isContainerBookingItem(item.label);
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
@@ -419,7 +492,7 @@ export function ProjectChecklist({
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking) return; // These items disabled for manual click
                     if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
@@ -432,12 +505,12 @@ export function ProjectChecklist({
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding) return; // Scaffolding disabled for manual completion
+                          if (isBookScaffolding || isWhatsApp || isContainerBooking) return; // These items disabled for manual completion
                           if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
@@ -683,6 +756,102 @@ export function ProjectChecklist({
                                 <div className="flex items-center gap-2 text-xs text-success">
                                   <CheckCircle2 className="w-3 h-3" />
                                   <span>WhatsApp-grupp skapad och bekräftad</span>
+                                </div>
+                              );
+                            
+                            default:
+                              return null;
+                          }
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Container Booking Integration */}
+                    {isContainerBooking && project && (
+                      <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-medium text-primary">Container Hemtag</span>
+                        </div>
+                        
+                        {/* Address preview */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Adress:</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 ml-2"
+                              onClick={() => copyToClipboard(project.address)}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          <div className="p-2 bg-background/50 rounded">
+                            <span className="text-xs font-medium">{project.address}</span>
+                          </div>
+                        </div>
+
+                        {/* Status and actions */}
+                        {(() => {
+                          const state = containerStates[item.id];
+                          const status = state?.status || 'idle';
+                          
+                          switch (status) {
+                            case 'idle':
+                              return (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    Kopiera adressen för att hitta rätt mail tråd för att boka hem container.
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => openOutlook(item.id, project)}
+                                    className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
+                                  >
+                                    <Mail className="w-3 h-3 mr-1" />
+                                    Öppna Outlook
+                                  </Button>
+                                </div>
+                              );
+                            
+                            case 'opened':
+                              return (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-xs text-amber-600">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Outlook öppnad - väntar på bekräftelse</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Har du skickat emailet för container hemtag? Bekräfta när du är klar.
+                                  </p>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => confirmContainerBooking(item.id)}
+                                      className="flex-1 h-8 text-xs"
+                                    >
+                                      <Check className="w-3 h-3 mr-1" />
+                                      Email skickat
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => resetContainerStatus(item.id)}
+                                      className="h-8 text-xs"
+                                    >
+                                      Börja om
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            
+                            case 'confirmed':
+                              return (
+                                <div className="flex items-center gap-2 text-xs text-success">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Container hemtag bokad och bekräftad</span>
                                 </div>
                               );
                             

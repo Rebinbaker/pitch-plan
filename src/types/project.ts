@@ -100,7 +100,7 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Schedule construction team', completed: false, weight: 2 },
   { label: 'Skapa WhatsApp grupp', completed: false, weight: 1 },
   { label: 'Dagliga egenkontroller', completed: false, weight: 5 },
-  { label: 'Bokad hemtag av container', completed: false, weight: 3 },
+  { label: 'Boka hemtag av container', completed: false, weight: 3 },
   { label: 'Nedmontering av ställningar', completed: false, weight: 4 },
   { label: 'Slutsynbesiktning', completed: false, weight: 3 },
   { label: 'Avvarat material?', completed: false, weight: 2 },
