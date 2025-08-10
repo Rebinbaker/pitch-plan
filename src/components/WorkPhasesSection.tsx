@@ -475,36 +475,41 @@ Tack! 👷‍♂️`;
             </label>
             
             {/* Status icon and action buttons for inspection phases */}
-            {phase.requiresDailyInspection && (
-              <div className="flex items-center gap-1">
-                {getPhaseStatusIcon(phase)}
-                
-                {/* Copy reminder button for ongoing phases */}
-                {!phase.completed && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0"
-                    onClick={() => copyReminderText(phase.label)}
-                    title="Kopiera påminnelse"
-                  >
-                    <Copy className="h-2 w-2" />
-                  </Button>
-                )}
-                
-                {/* Images received button for completed phases */}
-                {phase.completed && !phase.imagesReceived && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1 text-xs"
-                    onClick={() => handleImagesReceived(phase.id)}
-                  >
-                    Bilder mottagna
-                  </Button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <span className="text-xs bg-red-100 px-1 rounded">
+                DEBUG: req={phase.requiresDailyInspection ? 'YES' : 'NO'} type={typeof phase.requiresDailyInspection}
+              </span>
+              {phase.requiresDailyInspection && (
+                <div className="flex items-center gap-1">
+                  {getPhaseStatusIcon(phase)}
+                  
+                  {/* Copy reminder button for ongoing phases */}
+                  {!phase.completed && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0"
+                      onClick={() => copyReminderText(phase.label)}
+                      title="Kopiera påminnelse"
+                    >
+                      <Copy className="h-2 w-2" />
+                    </Button>
+                  )}
+                  
+                  {/* Images received button for completed phases */}
+                  {phase.completed && !phase.imagesReceived && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1 text-xs"
+                      onClick={() => handleImagesReceived(phase.id)}
+                    >
+                      Bilder mottagna
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
             
             {phase.completedAt && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -548,36 +553,41 @@ Tack! 👷‍♂️`;
                 </label>
                 
                 {/* Status icon and action buttons for inspection phases */}
-                {phase.requiresDailyInspection && (
-                  <div className="flex items-center gap-1">
-                    {getPhaseStatusIcon(phase)}
-                    
-                    {/* Copy reminder button for ongoing phases */}
-                    {!phase.completed && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 w-5 p-0"
-                        onClick={() => copyReminderText(phase.label)}
-                        title="Kopiera påminnelse"
-                      >
-                        <Copy className="h-2 w-2" />
-                      </Button>
-                    )}
-                    
-                    {/* Images received button for completed phases */}
-                    {phase.completed && !phase.imagesReceived && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-1 text-xs"
-                        onClick={() => handleImagesReceived(phase.id)}
-                      >
-                        Bilder mottagna
-                      </Button>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs bg-red-100 px-1 rounded">
+                    DEBUG: req={phase.requiresDailyInspection ? 'YES' : 'NO'} type={typeof phase.requiresDailyInspection}
+                  </span>
+                  {phase.requiresDailyInspection && (
+                    <div className="flex items-center gap-1">
+                      {getPhaseStatusIcon(phase)}
+                      
+                      {/* Copy reminder button for ongoing phases */}
+                      {!phase.completed && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0"
+                          onClick={() => copyReminderText(phase.label)}
+                          title="Kopiera påminnelse"
+                        >
+                          <Copy className="h-2 w-2" />
+                        </Button>
+                      )}
+                      
+                      {/* Images received button for completed phases */}
+                      {phase.completed && !phase.imagesReceived && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-1 text-xs"
+                          onClick={() => handleImagesReceived(phase.id)}
+                        >
+                          Bilder mottagna
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 
                 {phase.completedAt && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
