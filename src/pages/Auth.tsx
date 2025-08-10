@@ -100,7 +100,9 @@ const Auth = () => {
           toast.error('Fel vid registrering: ' + error.message);
         }
       } else {
-        toast.success('Konto skapat! Kontrollera din e-post för att verifiera kontot.');
+        // Send our custom welcome email instead of relying on trigger
+        await sendWelcomeEmail();
+        toast.success('Konto skapat! Du har fått ett välkomstmail från Lokala Hantverkarna.');
         setShowResendEmail(true);
         setResendEmail(email);
         setActiveTab('signin');
