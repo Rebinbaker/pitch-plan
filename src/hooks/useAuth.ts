@@ -58,7 +58,7 @@ export const useAuthState = () => {
   const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    // Sign up - the database trigger will handle sending the welcome email
+    // Sign up without Supabase sending confirmation email - we'll send our custom one
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
