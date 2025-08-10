@@ -16,6 +16,7 @@ const generateWorkPhases = (completedCount = 0) =>
     completedAt: index < completedCount ? '2024-01-14' : undefined,
     imagesReceived: false, // Initialize as not received
     inspectionConfirmed: false, // Initialize as not confirmed
+    requiresDailyInspection: item.requiresDailyInspection, // Explicitly preserve this property
   }));
 
 // Generate sample activity log entries
