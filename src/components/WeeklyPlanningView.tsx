@@ -537,8 +537,6 @@ interface DraggableProjectCardProps {
 }
 
 function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardProps) {
-  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
-  
   const {
     attributes,
     listeners,
@@ -548,22 +546,6 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
   } = useDraggable({
     id: project.id,
   });
-
-  const handleMouseDown = () => {
-    setDragStartTime(Date.now());
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    const clickTime = Date.now();
-    const timeDiff = dragStartTime ? clickTime - dragStartTime : 0;
-    
-    // If it's a quick click (less than 200ms), treat as click not drag
-    if (timeDiff < 200 && onViewDetails) {
-      e.stopPropagation();
-      console.log('Quick click detected, opening details for:', project.name);
-      onViewDetails(project);
-    }
-  };
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -575,13 +557,31 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
       <div
         ref={setNodeRef}
         style={style}
-        {...listeners}
         {...attributes}
-        className="cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-        onClick={handleClick}
+        className="relative"
       >
-        <ProjectWeeklyCard project={project} onViewDetails={undefined} />
+        {/* Drag handle - small area at top right */}
+        <div 
+          {...listeners}
+          className="absolute top-2 right-2 w-8 h-8 bg-muted/20 hover:bg-muted/40 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-xs opacity-0 hover:opacity-100 transition-opacity"
+          title="Drag to move project"
+        >
+          ⋮⋮
+        </div>
+        
+        {/* Click area - everywhere else */}
+        <div 
+          className="cursor-pointer"
+          onClick={(e) => {
+            console.log('Project card clicked:', project.name);
+            e.stopPropagation();
+            if (onViewDetails) {
+              onViewDetails(project);
+            }
+          }}
+        >
+          <ProjectWeeklyCard project={project} onViewDetails={undefined} />
+        </div>
       </div>
     </ProjectHoverCard>
   );
