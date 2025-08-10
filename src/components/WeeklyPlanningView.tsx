@@ -1022,6 +1022,14 @@ function MonthlyProjectCard({ project, onViewDetails }: MonthlyProjectCardProps)
             <Users className="w-3 h-3" />
             {project.constructionTeam}
           </div>
+
+          {/* Show assigned trailer if available */}
+          {project.assignedTrailer && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Truck className="w-3 h-3" />
+              <span>Släp: {project.assignedTrailer}</span>
+            </div>
+          )}
           
           <div className="text-xs text-muted-foreground">
             {format(new Date(project.startDate), "d/M")} - {format(new Date(project.deadline), "d/M")}
