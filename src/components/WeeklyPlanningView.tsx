@@ -12,7 +12,7 @@ import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMon
 import { cn } from '@/lib/utils';
 import { ProjectHoverCard } from './ProjectHoverCard';
 import { ProjectDetailModal } from './ProjectDetailModal';
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 
