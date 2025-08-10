@@ -40,14 +40,6 @@ export function ProjectHeader({
         </Button>
       </div>
 
-      {/* Black logo positioned above projects */}
-      <div className="flex justify-center mb-6">
-        <img 
-          src={logo} 
-          alt="Lokala Hantverkarna" 
-          className="h-16 w-auto hover:scale-105 transition-transform duration-300"
-        />
-      </div>
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">

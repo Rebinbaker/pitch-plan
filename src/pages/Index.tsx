@@ -17,6 +17,7 @@ import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useUserRole } from '@/hooks/useUserRole';
+import logo from '../assets/logo.png';
 
 const Index = () => {
   const { signOut, user } = useAuth();
@@ -104,8 +105,18 @@ const Index = () => {
         }}
       />
       <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header with profile and logout */}
-        <div className="flex justify-end items-center mb-6">
+        {/* Header with logo on left and profile on right */}
+        <div className="flex justify-between items-center mb-6">
+          {/* Logo on the left */}
+          <div className="flex items-center">
+            <img 
+              src={logo} 
+              alt="Lokala Hantverkarna" 
+              className="h-12 w-auto hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          
+          {/* Profile on the right */}
           <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
