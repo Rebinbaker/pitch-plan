@@ -100,8 +100,6 @@ const Auth = () => {
           toast.error('Fel vid registrering: ' + error.message);
         }
       } else {
-        // Send our custom email from Lokala Hantverkarna
-        await sendWelcomeEmail();
         toast.success("Konto skapat! Du har fått ett bekräftelsemail från Lokala Hantverkarna.");
         setShowResendEmail(true);
         setResendEmail(email);
@@ -149,9 +147,20 @@ const Auth = () => {
 
     setResendLoading(true);
     try {
-      // Use our custom welcome email instead of Supabase's resend
-      await sendWelcomeEmail();
-      toast.success("Bekräftelsemail skickat på nytt från Lokala Hantverkarna! Kontrollera din inkorg.");
+      // Use Supabase's resend function to send the same template as signup
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: resendEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast.error('Fel vid skickning av email: ' + error.message);
+      } else {
+        toast.success('Bekräftelsemail skickat på nytt från Lokala Hantverkarna! Kontrollera din inkorg.');
+      }
     } catch (error) {
       toast.error('Ett oväntat fel uppstod');
     } finally {
@@ -159,25 +168,6 @@ const Auth = () => {
     }
   };
 
-  const sendWelcomeEmail = async () => {
-    if (!email || !username) {
-      toast.error('Fyll i email och användarnamn först');
-      return;
-    }
-
-    try {
-      await supabase.functions.invoke('send-welcome-email', {
-        body: {
-          email,
-          confirmationUrl: 'https://pitch-plan.lovable.app/',
-          username
-        }
-      });
-      toast.success('Välkomstmejl skickat från Lokala Hantverkarna!');
-    } catch (error) {
-      toast.error('Kunde inte skicka välkomstmejl');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
@@ -311,15 +301,6 @@ const Auth = () => {
                 {password && <PasswordStrength password={password} />}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Skapar konto...' : 'Skapa konto'}
-                </Button>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full mt-2" 
-                  onClick={sendWelcomeEmail}
-                >
-                  🏠 Skicka välkomstmejl från Lokala Hantverkarna
                 </Button>
                 
                 {showResendEmail && (
