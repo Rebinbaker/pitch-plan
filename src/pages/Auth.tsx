@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from "sonner";
 import { PasswordStrength } from '@/components/PasswordStrength';
 import { supabase } from '@/integrations/supabase/client';
+import logo from '../assets/logo.png';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -190,6 +191,15 @@ const Auth = () => {
             backgroundSize: '50px 50px'
           }}></div>
         </div>
+      </div>
+
+      {/* Logo in top left corner */}
+      <div className="absolute top-8 left-8 z-20">
+        <img 
+          src={logo} 
+          alt="Lokala Hantverkarna" 
+          className="w-32 h-auto drop-shadow-lg"
+        />
       </div>
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
