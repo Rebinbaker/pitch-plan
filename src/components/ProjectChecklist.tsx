@@ -870,7 +870,11 @@ Tack!`);
                                   </p>
                                   <Button
                                     size="sm"
-                                    onClick={() => openOutlook(item.id, project)}
+                                    onClick={() => {
+                                      // Open Outlook web app
+                                      window.open('https://outlook.office.com', '_blank');
+                                      openOutlook(item.id, project);
+                                    }}
                                     className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
                                   >
                                     <Mail className="w-3 h-3 mr-1" />
