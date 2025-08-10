@@ -442,11 +442,6 @@ export function WeeklyPlanningView({ projects, onUpdateProject }: WeeklyPlanning
             </DroppableColumn>
           </div>
 
-          <DragOverlay>
-            {activeId ? (
-              <ProjectWeeklyCard project={projects.find(p => p.id === activeId)!} />
-            ) : null}
-          </DragOverlay>
         </DndContext>
       ) : viewMode === 'calendar' ? (
         <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} />
@@ -524,10 +519,7 @@ function DraggableProjectCard({ project }: DraggableProjectCardProps) {
         style={style}
         {...listeners}
         {...attributes}
-        className={cn(
-          "cursor-move transition-opacity",
-          isDragging ? "opacity-0" : "opacity-100"
-        )}
+        className="cursor-move"
       >
         <ProjectWeeklyCard project={project} />
       </div>
@@ -917,10 +909,7 @@ function MonthlyProjectCard({ project }: MonthlyProjectCardProps) {
         style={style}
         {...listeners}
         {...attributes}
-        className={cn(
-          "border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing transition-all",
-          isDragging && "opacity-0"
-        )}
+        className="border rounded p-3 space-y-2 cursor-grab active:cursor-grabbing"
       >
         <div className="flex items-start justify-between">
           <h5 className="font-medium text-sm">{project.name}</h5>
