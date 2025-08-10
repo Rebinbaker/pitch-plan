@@ -392,6 +392,7 @@ export function ProjectChecklist({
             const isAvvaratMaterial = item.label === 'Avvarat material?';
             const isWhatsApp = isWhatsAppItem(item.label);
             const hasTrailerAssigned = !!project?.assignedTrailer;
+            const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
             const itemLocked = isItemLocked(index);
             
@@ -418,7 +419,7 @@ export function ProjectChecklist({
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial) return; // Book scaffolding and avvarat material disabled for click
+                    if (isBookScaffolding || isAvvaratMaterial || isDailyInspections) return; // These items disabled for manual click
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
                   }}
@@ -430,15 +431,18 @@ export function ProjectChecklist({
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding) return; // Book scaffolding disabled
+                          if (isBookScaffolding || isDailyInspections) return; // These items disabled for manual completion
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || isDailyInspections || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
                         <Lock className="w-3 h-3 text-muted-foreground ml-1" />
+                      )}
+                      {isDailyInspections && !isItemComplete && (
+                        <Clock className="w-3 h-3 text-muted-foreground ml-1" />
                       )}
                     </div>
                   ) : (
@@ -453,7 +457,7 @@ export function ProjectChecklist({
                     <label 
                       htmlFor={item.id}
                       className={`text-sm font-medium leading-none ${
-                        (!itemLocked && !isBookScaffolding && (!isScheduleTeam || hasTeamAssigned) && !isAvvaratMaterial) ? 'cursor-pointer' : ''
+                        (!itemLocked && !isBookScaffolding && !isDailyInspections && (!isScheduleTeam || hasTeamAssigned) && !isAvvaratMaterial) ? 'cursor-pointer' : ''
                       } ${
                         isItemComplete 
                           ? 'text-success line-through' 
@@ -466,6 +470,11 @@ export function ProjectChecklist({
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
                           (Låst tills alla arbetsmoment bekräftade)
+                        </span>
+                      )}
+                      {isDailyInspections && !isItemComplete && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (Slutförs automatiskt när alla egenkontroller bekräftade)
                         </span>
                       )}
                     </label>

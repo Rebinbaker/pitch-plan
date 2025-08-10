@@ -120,16 +120,37 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
       return phase;
     });
 
+    // Check if all work phases requiring daily inspection are now confirmed
+    const allInspectionPhasesConfirmed = updatedPhases
+      .filter(phase => phase.requiresDailyInspection)
+      .every(phase => phase.completed && phase.inspectionConfirmed);
+
+    // Auto-complete "Dagliga egenkontroller" checklist item if all inspections are confirmed
+    let updatedChecklist = project.checklist;
+    if (allInspectionPhasesConfirmed) {
+      updatedChecklist = project.checklist?.map(item => 
+        item.label === 'Dagliga egenkontroller' 
+          ? { ...item, completed: true, completedAt: new Date().toISOString().split('T')[0] }
+          : item
+      ) || [];
+    }
+
     const updatedProject = {
       ...project,
       workPhases: updatedPhases,
+      checklist: updatedChecklist,
       activityLog: [
         ...(project.activityLog || []),
         createActivityLogEntry(
           'Bilder mottagna',
           `Projektledaren bekräftade bilder för "${workPhases.find(p => p.id === phaseId)?.label}"`,
           'workphase'
-        )
+        ),
+        ...(allInspectionPhasesConfirmed ? [createActivityLogEntry(
+          'Dagliga egenkontroller slutförda',
+          'Alla arbetsmoment med dagliga egenkontroller är bekräftade',
+          'checklist'
+        )] : [])
       ]
     };
 
@@ -137,7 +158,9 @@ export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, tea
     
     toast({
       title: "Bilder bekräftade",
-      description: "Arbetsmoment kan nu markeras som klart",
+      description: allInspectionPhasesConfirmed 
+        ? "Alla egenkontroller bekräftade! Dagliga egenkontroller är nu klara."
+        : "Arbetsmoment kan nu markeras som klart",
     });
   };
 
