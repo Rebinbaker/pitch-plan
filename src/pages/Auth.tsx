@@ -194,14 +194,6 @@ const Auth = () => {
 
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md">
-          {/* Logo section */}
-          <div className="text-center mb-8">
-            <img 
-              src="/lovable-uploads/0710180d-c2f5-4ded-92b5-f2b9da682815.png" 
-              alt="Lokala Hantverkarna" 
-              className="mx-auto mb-6 max-w-[280px] h-auto drop-shadow-2xl"
-            />
-          </div>
 
           {/* Main card with gradient border */}
           <div className="relative">
