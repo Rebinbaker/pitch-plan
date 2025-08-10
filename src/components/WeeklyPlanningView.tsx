@@ -558,8 +558,14 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
         style={style}
         {...listeners}
         {...attributes}
-        className="cursor-move"
-      >
+        className="cursor-grab active:cursor-grabbing"
+        onClick={(e) => {
+          if (!isDragging && onViewDetails) {
+            e.stopPropagation();
+            onViewDetails(project);
+          }
+        }}
+     >
         <ProjectWeeklyCard project={project} onViewDetails={onViewDetails} />
       </div>
     </ProjectHoverCard>
