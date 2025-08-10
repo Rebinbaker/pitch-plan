@@ -50,9 +50,9 @@ function DraggableProjectCard({ project, onViewDetails, onUpdateProject, trailer
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className={isDragging ? 'z-50' : ''}
     >
+      <div {...listeners} className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing" />
       <ProjectCard
         project={project}
         onViewDetails={onViewDetails}
