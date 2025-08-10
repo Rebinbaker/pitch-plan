@@ -537,6 +537,8 @@ interface DraggableProjectCardProps {
 }
 
 function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardProps) {
+  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
+  
   const {
     attributes,
     listeners,
@@ -546,6 +548,22 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
   } = useDraggable({
     id: project.id,
   });
+
+  const handleMouseDown = () => {
+    setDragStartTime(Date.now());
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    const clickTime = Date.now();
+    const timeDiff = dragStartTime ? clickTime - dragStartTime : 0;
+    
+    // If it's a quick click (less than 200ms), treat as click not drag
+    if (timeDiff < 200 && onViewDetails) {
+      e.stopPropagation();
+      console.log('Quick click detected, opening details for:', project.name);
+      onViewDetails(project);
+    }
+  };
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -557,30 +575,17 @@ function DraggableProjectCard({ project, onViewDetails }: DraggableProjectCardPr
       <div
         ref={setNodeRef}
         style={style}
+        {...listeners}
         {...attributes}
-        className="relative"
+        className="cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+        onClick={handleClick}
       >
-        <div 
-          {...listeners} 
-          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
-        />
-        <div 
-          className="relative z-20 cursor-pointer"
-          onClick={(e) => {
-            console.log('WeeklyPlanningView card clicked:', project.name, 'isDragging:', isDragging);
-            if (!isDragging && onViewDetails) {
-              e.stopPropagation();
-              onViewDetails(project);
-            }
-          }}
-        >
-          <ProjectWeeklyCard project={project} onViewDetails={undefined} />
-        </div>
+        <ProjectWeeklyCard project={project} onViewDetails={undefined} />
       </div>
     </ProjectHoverCard>
   );
 }
-
 function ProjectWeeklyCard({ project, onViewDetails }: ProjectWeeklyCardProps) {
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
@@ -635,13 +640,7 @@ function ProjectWeeklyCard({ project, onViewDetails }: ProjectWeeklyCardProps) {
 
   return (
     <Card 
-      className="shadow-card cursor-pointer hover:shadow-lg transition-shadow"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (onViewDetails) {
-          onViewDetails(project);
-        }
-      }}
+      className="shadow-card hover:shadow-lg transition-shadow"
     >
       <CardContent className="p-4 space-y-2">
         <div className="flex items-start justify-between">
