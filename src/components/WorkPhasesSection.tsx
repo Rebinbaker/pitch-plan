@@ -556,22 +556,12 @@ Tack! 👷‍♂️`;
                   </Tooltip>
                 )}
                 
-                {/* Images received button for completed phases */}
+                {/* Warning for completed phases without images */}
                 {phase.completed && !phase.imagesReceived && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-3 text-xs gap-2 border-success text-success hover:bg-success/10 flex-1"
-                        onClick={() => handleImagesReceived(phase.id)}
-                      >
-                        <Camera className="h-3 w-3" />
-                        Markera bilder mottagna
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
-                  </Tooltip>
+                  <div className="flex items-center gap-2 text-warning text-xs px-3 py-1 bg-warning/10 border border-warning/20 rounded flex-1 justify-center">
+                    <AlertTriangle className="h-3 w-3" />
+                    Bilder inte mottagna
+                  </div>
                 )}
                 
                 {/* Show confirmation when all is done */}
@@ -672,22 +662,12 @@ Tack! 👷‍♂️`;
                       </Tooltip>
                     )}
                     
-                    {/* Images received button for completed phases */}
+                    {/* Warning for completed phases without images */}
                     {phase.completed && !phase.imagesReceived && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-3 text-xs gap-2 border-success text-success hover:bg-success/10 flex-1"
-                            onClick={() => handleImagesReceived(phase.id)}
-                          >
-                            <Camera className="h-3 w-3" />
-                            Markera bilder mottagna
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Bekräfta att bilder har mottagits från arbetare</TooltipContent>
-                      </Tooltip>
+                      <div className="flex items-center gap-2 text-warning text-xs px-3 py-1 bg-warning/10 border border-warning/20 rounded flex-1 justify-center">
+                        <AlertTriangle className="h-3 w-3" />
+                        Bilder inte mottagna
+                      </div>
                     )}
                     
                     {/* Show confirmation when all is done */}
