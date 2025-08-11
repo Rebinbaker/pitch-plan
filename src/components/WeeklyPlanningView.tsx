@@ -960,33 +960,41 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     console.log('Project found:', !!project, project?.name);
     if (!project) return;
     
-    const oldStartDate = new Date(project.startDate);
-    const oldDeadline = new Date(project.deadline);
-    const projectDuration = Math.ceil((oldDeadline.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    const oldStartDate = new Date(project.planerad_start_datum || project.startDate);
+    const oldDeadline = new Date(project.beräknat_slut_datum || project.deadline);
+    const projectDuration = project.ungefärlig_arbetstid_dagar || Math.ceil((oldDeadline.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
     
     // Calculate new start date based on the target week (start on Monday)
     const newStartDate = new Date(targetWeek.startDate);
     const newDeadline = new Date(newStartDate);
     newDeadline.setDate(newStartDate.getDate() + projectDuration);
     
+    // Generate new week string for planning
+    const newWeekString = dateToWeekString(newStartDate);
+    
     // Create activity log entry
     const newActivityEntry = {
       id: `activity-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      user: 'System', // In a real app, this would be the current user
+      user: 'System',
       action: 'Projekt omplanerat',
-      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')}) till vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`,
+      description: `Projekt prioriterades om från vecka ${dateToWeekString(oldStartDate)} till vecka ${newWeekString}`,
       category: 'general' as const,
-      oldValue: `Vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')})`,
-      newValue: `Vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`
+      oldValue: `${dateToWeekString(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')})`,
+      newValue: `${newWeekString} (${format(newStartDate, 'yyyy-MM-dd')})`
     };
     
-    // Update project with new dates and activity log
+    // Update project with new planning data
     onUpdateProject(projectId, {
-      startDate: format(newStartDate, 'yyyy-MM-dd'),
-      deadline: format(newDeadline, 'yyyy-MM-dd'),
+      bygg_start_vecka: newWeekString,
+      planerad_start_datum: calculatePlannedStartDate(newWeekString),
+      beräknat_slut_datum: format(newDeadline, 'yyyy-MM-dd'),
+      startDate: format(newStartDate, 'yyyy-MM-dd'), // Legacy compatibility
+      deadline: format(newDeadline, 'yyyy-MM-dd'), // Legacy compatibility
       activityLog: [...(project.activityLog || []), newActivityEntry]
     });
+    
+    console.log(`MONTHLY: Moved project ${project.name} to week ${newWeekString}, planerad_start_datum: ${calculatePlannedStartDate(newWeekString)}`);
 
     // Create and add notification for project rescheduling
     const notification = {
