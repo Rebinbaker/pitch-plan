@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface ProjectDetailModalProps {
@@ -390,16 +391,30 @@ Tack! 👷‍♂️`;
                   <div className="flex items-center gap-3">
                     <CalendarDays className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{new Date(project.startDate).toLocaleDateString('sv-SE')}</p>
-                      <p className="text-sm text-muted-foreground">Startdatum</p>
+                      <p className="font-medium">
+                        {project.actualConstructionStart 
+                          ? new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')
+                          : `${project.constructionStartWeek || ''} (Planerad)`
+                        }
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {project.actualConstructionStart ? 'Faktisk byggstart' : 'Planerad byggstart'}
+                      </p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3">
                     <CalendarDays className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{new Date(project.deadline).toLocaleDateString('sv-SE')}</p>
-                      <p className="text-sm text-muted-foreground">Deadline</p>
+                      <p className="font-medium">
+                        {project.actualConstructionStart 
+                          ? new Date(calculateDeadlineFromWorkDays(project.actualConstructionStart, project.estimatedWorkDays || 7)).toLocaleDateString('sv-SE')
+                          : new Date(project.deadline).toLocaleDateString('sv-SE')
+                        }
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {project.actualConstructionStart ? 'Beräknad deadline' : 'Planerad deadline'}
+                      </p>
                     </div>
                   </div>
                   
