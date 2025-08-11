@@ -70,6 +70,20 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
 
   // Filter projects that are relevant for this week using new planning logic
   const allWeekProjects = projects.filter(project => {
+    // Debug logging for project "871"
+    if (project.name === "871") {
+      console.log('FILTER DEBUG for project 871:', {
+        name: project.name,
+        startDate: project.startDate,
+        deadline: project.deadline,
+        planerad_start_datum: project.planerad_start_datum,
+        beräknat_slut_datum: project.beräknat_slut_datum,
+        bygg_start_vecka: project.bygg_start_vecka,
+        weekStart: startOfWeek,
+        weekEnd: endOfWeek
+      });
+    }
+    
     // Use new planning fields if available, fallback to legacy
     const plannedStartStr = project.planerad_start_datum || project.startDate;
     const calculatedEndStr = project.beräknat_slut_datum || project.deadline;
@@ -87,6 +101,19 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
                       isDueThisWeek(project, startOfWeek, endOfWeek);
     
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
+    
+    // Debug logging for project "871"
+    if (project.name === "871") {
+      console.log('FILTER RESULT for project 871:', {
+        plannedStartStr,
+        calculatedEndStr,
+        plannedStart,
+        calculatedEnd,
+        isRelevant,
+        matchesRegion,
+        finalResult: isRelevant && matchesRegion
+      });
+    }
     
     return isRelevant && matchesRegion;
   });
