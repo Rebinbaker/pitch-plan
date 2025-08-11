@@ -48,12 +48,10 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     })
   );
 
-  // Calculate dates for the selected week
+  // Calculate dates for the selected week (ISO week starts on Monday)
   const getWeekDates = (date: Date) => {
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay() + 1); // Monday
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+    const startOfWeek = startWeek(date, { weekStartsOn: 1 }); // ISO week starts on Monday
+    const endOfWeek = endWeek(date, { weekStartsOn: 1 }); // ISO week ends on Sunday
     return { startOfWeek, endOfWeek };
   };
 
