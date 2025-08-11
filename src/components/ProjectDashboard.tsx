@@ -15,10 +15,11 @@ interface ProjectDashboardProps {
   onUpdateTrailer?: (trailer: any) => void;
   selectedProjectId?: string | null;
   onClearSelection?: () => void;
+  onAddNotifications?: (notifications: any[]) => void;
 }
 
 // Simple Project Card Component (no drag functionality)
-function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer }: {
+function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
@@ -26,6 +27,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, 
   teams: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
+  onAddNotifications?: (notifications: any[]) => void;
 }) {
   return (
     <ProjectCard
@@ -36,11 +38,12 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, 
       teams={teams}
       onUpdateTeam={onUpdateTeam}
       onUpdateTrailer={onUpdateTrailer}
+      onAddNotifications={onAddNotifications}
     />
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -154,6 +157,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
             teams={teams}
             onUpdateTeam={onUpdateTeam}
             onUpdateTrailer={onUpdateTrailer}
+            onAddNotifications={onAddNotifications}
           />
         ))}
       </div>

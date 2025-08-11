@@ -35,9 +35,10 @@ interface WorkPhasesSectionProps {
   trailers?: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
+  onAddNotifications?: (notifications: any[]) => void;
 }
 
-export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, teams = [], trailers = [], onUpdateTeam, onUpdateTrailer }: WorkPhasesSectionProps) {
+export function WorkPhasesSection({ project, onUpdateProject, onOpenDetails, teams = [], trailers = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: WorkPhasesSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copiedPhases, setCopiedPhases] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -373,7 +374,7 @@ Tack! 👷‍♂️`;
         };
         
         // Store notification in localStorage for the notification system to pick up
-        const existingNotifications = JSON.parse(localStorage.getItem('projectNotifications') || '[]');
+        const existingNotifications = JSON.parse(localStorage.getItem('lovable_notifications') || '[]');
         
         // Check if we already have a late start notification for this project
         const hasExistingLateStartNotification = existingNotifications.some((n: any) => 
@@ -381,8 +382,14 @@ Tack! 👷‍♂️`;
         );
         
         if (!hasExistingLateStartNotification) {
-          const updatedNotifications = [...existingNotifications, lateStartNotification];
-          localStorage.setItem('projectNotifications', JSON.stringify(updatedNotifications));
+          // Add notification using React state if available
+          if (onAddNotifications) {
+            onAddNotifications([lateStartNotification]);
+          } else {
+            // Fallback to localStorage
+            const updatedNotifications = [...existingNotifications, lateStartNotification];
+            localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
+          }
           
           // Show toast notification
           toast({

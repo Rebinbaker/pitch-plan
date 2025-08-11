@@ -20,9 +20,10 @@ interface ProjectCardProps {
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
+  onAddNotifications?: (notifications: any[]) => void;
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
@@ -211,6 +212,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
               trailers={trailers}
               onUpdateTeam={onUpdateTeam}
               onUpdateTrailer={onUpdateTrailer}
+              onAddNotifications={onAddNotifications}
             />
           </TooltipProvider>
         )}

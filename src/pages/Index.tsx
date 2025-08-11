@@ -221,6 +221,7 @@ const Index = () => {
               onUpdateTrailer={updateScaffolding}
               selectedProjectId={selectedProjectId}
               onClearSelection={() => setSelectedProjectId(null)}
+              onAddNotifications={addNotifications}
             />
           </TabsContent>
 
