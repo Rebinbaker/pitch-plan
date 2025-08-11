@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist, defaultWorkPhases } from '@/types/project';
 import { useToast } from '@/hooks/use-toast';
 import { weekNumberToDate, calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
+import { dateToWeekString, calculatePlannedStartDate, calculateBeraknatSlutDatum, migrateProjectToNewPlanning } from '@/utils/projectPlanning';
 
 const projectFormSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
@@ -144,13 +145,18 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
     setIsSubmitting(true);
     
     try {
-      // Calculate startDate and deadline from week and work days
+      // Calculate dates from week input - convert "v32" to "2025-W32" format  
+      const currentYear = new Date().getFullYear();
+      const weekNum = data.constructionStartWeek.replace(/[^0-9]/g, '');
+      const byggStartVecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
+      
       const startDate = weekNumberToDate(data.constructionStartWeek);
       const deadline = calculateDeadlineFromWorkDays(startDate, data.estimatedWorkDays);
+      const planeradStartDatum = calculatePlannedStartDate(byggStartVecka);
 
       if (isEditing && project && onUpdateProject) {
-        // Update existing project
-        const updatedProject: Project = {
+        // Update existing project - migrate to new planning structure
+        let updatedProject: Project = {
           ...project,
           name: data.name,
           address: data.address,
@@ -166,6 +172,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           region: data.region,
           notes: data.notes || '',
         };
+        
+        // Apply migration to ensure new planning fields are populated
+        updatedProject = migrateProjectToNewPlanning(updatedProject);
 
         onUpdateProject(updatedProject);
         
@@ -174,9 +183,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           description: `${updatedProject.name} har uppdaterats.`,
         });
       } else {
-        // Create new project
+        // Create new project with new planning fields from the start
         const projectId = `project-${Date.now()}`;
-        const newProject: Project = {
+        const baseProject: Project = {
           id: projectId,
           name: data.name,
           address: data.address,
@@ -191,6 +200,12 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           status: data.status,
           region: data.region,
           notes: data.notes || '',
+          
+          // New planning fields
+          bygg_start_vecka: byggStartVecka,
+          planerad_start_datum: planeradStartDatum,
+          ungefärlig_arbetstid_dagar: data.estimatedWorkDays,
+          
           checklist: defaultChecklist.map((item, index) => ({
             ...item,
             id: `checklist-${projectId}-${index}`,
@@ -206,6 +221,12 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
             lastReminderSent: undefined,
           })),
           completionPercentage: 0,
+        };
+        
+        // Calculate beräknat_slut_datum after all fields are set
+        const newProject: Project = {
+          ...baseProject,
+          beräknat_slut_datum: calculateBeraknatSlutDatum(baseProject)
         };
 
         onAddProject(newProject);
