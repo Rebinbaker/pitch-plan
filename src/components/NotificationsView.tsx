@@ -41,6 +41,7 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
       case 'checklist_incomplete': return Clock;
       case 'inspection_missing': return Eye;
       case 'deadline_warning': return Bell;
+      case 'project_rescheduled': return Clock;
       default: return Bell;
     }
   };
@@ -51,6 +52,7 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
       case 'checklist_incomplete': return 'Checklist';
       case 'inspection_missing': return 'Inspection';
       case 'deadline_warning': return 'Deadline';
+      case 'project_rescheduled': return 'Omplanering';
       default: return 'Notification';
     }
   };
@@ -100,6 +102,7 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
               <SelectItem value="checklist_incomplete">Checklists</SelectItem>
               <SelectItem value="inspection_missing">Inspections</SelectItem>
               <SelectItem value="deadline_warning">Deadlines</SelectItem>
+              <SelectItem value="project_rescheduled">Omplaneringar</SelectItem>
             </SelectContent>
           </Select>
           

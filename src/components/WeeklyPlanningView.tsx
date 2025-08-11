@@ -901,7 +901,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     // Create and add notification for project rescheduling
     const notification = {
       id: `reschedule-${projectId}-${Date.now()}`,
-      type: 'deadline_warning' as const,
+      type: 'project_rescheduled' as const,
       priority: 'medium' as const,
       title: 'Projekt omplanerat',
       message: `Projekt "${project.name}" har flyttats från vecka ${getWeek(oldStartDate)} till vecka ${weekNumber}.`,
