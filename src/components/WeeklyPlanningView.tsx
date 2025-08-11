@@ -904,7 +904,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       type: 'project_rescheduled' as const,
       priority: 'medium' as const,
       title: 'Projekt omplanerat',
-      message: `Projekt "${project.name}" har flyttats från vecka ${getWeek(oldStartDate)} till vecka ${weekNumber}.`,
+      message: `"${project.name}" flyttades till vecka ${weekNumber}`,
       projectId: project.id,
       projectName: project.name,
       createdAt: new Date().toISOString(),
@@ -912,11 +912,11 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       actionRequired: false
     };
 
-    // Add notification using local storage hook if available
+    // Add notification using the correct localStorage key
     if (typeof window !== 'undefined') {
-      const existingNotifications = JSON.parse(localStorage.getItem('project_notifications') || '[]');
+      const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
       const updatedNotifications = [...existingNotifications, notification];
-      localStorage.setItem('project_notifications', JSON.stringify(updatedNotifications));
+      localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
       
       // Show toast notification
       import('@/hooks/use-toast').then(({ toast }) => {
