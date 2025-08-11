@@ -99,8 +99,8 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     else if (project.status === 'ongoing') {
       ongoingProjects.push(project);
     }
-    // Only planned projects that start this week (and not due this week) go to starting
-    else if (project.status === 'planned' && startDate >= startOfWeek && startDate <= endOfWeek) {
+    // Projects that start this week (and not due this week) go to starting, regardless of status
+    else if (startDate >= startOfWeek && startDate <= endOfWeek) {
       startingThisWeek.push(project);
     }
   });
