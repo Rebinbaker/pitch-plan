@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, AlertTriangle, Clock, CheckCircle, X, Eye } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, CheckCircle, X, Eye, Edit, Calendar, Package, CheckSquare, Search } from 'lucide-react';
 import { Notification, NotificationType, NotificationPriority } from '@/types/notification';
+import { getNotificationTypeInfo } from '@/utils/projectChangeTracker';
 
 interface NotificationsViewProps {
   notifications: Notification[];
@@ -38,25 +39,21 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
   };
 
   const getTypeIcon = (type: NotificationType) => {
-    switch (type) {
-      case 'material_order': return AlertTriangle;
-      case 'checklist_incomplete': return Clock;
-      case 'inspection_missing': return Eye;
-      case 'deadline_warning': return Bell;
-      case 'project_rescheduled': return Clock;
+    const typeInfo = getNotificationTypeInfo(type);
+    switch (typeInfo.icon) {
+      case 'Package': return Package;
+      case 'CheckSquare': return CheckSquare;
+      case 'Search': return Search;
+      case 'Clock': return Clock;
+      case 'Calendar': return Calendar;
+      case 'Edit': return Edit;
+      case 'AlertTriangle': return AlertTriangle;
       default: return Bell;
     }
   };
 
   const getTypeLabel = (type: NotificationType) => {
-    switch (type) {
-      case 'material_order': return 'Material Order';
-      case 'checklist_incomplete': return 'Checklist';
-      case 'inspection_missing': return 'Inspection';
-      case 'deadline_warning': return 'Deadline';
-      case 'project_rescheduled': return 'Omplanering';
-      default: return 'Notification';
-    }
+    return getNotificationTypeInfo(type).label;
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -101,10 +98,12 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
             <SelectContent>
               <SelectItem value="all">Alla typer</SelectItem>
               <SelectItem value="material_order">Materialbeställningar</SelectItem>
-              <SelectItem value="checklist_incomplete">Checklists</SelectItem>
-              <SelectItem value="inspection_missing">Inspections</SelectItem>
-              <SelectItem value="deadline_warning">Deadlines</SelectItem>
-              <SelectItem value="project_rescheduled">Omplaneringar</SelectItem>
+              <SelectItem value="checklist_incomplete">Checklista</SelectItem>
+              <SelectItem value="inspection_missing">Inspektion</SelectItem>
+              <SelectItem value="deadline_warning">Deadline</SelectItem>
+              <SelectItem value="project_rescheduled">Omschemaläggning</SelectItem>
+              <SelectItem value="field_change">Manuell ändring</SelectItem>
+              <SelectItem value="passive_delay">Passiv försening</SelectItem>
             </SelectContent>
           </Select>
           
@@ -197,6 +196,34 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
                       <p className="text-sm text-muted-foreground">
                         {notification.message}
                       </p>
+                      
+                      {/* Show change details for field changes */}
+                      {(notification.type === 'field_change' || notification.type === 'passive_delay') && 
+                       notification.fieldChanged && notification.oldValue && notification.newValue && (
+                        <div className="mt-2 p-2 bg-accent/20 rounded text-xs">
+                          <div className="font-medium text-foreground mb-1">
+                            {notification.type === 'field_change' ? 'Ändring:' : 'Försening:'}
+                          </div>
+                          <div className="space-y-1 text-muted-foreground">
+                            <div>Fält: <span className="font-medium">{notification.fieldChanged}</span></div>
+                            <div>Från: <span className="font-medium">{notification.oldValue}</span></div>
+                            <div>Till: <span className="font-medium">{notification.newValue}</span></div>
+                            {notification.changedBy && (
+                              <div>Ändrad av: <span className="font-medium">{notification.changedBy}</span></div>
+                            )}
+                            {notification.changeType && (
+                              <div>
+                                <Badge 
+                                  variant={notification.changeType === 'manual_change' ? 'default' : 'destructive'} 
+                                  className="text-xs mt-1"
+                                >
+                                  {notification.changeType === 'manual_change' ? 'Manuell ändring' : 'Passiv försening'}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>Project: {notification.projectName}</span>

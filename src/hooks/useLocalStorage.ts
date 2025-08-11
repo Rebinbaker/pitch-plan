@@ -9,6 +9,7 @@ import { mockScaffolding } from '@/data/mockScaffolding';
 import { mockTeams } from '@/data/mockTeams';
 import { mockNotifications } from '@/data/mockNotifications';
 import { defaultWorkPhases } from '@/types/project';
+import { trackProjectChanges } from '@/utils/projectChangeTracker';
 
 const STORAGE_KEYS = {
   PROJECTS: 'lovable_projects',
@@ -169,6 +170,19 @@ export const useLocalStorage = () => {
       }
     } else {
       console.log('Skipping actualConstructionStart check - already exists or no current project');
+    }
+
+    // Track changes and generate notifications if there's a current project to compare with
+    if (currentProject) {
+      const changeNotifications = trackProjectChanges(updatedProject, currentProject);
+      if (changeNotifications.length > 0) {
+        console.log('Generated change notifications:', changeNotifications.length);
+        // Add notifications to the existing notifications array
+        const existingNotifications = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        const allNotifications = [...changeNotifications, ...existingNotifications];
+        setNotifications(allNotifications);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(allNotifications));
+      }
     }
 
     const newProjects = projects.map(project => 
