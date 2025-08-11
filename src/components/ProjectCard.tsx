@@ -96,11 +96,21 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span>Byggstart: {project.constructionStartWeek}</span>
+            <span>
+              {project.actualConstructionStart 
+                ? `Faktisk byggstart: ${new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')}`
+                : `Planerad byggstart: ${project.constructionStartWeek}`
+              }
+            </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="w-4 h-4" />
-            <span>Arbetstid: {project.estimatedWorkDays} dagar</span>
+            <span>
+              {project.actualConstructionStart && project.deadline
+                ? `Beräknad deadline: ${new Date(project.deadline).toLocaleDateString('sv-SE')}`
+                : `Arbetstid: ${project.estimatedWorkDays} dagar`
+              }
+            </span>
           </div>
         </div>
         
