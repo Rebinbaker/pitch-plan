@@ -335,6 +335,25 @@ Tack! 👷‍♂️`;
     // Check if this is the first work phase being completed and status is planned
     const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
     
+    // Auto-complete project if both work phases and checklist are done
+    let updatedProject = {
+      ...project,
+      workPhases: updatedPhases,
+      completionPercentage: newCompletionPercentage,
+    };
+    
+    // Set actualConstructionStart when first work phase is completed
+    if (wasFirstPhaseCompleted && !updatedProject.actualConstructionStart) {
+      const firstPhase = updatedPhases.find(phase => phase.completed);
+      if (firstPhase?.completedAt) {
+        console.log('Setting actualConstructionStart to:', firstPhase.completedAt);
+        updatedProject = {
+          ...updatedProject,
+          actualConstructionStart: firstPhase.completedAt,
+        };
+      }
+    }
+    
     // Mark resources as "I bruk" when project starts (first work phase completed)
     if (wasFirstPhaseCompleted && onUpdateTeam && onUpdateTrailer) {
       // Mark assigned team as busy
@@ -362,13 +381,6 @@ Tack! 👷‍♂️`;
         }
       }
     }
-    
-    // Auto-complete project if both work phases and checklist are done
-    let updatedProject = {
-      ...project,
-      workPhases: updatedPhases,
-      completionPercentage: newCompletionPercentage,
-    };
 
     // Change status from planned to ongoing when first work phase is completed
     if (wasFirstPhaseCompleted) {

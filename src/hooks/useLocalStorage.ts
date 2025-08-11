@@ -139,6 +139,7 @@ export const useLocalStorage = () => {
     console.log('Project ID:', updatedProject.id);
     console.log('Project name:', updatedProject.name);
     console.log('Current actualConstructionStart:', updatedProject.actualConstructionStart);
+    console.log('Projects in storage before update:', projects.length);
     
     // Check if first work phase was just completed and set actual construction start
     const currentProject = projects.find(p => p.id === updatedProject.id);
@@ -174,8 +175,17 @@ export const useLocalStorage = () => {
       project.id === updatedProject.id ? updatedProject : project
     );
     
+    console.log('Saving projects to localStorage. Count before:', projects.length);
+    console.log('Saving projects to localStorage. Count after:', newProjects.length);
+    console.log('Updated project saved with actualConstructionStart:', updatedProject.actualConstructionStart);
+    
     setProjects(newProjects);
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(newProjects));
+    
+    // Verify the save was successful
+    const savedData = localStorage.getItem(STORAGE_KEYS.PROJECTS);
+    console.log('Data successfully saved to localStorage:', !!savedData);
+    console.log('Saved data length:', savedData ? JSON.parse(savedData).length : 0);
 
     // Generate timeline notifications after project update
     const { checkProjectTimelineNotifications } = await import('@/utils/projectNotifications');
