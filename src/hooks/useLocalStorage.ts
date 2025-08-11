@@ -34,41 +34,45 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
-    // Migration function to fix work phases missing properties
+    // Migration function to ensure work phases have proper structure
     const migrateWorkPhases = (projects: Project[]): Project[] => {
       console.log('MIGRATION: Starting migration of projects:', projects.length);
       return projects.map(project => {
         console.log('MIGRATION: Processing project:', project.name);
-        console.log('MIGRATION: Original workPhases:', project.workPhases?.map(p => ({ 
-          label: p.label, 
-          requiresDailyInspection: p.requiresDailyInspection 
-        })));
         
+        // Check if workPhases need migration (missing essential fields)
+        if (!project.workPhases || project.workPhases.length === 0 || !project.workPhases[0].id) {
+          console.log('MIGRATION: Creating new workPhases structure for:', project.name);
+          
+          const newWorkPhases = defaultWorkPhases.map((defaultPhase, index) => ({
+            ...defaultPhase,
+            id: `workphase-${Date.now()}-${index}`,
+            completed: false,
+            completedAt: undefined,
+            imagesReceived: false,
+            inspectionConfirmed: false,
+            comment: undefined,
+            lastReminderSent: undefined,
+          }));
+          
+          return {
+            ...project,
+            workPhases: newWorkPhases
+          };
+        }
+        
+        // If workPhases exist with proper structure, just ensure all required fields exist
         const updatedProject = {
           ...project,
-          workPhases: project.workPhases?.map((phase, index) => {
-            const defaultPhase = defaultWorkPhases[index];
-            const updatedPhase = {
-              ...phase,
-              requiresDailyInspection: phase.requiresDailyInspection ?? defaultPhase?.requiresDailyInspection ?? true,
-              imagesReceived: phase.imagesReceived ?? false,
-              inspectionConfirmed: phase.inspectionConfirmed ?? false,
-            };
-            console.log('MIGRATION: Phase migrated:', { 
-              label: updatedPhase.label, 
-              requiresDailyInspection: updatedPhase.requiresDailyInspection,
-              from: phase.requiresDailyInspection,
-              to: updatedPhase.requiresDailyInspection
-            });
-            return updatedPhase;
-          }) || []
+          workPhases: project.workPhases.map(phase => ({
+            ...phase,
+            requiresDailyInspection: phase.requiresDailyInspection ?? true,
+            imagesReceived: phase.imagesReceived ?? false,
+            inspectionConfirmed: phase.inspectionConfirmed ?? false,
+          }))
         };
         
-        console.log('MIGRATION: Updated workPhases:', updatedProject.workPhases?.map(p => ({ 
-          label: p.label, 
-          requiresDailyInspection: p.requiresDailyInspection 
-        })));
-        
+        console.log('MIGRATION: Updated project:', project.name, 'with', updatedProject.workPhases.length, 'work phases');
         return updatedProject;
       });
     };
