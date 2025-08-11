@@ -243,7 +243,7 @@ export const useSupabaseData = () => {
         deadline: updatedProject.deadline,
         construction_start_week: updatedProject.constructionStartWeek,
         estimated_work_days: updatedProject.estimatedWorkDays,
-        actual_construction_start: updatedProject.actualConstructionStart,
+        actual_construction_start: updatedProject.actualConstructionStart || null,
         rot_status: updatedProject.rotStatus,
         status: updatedProject.status,
         region: updatedProject.region,
