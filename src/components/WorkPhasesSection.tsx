@@ -497,7 +497,11 @@ Tack! 👷‍♂️`;
               <Checkbox 
                 id={phase.id}
                 checked={phase.completed}
-                onCheckedChange={() => handlePhaseToggle(phase.id)}
+                onCheckedChange={() => {
+                  console.log('Checkbox clicked for phase:', phase.id, phase.label);
+                  console.log('Phase disabled?', phase.requiresDailyInspection && phase.completed && !phase.imagesReceived);
+                  handlePhaseToggle(phase.id);
+                }}
                 disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
                 className="data-[state=checked]:bg-success data-[state=checked]:border-success h-4 w-4"
               />
