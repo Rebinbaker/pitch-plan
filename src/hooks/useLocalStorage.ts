@@ -196,7 +196,8 @@ export const useLocalStorage = () => {
           id: notification.id,
           type: 'deadline_warning' as const,
           priority: notification.type === 'early_completion' ? 'low' as const : 'medium' as const,
-          title: notification.type === 'early_completion' ? 'Projekt slutfört i förtid' : 'Projektförseining',
+          title: notification.type === 'early_completion' ? 'Projekt slutfört i förtid' : 
+                 notification.type === 'late_start' ? 'Försenad projektstart' : 'Projektförseining',
           message: notification.message,
           projectId: notification.projectId,
           projectName: notification.projectName,
@@ -320,6 +321,12 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(newNotifications));
   };
 
+  const addNotifications = (newNotifications: Notification[]) => {
+    const currentNotifications = [...notifications, ...newNotifications];
+    setNotifications(currentNotifications);
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(currentNotifications));
+  };
+
   return {
     projects,
     scaffolding,
@@ -335,6 +342,7 @@ export const useLocalStorage = () => {
     addTeam,
     uploadFile,
     markNotificationAsRead,
-    dismissNotification
+    dismissNotification,
+    addNotifications
   };
 };

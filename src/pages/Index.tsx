@@ -42,7 +42,8 @@ const Index = () => {
     addTeam,
     uploadFile,
     markNotificationAsRead,
-    dismissNotification
+    dismissNotification,
+    addNotifications
   } = useLocalStorage();
 
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
@@ -67,6 +68,22 @@ const Index = () => {
 
     fetchUsername();
   }, [user]);
+
+  // Generate test notifications for delayed projects on first load
+  useEffect(() => {
+    const generateNotifications = async () => {
+      if (projects.length > 0 && notifications.length === 0) {
+        const { generateTestNotifications } = await import('@/utils/generateTestNotifications');
+        const testNotifications = generateTestNotifications(projects);
+        
+        if (testNotifications.length > 0) {
+          addNotifications(testNotifications);
+        }
+      }
+    };
+
+    generateNotifications();
+  }, [projects, notifications.length]);
 
   const handleAddProject = () => {
     setIsAddProjectModalOpen(true);
