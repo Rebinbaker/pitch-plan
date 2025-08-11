@@ -41,7 +41,7 @@ export const useLocalStorage = () => {
         console.log('MIGRATION: Processing project:', project.name);
         
         // Check if workPhases need migration (missing essential fields)
-        if (!project.workPhases || project.workPhases.length === 0 || !project.workPhases[0].id) {
+        if (!project.workPhases || project.workPhases.length === 0 || !project.workPhases[0].id || project.workPhases[0].completed === undefined) {
           console.log('MIGRATION: Creating new workPhases structure for:', project.name);
           
           const newWorkPhases = defaultWorkPhases.map((defaultPhase, index) => ({
