@@ -923,10 +923,10 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     // Add notification using the correct localStorage key
     console.log('Adding notification to localStorage');
     if (typeof window !== 'undefined') {
-      const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+      const existingNotifications = JSON.parse(localStorage.getItem('lovable_notifications') || '[]');
       console.log('Existing notifications count:', existingNotifications.length);
       const updatedNotifications = [...existingNotifications, notification];
-      localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+      localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
       console.log('Updated notifications count:', updatedNotifications.length);
       
       // Show toast notification
