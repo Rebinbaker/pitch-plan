@@ -198,6 +198,12 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           workPhases: defaultWorkPhases.map((item, index) => ({
             ...item,
             id: `workphase-${projectId}-${index}`,
+            completed: false,
+            completedAt: undefined,
+            imagesReceived: false,
+            inspectionConfirmed: false,
+            comment: undefined,
+            lastReminderSent: undefined,
           })),
           completionPercentage: 0,
         };
