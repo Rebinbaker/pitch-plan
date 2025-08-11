@@ -1,5 +1,6 @@
 import { Project } from '@/types/project';
 import { differenceInDays, parseISO, addDays } from 'date-fns';
+import { weekNumberToDate } from '@/utils/weekCalculations';
 
 export interface ProjectNotification {
   id: string;
@@ -17,7 +18,6 @@ export function checkProjectTimelineNotifications(project: Project): ProjectNoti
   // Check for late start if project has started
   if (project.actualConstructionStart && project.constructionStartWeek) {
     const actualStart = parseISO(project.actualConstructionStart);
-    const { weekNumberToDate } = require('@/utils/weekCalculations');
     const plannedStartDate = parseISO(weekNumberToDate(project.constructionStartWeek));
     const daysLate = differenceInDays(actualStart, plannedStartDate);
     

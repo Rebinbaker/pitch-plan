@@ -8,6 +8,7 @@ import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, Al
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { checkProjectTimelineNotifications } from '@/utils/projectNotifications';
 
 const createActivityLogEntry = (
   action: string,
@@ -352,7 +353,45 @@ Tack! 👷‍♂️`;
           actualConstructionStart: firstPhase.completedAt,
         };
       }
-    }
+      }
+      
+      // Check for late start notification
+      const projectNotification = checkProjectTimelineNotifications(updatedProject);
+      if (projectNotification && projectNotification.type === 'late_start') {
+        // Create a notification for late start  
+        const lateStartNotification = {
+          id: `late-start-${updatedProject.id}-${Date.now()}`,
+          type: 'deadline_warning' as const,
+          priority: 'high' as const,
+          title: 'Försenad projektstart',
+          message: `${projectNotification.message} Brådskande: Kontrollera materialbeställningar och tidplan.`,
+          projectId: updatedProject.id,
+          projectName: updatedProject.name,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          actionRequired: true
+        };
+        
+        // Store notification in localStorage for the notification system to pick up
+        const existingNotifications = JSON.parse(localStorage.getItem('projectNotifications') || '[]');
+        
+        // Check if we already have a late start notification for this project
+        const hasExistingLateStartNotification = existingNotifications.some((n: any) => 
+          n.projectId === updatedProject.id && n.title === 'Försenad projektstart'
+        );
+        
+        if (!hasExistingLateStartNotification) {
+          const updatedNotifications = [...existingNotifications, lateStartNotification];
+          localStorage.setItem('projectNotifications', JSON.stringify(updatedNotifications));
+          
+          // Show toast notification
+          toast({
+            title: "Försenad projektstart upptäckt",
+            description: `Projekt "${updatedProject.name}" startade ${projectNotification.daysLate} dag${projectNotification.daysLate > 1 ? 'ar' : ''} senare än planerat.`,
+            variant: "destructive",
+          });
+        }
+      }
     
     // Mark resources as "I bruk" when project starts (first work phase completed)
     if (wasFirstPhaseCompleted && onUpdateTeam && onUpdateTrailer) {
