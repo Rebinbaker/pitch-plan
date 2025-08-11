@@ -105,22 +105,22 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
       });
     }
     
-    // Priority order: due this week > ongoing > starting
-    // If project has deadline this week, it goes to due this week
-    if (deadline >= startOfWeek && deadline <= endOfWeek) {
-      completingThisWeek.push(project);
-      if (project.name === "54") console.log('Project 54 added to completingThisWeek');
-    } 
-    // If project is ongoing (and not due this week), it goes to ongoing
+    // Priority order: starting this week > ongoing > completing this week
+    // Projects that start this week go to starting, regardless of when they end
+    if (startDate >= startOfWeek && startDate <= endOfWeek) {
+      startingThisWeek.push(project);
+      if (project.name === "54") console.log('Project 54 added to startingThisWeek');
+    }
+    // If project is ongoing (and doesn't start this week), it goes to ongoing
     else if (project.status === 'ongoing') {
       ongoingProjects.push(project);
       if (project.name === "54") console.log('Project 54 added to ongoingProjects');
     }
-    // Projects that start this week (and not due this week) go to starting, regardless of status
-    else if (startDate >= startOfWeek && startDate <= endOfWeek) {
-      startingThisWeek.push(project);
-      if (project.name === "54") console.log('Project 54 added to startingThisWeek');
-    }
+    // If project has deadline this week (but doesn't start this week), it goes to completing
+    else if (deadline >= startOfWeek && deadline <= endOfWeek) {
+      completingThisWeek.push(project);
+      if (project.name === "54") console.log('Project 54 added to completingThisWeek');
+    } 
   });
 
   // Total categorized projects (should equal allWeekProjects.length)
