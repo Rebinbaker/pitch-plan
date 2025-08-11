@@ -12,7 +12,7 @@ import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMon
 import { cn } from '@/lib/utils';
 import { ProjectHoverCard } from './ProjectHoverCard';
 import { ProjectDetailModal } from './ProjectDetailModal';
-import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from '@/hooks/use-toast';
@@ -802,6 +802,11 @@ interface MonthlyViewProps {
 }
 
 function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -929,10 +934,11 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
 
   return (
     <DndContext
+      onDragStart={handleDragStart}
       onDragEnd={handleMonthlyDragEnd}
       modifiers={[restrictToWindowEdges]}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div className="text-center">
           <h3 className="text-xl font-bold">
             Månadsplanering: {format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}
@@ -948,6 +954,16 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
           ))}
         </div>
       </div>
+      <DragOverlay>
+        {activeId ? (
+          <div className="opacity-90 transform rotate-2 scale-105 animate-scale-in">
+            {(() => {
+              const project = projects.find(p => p.id === activeId);
+              return project ? <MonthlyProjectCard project={project} isDragging={true} /> : null;
+            })()}
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }
@@ -1001,7 +1017,7 @@ interface MonthlyProjectCardProps {
   trailers?: any[];
 }
 
-function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyProjectCardProps) {
+function MonthlyProjectCard({ project, onViewDetails, trailers = [], isDragging = false }: MonthlyProjectCardProps & { isDragging?: boolean }) {
   // Helper function to get trailer name
   const getTrailerName = (trailerId: string) => {
     const trailer = trailers.find(t => t.id === trailerId);
@@ -1012,15 +1028,16 @@ function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyPr
     listeners,
     setNodeRef,
     transform,
-    isDragging,
+    isDragging: dndIsDragging,
   } = useDraggable({
     id: project.id,
   });
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    opacity: isDragging ? 0.5 : 1,
-  } : { opacity: isDragging ? 0.5 : 1 };
+    opacity: dndIsDragging ? 0.3 : 1,
+    transition: dndIsDragging ? 'none' : 'transform 0.2s ease',
+  } : { opacity: dndIsDragging ? 0.3 : 1 };
 
   return (
     <ProjectHoverCard project={project}>
@@ -1028,7 +1045,10 @@ function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyPr
         ref={setNodeRef}
         style={style}
         {...attributes}
-        className="border rounded p-3 space-y-2 relative"
+        className={cn(
+          "border rounded p-3 space-y-2 relative cursor-pointer hover:shadow-md transition-all duration-200 hover-scale",
+          dndIsDragging && "opacity-30 shadow-lg border-primary/50 scale-95"
+        )}
       >
         {/* Drag handle - larger and more visible */}
         <div 
