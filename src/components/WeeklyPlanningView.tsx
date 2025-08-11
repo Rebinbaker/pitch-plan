@@ -90,18 +90,38 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     const startDate = new Date(project.startDate);
     const deadline = new Date(project.deadline);
     
+    // Debug logging for project "54"
+    if (project.name === "54") {
+      console.log('DEBUG Project 54:', {
+        name: project.name,
+        startDate: project.startDate,
+        deadline: project.deadline,
+        status: project.status,
+        startDateObject: startDate,
+        deadlineObject: deadline,
+        startOfWeek,
+        endOfWeek,
+        startsThisWeek: startDate >= startOfWeek && startDate <= endOfWeek,
+        deadlineThisWeek: deadline >= startOfWeek && deadline <= endOfWeek,
+        isOngoing: project.status === 'ongoing'
+      });
+    }
+    
     // Priority order: due this week > ongoing > starting
     // If project has deadline this week, it goes to due this week
     if (deadline >= startOfWeek && deadline <= endOfWeek) {
       completingThisWeek.push(project);
+      if (project.name === "54") console.log('Project 54 added to completingThisWeek');
     } 
     // If project is ongoing (and not due this week), it goes to ongoing
     else if (project.status === 'ongoing') {
       ongoingProjects.push(project);
+      if (project.name === "54") console.log('Project 54 added to ongoingProjects');
     }
     // Projects that start this week (and not due this week) go to starting, regardless of status
     else if (startDate >= startOfWeek && startDate <= endOfWeek) {
       startingThisWeek.push(project);
+      if (project.name === "54") console.log('Project 54 added to startingThisWeek');
     }
   });
 
