@@ -288,6 +288,8 @@ Tack! 👷‍♂️`;
   };
 
   const handlePhaseToggle = (phaseId: string) => {
+    console.log('=== handlePhaseToggle called ===');
+    console.log('Phase ID:', phaseId);
     const activityEntries: ActivityLogEntry[] = [];
     
     const updatedPhases = workPhases.map(phase => {
@@ -430,6 +432,13 @@ Tack! 👷‍♂️`;
       activityLog: [...(project.activityLog || []), ...activityEntries],
     };
 
+    console.log('=== Calling onUpdateProject ===');
+    console.log('Updated project:', {
+      id: updatedProject.id,
+      name: updatedProject.name,
+      actualConstructionStart: updatedProject.actualConstructionStart,
+      firstWorkPhase: updatedProject.workPhases?.[0]
+    });
     onUpdateProject(updatedProject);
   };
 
