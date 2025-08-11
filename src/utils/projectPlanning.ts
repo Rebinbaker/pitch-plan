@@ -194,17 +194,41 @@ export function isBehindSchedule(project: Project, weekEnd: Date): boolean {
 export function migrateProjectToNewPlanning(project: Project): Project {
   let migratedProject = { ...project };
   
-  // Migrate bygg_start_vecka from constructionStartWeek
-  if (!migratedProject.bygg_start_vecka && migratedProject.constructionStartWeek) {
-    // Convert "v33" format to "2025-W33" format
-    const weekNum = migratedProject.constructionStartWeek.replace(/[^0-9]/g, '');
-    const currentYear = new Date().getFullYear();
-    migratedProject.bygg_start_vecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
+  // Migrate bygg_start_vecka from constructionStartWeek or startDate
+  if (!migratedProject.bygg_start_vecka) {
+    if (migratedProject.constructionStartWeek) {
+      // Convert "v33" format to "2025-W33" format
+      const weekNum = migratedProject.constructionStartWeek.replace(/[^0-9]/g, '');
+      const currentYear = new Date().getFullYear();
+      migratedProject.bygg_start_vecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
+    } else {
+      // Use startDate to calculate week
+      const startDate = new Date(migratedProject.startDate);
+      migratedProject.bygg_start_vecka = dateToWeekString(startDate);
+    }
   }
   
-  // Migrate ungefärlig_arbetstid_dagar from estimatedWorkDays
-  if (!migratedProject.ungefärlig_arbetstid_dagar && migratedProject.estimatedWorkDays) {
-    migratedProject.ungefärlig_arbetstid_dagar = migratedProject.estimatedWorkDays;
+  // Calculate planerad_start_datum from bygg_start_vecka
+  if (!migratedProject.planerad_start_datum) {
+    try {
+      migratedProject.planerad_start_datum = calculatePlannedStartDate(migratedProject.bygg_start_vecka);
+    } catch (e) {
+      // Fallback to startDate if week calculation fails
+      migratedProject.planerad_start_datum = migratedProject.startDate;
+    }
+  }
+  
+  // Migrate ungefärlig_arbetstid_dagar from estimatedWorkDays or calculate
+  if (!migratedProject.ungefärlig_arbetstid_dagar) {
+    if (migratedProject.estimatedWorkDays) {
+      migratedProject.ungefärlig_arbetstid_dagar = migratedProject.estimatedWorkDays;
+    } else {
+      // Calculate from startDate to deadline
+      const start = new Date(migratedProject.startDate);
+      const end = new Date(migratedProject.deadline);
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      migratedProject.ungefärlig_arbetstid_dagar = Math.max(1, days);
+    }
   }
   
   // Migrate första_moment_bockat_datum from actualConstructionStart
@@ -212,26 +236,10 @@ export function migrateProjectToNewPlanning(project: Project): Project {
     migratedProject.första_moment_bockat_datum = migratedProject.actualConstructionStart;
   }
   
-  // Set default values if still missing
-  if (!migratedProject.bygg_start_vecka) {
-    // Use startDate to calculate week
-    const startDate = new Date(migratedProject.startDate);
-    migratedProject.bygg_start_vecka = dateToWeekString(startDate);
-  }
-  
-  if (!migratedProject.ungefärlig_arbetstid_dagar) {
-    // Calculate from startDate to deadline
-    const start = new Date(migratedProject.startDate);
-    const end = new Date(migratedProject.deadline);
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    migratedProject.ungefärlig_arbetstid_dagar = Math.max(1, days);
-  }
-  
-  // Calculate planerad_start_datum
-  migratedProject.planerad_start_datum = calculatePlannedStartDate(migratedProject.bygg_start_vecka);
-  
   // Calculate beräknat_slut_datum
-  migratedProject.beräknat_slut_datum = calculateBeraknatSlutDatum(migratedProject);
+  if (!migratedProject.beräknat_slut_datum) {
+    migratedProject.beräknat_slut_datum = calculateBeraknatSlutDatum(migratedProject);
+  }
   
   return migratedProject;
 }
