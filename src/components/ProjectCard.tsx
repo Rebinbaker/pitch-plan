@@ -97,10 +97,13 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="w-4 h-4" />
             <span>
-              {project.actualConstructionStart 
-                ? `Byggstart: ${new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')}`
-                : `Planerad byggstart: ${project.constructionStartWeek}`
-              }
+              {(() => {
+                console.log(`Project ${project.name} actualConstructionStart:`, project.actualConstructionStart);
+                console.log(`Project ${project.name} constructionStartWeek:`, project.constructionStartWeek);
+                return project.actualConstructionStart 
+                  ? `Byggstart: ${new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')}`
+                  : `Planerad byggstart: ${project.constructionStartWeek}`;
+              })()}
             </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
