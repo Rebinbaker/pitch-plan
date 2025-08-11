@@ -854,20 +854,28 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
   const weeks = getWeeksInRange();
 
   const handleMonthlyDragEnd = (event: DragEndEvent) => {
+    console.log('MONTHLY DRAG END CALLED:', event);
     const { active, over } = event;
     
-    if (!over || active.id === over.id || !onUpdateProject) return;
+    console.log('Active:', active?.id, 'Over:', over?.id);
+    if (!over || active.id === over.id || !onUpdateProject) {
+      console.log('Early return - no over, same id, or no onUpdateProject');
+      return;
+    }
     
     const projectId = active.id as string;
     const newWeekId = over.id as string;
     
     // Extract week number from the drop zone ID
     const weekNumber = parseInt(newWeekId.replace('week-', ''));
+    console.log('Extracted week number:', weekNumber);
     const targetWeek = weeks.find(w => w.weekNumber === weekNumber);
     
+    console.log('Target week found:', !!targetWeek);
     if (!targetWeek) return;
     
     const project = projects.find(p => p.id === projectId);
+    console.log('Project found:', !!project, project?.name);
     if (!project) return;
     
     const oldStartDate = new Date(project.startDate);
@@ -913,12 +921,16 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     };
 
     // Add notification using the correct localStorage key
+    console.log('Adding notification to localStorage');
     if (typeof window !== 'undefined') {
       const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+      console.log('Existing notifications count:', existingNotifications.length);
       const updatedNotifications = [...existingNotifications, notification];
       localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+      console.log('Updated notifications count:', updatedNotifications.length);
       
       // Show toast notification
+      console.log('Showing toast notification');
       import('@/hooks/use-toast').then(({ toast }) => {
         toast({
           title: "Projekt omplanerat",
