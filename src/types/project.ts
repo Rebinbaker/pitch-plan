@@ -56,11 +56,21 @@ export interface Project {
   customerPhone: string;
   responsibleSeller: string;
   constructionTeam?: string; // Made optional since it will be set via checklist
-  startDate: string;
-  deadline: string;
-  constructionStartWeek: string; // Week number for planned construction start (e.g., "v31")
-  estimatedWorkDays: number; // Estimated work time in days
-  actualConstructionStart?: string; // Date when first checklist item is completed
+  startDate: string; // Legacy field - keeping for backwards compatibility
+  deadline: string; // Legacy field - keeping for backwards compatibility
+  
+  // New planning fields (optional for migration)
+  bygg_start_vecka?: string; // ISO week format (e.g., "2025-W33")
+  planerad_start_datum?: string; // Auto-calculated from bygg_start_vecka
+  ungefärlig_arbetstid_dagar?: number; // Estimated work time in days
+  första_moment_bockat_datum?: string; // Date when first work phase is completed
+  beräknat_slut_datum?: string; // Calculated end date based on status
+  
+  // Legacy fields (deprecated but keeping for migration)
+  constructionStartWeek?: string; // Deprecated - use bygg_start_vecka
+  estimatedWorkDays?: number; // Deprecated - use ungefärlig_arbetstid_dagar
+  actualConstructionStart?: string; // Deprecated - use första_moment_bockat_datum
+  
   rotStatus: ROTStatus;
   status: ProjectStatus;
   region: Region;

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar as CalendarIcon, Clock, MapPin, User, Truck, Users, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { isStartingThisWeek, isOngoingProject, isDueThisWeek, hasDelayedStart, isBehindSchedule, dateToWeekString, calculatePlannedStartDate } from '@/utils/projectPlanning';
 import { format, addWeeks, getWeek, getYear, isSameMonth, startOfMonth, endOfMonth, startOfWeek as startWeek, endOfWeek as endWeek, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ProjectHoverCard } from './ProjectHoverCard';
@@ -67,60 +68,58 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     setSelectedDate(new Date());
   };
 
-  // Filter projects for the selected week
+  // Filter projects that are relevant for this week
   const allWeekProjects = projects.filter(project => {
-    const startDate = new Date(project.startDate);
-    const deadline = new Date(project.deadline);
-    const isThisWeek = (startDate >= startOfWeek && startDate <= endOfWeek) ||
-                      (deadline >= startOfWeek && deadline <= endOfWeek) ||
-                      (startDate <= startOfWeek && deadline >= endOfWeek);
+    const plannedStart = new Date(project.planerad_start_datum || project.startDate);
+    const calculatedEnd = new Date(project.beräknat_slut_datum || project.deadline);
+    const today = new Date();
+    
+    // Project is relevant if:
+    // 1. It starts this week (planned)
+    // 2. It's ongoing and should be completed by or after this week
+    // 3. It's due this week (calculated end)
+    const isRelevant = isStartingThisWeek(project, startOfWeek, endOfWeek) ||
+                      (isOngoingProject(project, today) && calculatedEnd >= startOfWeek) ||
+                      isDueThisWeek(project, startOfWeek, endOfWeek);
     
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
-    return isThisWeek && matchesRegion;
+    return isRelevant && matchesRegion;
   });
 
-  // Categorize projects - each project appears in exactly one category
+  // Categorize projects using new business logic
   const startingThisWeek: Project[] = [];
   const ongoingProjects: Project[] = [];
   const completingThisWeek: Project[] = [];
+  const today = new Date();
 
   allWeekProjects.forEach(project => {
-    const startDate = new Date(project.startDate);
-    const deadline = new Date(project.deadline);
-    
     // Debug logging for project "54"
     if (project.name === "54") {
-      console.log('DEBUG Project 54:', {
+      console.log('DEBUG Project 54 NEW LOGIC:', {
         name: project.name,
-        startDate: project.startDate,
-        deadline: project.deadline,
         status: project.status,
-        startDateObject: startDate,
-        deadlineObject: deadline,
-        startOfWeek,
-        endOfWeek,
-        startsThisWeek: startDate >= startOfWeek && startDate <= endOfWeek,
-        deadlineThisWeek: deadline >= startOfWeek && deadline <= endOfWeek,
-        isOngoing: project.status === 'ongoing'
+        planerad_start_datum: project.planerad_start_datum,
+        beräknat_slut_datum: project.beräknat_slut_datum,
+        första_moment_bockat_datum: project.första_moment_bockat_datum,
+        isStartingThisWeek: isStartingThisWeek(project, startOfWeek, endOfWeek),
+        isOngoingProject: isOngoingProject(project, today),
+        isDueThisWeek: isDueThisWeek(project, startOfWeek, endOfWeek),
+        hasDelayedStart: hasDelayedStart(project, today),
+        isBehindSchedule: isBehindSchedule(project, endOfWeek)
       });
     }
     
-    // Priority order: starting this week > ongoing > completing this week
-    // Projects that start this week go to starting, regardless of when they end
-    if (startDate >= startOfWeek && startDate <= endOfWeek) {
+    // Categorize based on new business logic
+    if (isStartingThisWeek(project, startOfWeek, endOfWeek)) {
       startingThisWeek.push(project);
-      if (project.name === "54") console.log('Project 54 added to startingThisWeek');
-    }
-    // If project is ongoing (and doesn't start this week), it goes to ongoing
-    else if (project.status === 'ongoing') {
+      if (project.name === "54") console.log('Project 54 added to startingThisWeek (NEW LOGIC)');
+    } else if (isOngoingProject(project, today)) {
       ongoingProjects.push(project);
-      if (project.name === "54") console.log('Project 54 added to ongoingProjects');
-    }
-    // If project has deadline this week (but doesn't start this week), it goes to completing
-    else if (deadline >= startOfWeek && deadline <= endOfWeek) {
+      if (project.name === "54") console.log('Project 54 added to ongoingProjects (NEW LOGIC)');
+    } else if (isDueThisWeek(project, startOfWeek, endOfWeek)) {
       completingThisWeek.push(project);
-      if (project.name === "54") console.log('Project 54 added to completingThisWeek');
-    } 
+      if (project.name === "54") console.log('Project 54 added to completingThisWeek (NEW LOGIC)');
+    }
   });
 
   // Total categorized projects (should equal allWeekProjects.length)
@@ -201,51 +200,82 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
       return;
     }
 
-    let newStartDate: Date;
     const currentStartDate = new Date(project.startDate);
     const currentDeadline = new Date(project.deadline);
     const projectDuration = Math.ceil((currentDeadline.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    let newStartDate: Date;
+
     if (targetWeek === 'starting') {
-      // Move to current selected week
+      // Move to current selected week - update bygg_start_vecka
       newStartDate = new Date(startOfWeek);
+      const newWeekString = dateToWeekString(newStartDate);
+      
+      // Calculate deadline and activity log entry
+      const newDeadline = new Date(newStartDate);
+      newDeadline.setDate(newStartDate.getDate() + projectDuration);
+      
+      const oldStartDateObj = new Date(project.startDate);
+      const newActivityEntry = {
+        id: `activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        user: 'System',
+        action: 'Projekt omplanerat',
+        description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
+        category: 'general' as const,
+        oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
+        newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
+      };
+      
+      // Update project with new planning data
+      onUpdateProject(projectId, {
+        bygg_start_vecka: newWeekString,
+        planerad_start_datum: calculatePlannedStartDate(newWeekString),
+        startDate: newStartDate.toISOString().split('T')[0], // Legacy compatibility
+        deadline: newDeadline.toISOString().split('T')[0], // Legacy compatibility
+        activityLog: [...(project.activityLog || []), newActivityEntry]
+      });
+      
+      setActiveId(null);
+      return;
     } else if (targetWeek === 'ongoing') {
       // Keep in ongoing (no date change needed)
       setActiveId(null);
       return;
     } else if (targetWeek === 'completing') {
-      // Set deadline to end of current week, calculate backwards
-      const newDeadline = new Date(endOfWeek);
-      newStartDate = new Date(newDeadline);
-      newStartDate.setDate(newDeadline.getDate() - projectDuration);
-    } else {
+      // For ongoing projects, this doesn't make sense with new logic
+      // Only allow this for planned projects
+      if (project.status === 'planned') {
+        // Set calculated end to end of current week, calculate backwards
+        const newCalculatedEnd = new Date(endOfWeek);
+        newStartDate = new Date(newCalculatedEnd);
+        newStartDate.setDate(newCalculatedEnd.getDate() - (project.ungefärlig_arbetstid_dagar || projectDuration));
+        
+        const newWeekString = dateToWeekString(newStartDate);
+        
+        const oldStartDateObj = new Date(project.startDate);
+        const newActivityEntry = {
+          id: `activity-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          user: 'System',
+          action: 'Projekt omplanerat',
+          description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
+          category: 'general' as const,
+          oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
+          newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
+        };
+        
+        onUpdateProject(projectId, {
+          bygg_start_vecka: newWeekString,
+          planerad_start_datum: calculatePlannedStartDate(newWeekString),
+          startDate: newStartDate.toISOString().split('T')[0], // Legacy compatibility
+          deadline: newCalculatedEnd.toISOString().split('T')[0], // Legacy compatibility
+          activityLog: [...(project.activityLog || []), newActivityEntry]
+        });
+      }
       setActiveId(null);
       return;
     }
-
-    // Calculate new deadline
-    const newDeadline = new Date(newStartDate);
-    newDeadline.setDate(newStartDate.getDate() + projectDuration);
-
-    // Create activity log entry
-    const oldStartDateObj = new Date(project.startDate);
-    const newActivityEntry = {
-      id: `activity-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      user: 'System', // In a real app, this would be the current user
-      action: 'Projekt omplanerat',
-      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
-      category: 'general' as const,
-      oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
-      newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
-    };
-
-    // Update project
-    onUpdateProject(projectId, {
-      startDate: newStartDate.toISOString().split('T')[0],
-      deadline: newDeadline.toISOString().split('T')[0],
-      activityLog: [...(project.activityLog || []), newActivityEntry]
-    });
 
     setActiveId(null);
   };

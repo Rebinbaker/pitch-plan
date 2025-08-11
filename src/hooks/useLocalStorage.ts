@@ -9,6 +9,7 @@ import { mockScaffolding } from '@/data/mockScaffolding';
 import { mockTeams } from '@/data/mockTeams';
 import { mockNotifications } from '@/data/mockNotifications';
 import { defaultWorkPhases } from '@/types/project';
+import { migrateProjectToNewPlanning, calculateBeraknatSlutDatum } from '@/utils/projectPlanning';
 
 const STORAGE_KEYS = {
   PROJECTS: 'lovable_projects',
@@ -34,19 +35,22 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
-    // Migration function to ensure work phases have proper structure
-    const migrateWorkPhases = (projects: Project[]): Project[] => {
+    // Migration function to ensure work phases and new planning fields
+    const migrateProjects = (projects: Project[]): Project[] => {
       console.log('MIGRATION: Starting migration of projects:', projects.length);
       return projects.map(project => {
         console.log('MIGRATION: Processing project:', project.name);
         
-        // Check if workPhases need migration (missing essential fields)
-        if (!project.workPhases || project.workPhases.length === 0 || !project.workPhases[0].id || project.workPhases[0].completed === undefined) {
-          console.log('MIGRATION: Creating new workPhases structure for:', project.name);
+        // First migrate to new planning structure
+        let migratedProject = migrateProjectToNewPlanning(project);
+        
+        // Then migrate work phases if needed
+        if (!migratedProject.workPhases || migratedProject.workPhases.length === 0 || !migratedProject.workPhases[0].id || migratedProject.workPhases[0].completed === undefined) {
+          console.log('MIGRATION: Creating new workPhases structure for:', migratedProject.name);
           
           const newWorkPhases = defaultWorkPhases.map((defaultPhase, index) => ({
             ...defaultPhase,
-            id: `workphase-${project.id}-${index}`,
+            id: `workphase-${migratedProject.id}-${index}`,
             completed: false,
             completedAt: undefined,
             imagesReceived: false,
@@ -55,25 +59,25 @@ export const useLocalStorage = () => {
             lastReminderSent: undefined,
           }));
           
-          return {
-            ...project,
+          migratedProject = {
+            ...migratedProject,
             workPhases: newWorkPhases
+          };
+        } else {
+          // If workPhases exist with proper structure, just ensure all required fields exist
+          migratedProject = {
+            ...migratedProject,
+            workPhases: migratedProject.workPhases.map(phase => ({
+              ...phase,
+              requiresDailyInspection: phase.requiresDailyInspection ?? true,
+              imagesReceived: phase.imagesReceived ?? false,
+              inspectionConfirmed: phase.inspectionConfirmed ?? false,
+            }))
           };
         }
         
-        // If workPhases exist with proper structure, just ensure all required fields exist
-        const updatedProject = {
-          ...project,
-          workPhases: project.workPhases.map(phase => ({
-            ...phase,
-            requiresDailyInspection: phase.requiresDailyInspection ?? true,
-            imagesReceived: phase.imagesReceived ?? false,
-            inspectionConfirmed: phase.inspectionConfirmed ?? false,
-          }))
-        };
-        
-        console.log('MIGRATION: Updated project:', project.name, 'with', updatedProject.workPhases.length, 'work phases');
-        return updatedProject;
+        console.log('MIGRATION: Updated project:', migratedProject.name, 'with', migratedProject.workPhases.length, 'work phases');
+        return migratedProject;
       });
     };
     
@@ -84,7 +88,7 @@ export const useLocalStorage = () => {
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       console.log('LOADING: Parsed projects from localStorage:', parsedProjects.length);
-      const migratedProjects = migrateWorkPhases(parsedProjects);
+      const migratedProjects = migrateProjects(parsedProjects);
       console.log('LOADING: Setting migrated projects:', migratedProjects.length);
       setProjects(migratedProjects);
       // Save migrated data back to localStorage
@@ -92,8 +96,9 @@ export const useLocalStorage = () => {
       console.log('LOADING: Saved migrated data back to localStorage');
     } else {
       console.log('LOADING: No localStorage data, using mock projects');
-      setProjects(mockProjects);
-      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(mockProjects));
+      const migratedMockProjects = migrateProjects(mockProjects);
+      setProjects(migratedMockProjects);
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(migratedMockProjects));
     }
 
     // Load scaffolding
@@ -141,13 +146,13 @@ export const useLocalStorage = () => {
     console.log('Current actualConstructionStart:', updatedProject.actualConstructionStart);
     console.log('Projects in storage before update:', projects.length);
     
-    // Check if first work phase was just completed and set actual construction start
+    // Check if first work phase was just completed and handle status transition
     const currentProject = projects.find(p => p.id === updatedProject.id);
     console.log('Found current project:', !!currentProject);
-    console.log('Current project actualConstructionStart:', currentProject?.actualConstructionStart);
+    console.log('Current project första_moment_bockat_datum:', currentProject?.första_moment_bockat_datum);
     
-    if (currentProject && !currentProject.actualConstructionStart) {
-      console.log('No actualConstructionStart yet, checking first work phase...');
+    if (currentProject && !currentProject.första_moment_bockat_datum) {
+      console.log('No första_moment_bockat_datum yet, checking first work phase...');
       const firstWorkPhase = updatedProject.workPhases?.[0];
       console.log('First work phase:', {
         exists: !!firstWorkPhase,
@@ -158,18 +163,24 @@ export const useLocalStorage = () => {
       });
       
       if (firstWorkPhase?.completed && firstWorkPhase.completedAt) {
-        console.log('Setting actualConstructionStart to:', firstWorkPhase.completedAt);
+        console.log('Setting första_moment_bockat_datum and changing status to ongoing');
         updatedProject = {
           ...updatedProject,
+          första_moment_bockat_datum: firstWorkPhase.completedAt,
+          status: 'ongoing' as const,
+          // Keep legacy field for backwards compatibility
           actualConstructionStart: firstWorkPhase.completedAt,
         };
-        console.log('Updated project actualConstructionStart:', updatedProject.actualConstructionStart);
+        console.log('Updated project första_moment_bockat_datum:', updatedProject.första_moment_bockat_datum);
       } else {
         console.log('First work phase not completed or missing completedAt');
       }
     } else {
-      console.log('Skipping actualConstructionStart check - already exists or no current project');
+      console.log('Skipping första_moment_bockat_datum check - already exists or no current project');
     }
+    
+    // Recalculate beräknat_slut_datum after potential status change
+    updatedProject.beräknat_slut_datum = calculateBeraknatSlutDatum(updatedProject);
 
     const newProjects = projects.map(project => 
       project.id === updatedProject.id ? updatedProject : project
