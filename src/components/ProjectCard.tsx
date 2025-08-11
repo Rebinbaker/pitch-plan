@@ -107,7 +107,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             <Clock className="w-4 h-4" />
             <span>
               {project.actualConstructionStart && project.deadline
-                ? `Beräknad deadline: ${new Date(project.deadline).toLocaleDateString('sv-SE')}`
+                ? `Deadline: ${new Date(project.deadline).toLocaleDateString('sv-SE')}`
                 : `Arbetstid: ${project.estimatedWorkDays} dagar`
               }
             </span>
