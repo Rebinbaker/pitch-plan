@@ -902,6 +902,9 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     }
     
     const projectId = active.id as string;
+    const project = projects.find(p => p.id === projectId);
+    console.log('MONTHLY DRAG: Project found:', project?.name, 'ID:', projectId);
+    
     const newWeekId = over.id as string;
     
     // Extract week number from the drop zone ID
@@ -910,11 +913,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     const targetWeek = weeks.find(w => w.weekNumber === weekNumber);
     
     console.log('Target week found:', !!targetWeek);
-    if (!targetWeek) return;
-    
-    const project = projects.find(p => p.id === projectId);
-    console.log('Project found:', !!project, project?.name);
-    if (!project) return;
+    if (!targetWeek || !project) return;
     
     const oldStartDate = new Date(project.planerad_start_datum || project.startDate);
     const oldDeadline = new Date(project.beräknat_slut_datum || project.deadline);
