@@ -290,9 +290,13 @@ Tack! 👷‍♂️`;
   const handlePhaseToggle = (phaseId: string) => {
     console.log('=== handlePhaseToggle called ===');
     console.log('Phase ID:', phaseId);
+    console.log('Project ID:', project.id);
+    console.log('Current project status:', project.status);
+    console.log('WorkPhases length:', workPhases.length);
+    console.log('Project workPhases length:', project.workPhases?.length);
     const activityEntries: ActivityLogEntry[] = [];
     
-    const updatedPhases = workPhases.map(phase => {
+    const updatedPhases = project.workPhases?.map(phase => {
       if (phase.id === phaseId) {
         const wasCompleted = phase.completed;
         const newPhase = {
