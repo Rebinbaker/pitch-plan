@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist, defaultWorkPhases } from '@/types/project';
 import { useToast } from '@/hooks/use-toast';
+import { weekNumberToDate, calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 
 const projectFormSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
@@ -40,8 +41,6 @@ const projectFormSchema = z.object({
   responsibleSeller: z.string().min(1, 'Responsible seller is required'),
   constructionStartWeek: z.string().min(1, 'Construction start week is required'),
   estimatedWorkDays: z.number().min(1, 'Estimated work days is required'),
-  startDate: z.string().min(1, 'Start date is required'),
-  deadline: z.string().min(1, 'Deadline is required'),
   rotStatus: z.enum(['Yes', 'No'] as const),
   status: z.enum(['planned', 'ongoing', 'completed', 'invoiced'] as const),
   region: z.enum(['Stockholm', 'Västra Götaland'] as const),
@@ -82,8 +81,6 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       responsibleSeller: '',
       constructionStartWeek: '',
       estimatedWorkDays: 7,
-      startDate: '',
-      deadline: '',
       rotStatus: 'No',
       status: 'planned',
       region: 'Stockholm',
@@ -111,8 +108,6 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         responsibleSeller: project.responsibleSeller,
         constructionStartWeek: project.constructionStartWeek || '',
         estimatedWorkDays: project.estimatedWorkDays || 7,
-        startDate: project.startDate,
-        deadline: project.deadline,
         rotStatus: project.rotStatus,
         status: project.status,
         region: project.region,
@@ -127,8 +122,6 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         responsibleSeller: '',
         constructionStartWeek: '',
         estimatedWorkDays: 7,
-        startDate: '',
-        deadline: '',
         rotStatus: 'No',
         status: 'planned',
         region: 'Stockholm',
@@ -151,6 +144,10 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
     setIsSubmitting(true);
     
     try {
+      // Calculate startDate and deadline from week and work days
+      const startDate = weekNumberToDate(data.constructionStartWeek);
+      const deadline = calculateDeadlineFromWorkDays(startDate, data.estimatedWorkDays);
+
       if (isEditing && project && onUpdateProject) {
         // Update existing project
         const updatedProject: Project = {
@@ -162,8 +159,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           responsibleSeller: data.responsibleSeller,
           constructionStartWeek: data.constructionStartWeek,
           estimatedWorkDays: data.estimatedWorkDays,
-          startDate: data.startDate,
-          deadline: data.deadline,
+          startDate,
+          deadline,
           rotStatus: data.rotStatus,
           status: data.status,
           region: data.region,
@@ -187,8 +184,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           responsibleSeller: data.responsibleSeller,
           constructionStartWeek: data.constructionStartWeek,
           estimatedWorkDays: data.estimatedWorkDays,
-          startDate: data.startDate,
-          deadline: data.deadline,
+          startDate,
+          deadline,
           rotStatus: data.rotStatus,
           status: data.status,
           region: data.region,
@@ -393,34 +390,6 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Startdatum</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Deadline</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="status"
