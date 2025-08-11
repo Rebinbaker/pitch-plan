@@ -87,11 +87,11 @@ export function setActualConstructionStart(project: Project): Project | null {
     return null; // Already set
   }
 
-  const firstChecklistItem = project.checklist?.[0];
-  if (firstChecklistItem?.completed && firstChecklistItem.completedAt) {
+  const firstWorkPhase = project.workPhases?.[0];
+  if (firstWorkPhase?.completed && firstWorkPhase.completedAt) {
     return {
       ...project,
-      actualConstructionStart: firstChecklistItem.completedAt,
+      actualConstructionStart: firstWorkPhase.completedAt,
     };
   }
 
