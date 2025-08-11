@@ -175,8 +175,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         });
       } else {
         // Create new project
+        const projectId = `project-${Date.now()}`;
         const newProject: Project = {
-          id: `project-${Date.now()}`,
+          id: projectId,
           name: data.name,
           address: data.address,
           customerName: data.customerName,
@@ -192,11 +193,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           notes: data.notes || '',
           checklist: defaultChecklist.map((item, index) => ({
             ...item,
-            id: `checklist-${Date.now()}-${index}`,
+            id: `checklist-${projectId}-${index}`,
           })),
           workPhases: defaultWorkPhases.map((item, index) => ({
             ...item,
-            id: `workphase-${Date.now()}-${index}`,
+            id: `workphase-${projectId}-${index}`,
           })),
           completionPercentage: 0,
         };
