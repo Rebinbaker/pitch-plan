@@ -897,6 +897,36 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       deadline: format(newDeadline, 'yyyy-MM-dd'),
       activityLog: [...(project.activityLog || []), newActivityEntry]
     });
+
+    // Create and add notification for project rescheduling
+    const notification = {
+      id: `reschedule-${projectId}-${Date.now()}`,
+      type: 'deadline_warning' as const,
+      priority: 'medium' as const,
+      title: 'Projekt omplanerat',
+      message: `Projekt "${project.name}" har flyttats från vecka ${getWeek(oldStartDate)} till vecka ${weekNumber}.`,
+      projectId: project.id,
+      projectName: project.name,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      actionRequired: false
+    };
+
+    // Add notification using local storage hook if available
+    if (typeof window !== 'undefined') {
+      const existingNotifications = JSON.parse(localStorage.getItem('project_notifications') || '[]');
+      const updatedNotifications = [...existingNotifications, notification];
+      localStorage.setItem('project_notifications', JSON.stringify(updatedNotifications));
+      
+      // Show toast notification
+      import('@/hooks/use-toast').then(({ toast }) => {
+        toast({
+          title: "Projekt omplanerat",
+          description: `"${project.name}" flyttades till vecka ${weekNumber}`,
+          duration: 3000,
+        });
+      });
+    }
   };
 
   return (
