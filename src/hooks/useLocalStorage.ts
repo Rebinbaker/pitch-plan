@@ -177,6 +177,45 @@ export const useLocalStorage = () => {
     setProjects(newProjects);
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(newProjects));
 
+    // Generate timeline notifications after project update
+    const { checkProjectTimelineNotifications } = await import('@/utils/projectNotifications');
+    const notification = checkProjectTimelineNotifications(updatedProject);
+    
+    if (notification) {
+      console.log('Generated notification:', notification);
+      const currentNotifications = [...notifications];
+      // Check if this notification already exists to avoid duplicates
+      const existingNotification = currentNotifications.find(n => 
+        n.id === notification.id || 
+        (n.projectId === notification.projectId && n.title.includes(notification.projectName))
+      );
+      
+      if (!existingNotification) {
+        // Convert ProjectNotification to Notification format
+        const formattedNotification = {
+          id: notification.id,
+          type: 'deadline_warning' as const,
+          priority: notification.type === 'early_completion' ? 'low' as const : 'medium' as const,
+          title: notification.type === 'early_completion' ? 'Projekt slutfört i förtid' : 'Projektförseining',
+          message: notification.message,
+          projectId: notification.projectId,
+          projectName: notification.projectName,
+          createdAt: notification.createdAt,
+          isRead: false,
+          actionRequired: notification.type === 'delay_warning'
+        };
+        
+        currentNotifications.push(formattedNotification);
+        setNotifications(currentNotifications);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(currentNotifications));
+        console.log('Added notification to storage');
+      } else {
+        console.log('Notification already exists, skipping');
+      }
+    } else {
+      console.log('No notification generated for this project update');
+    }
+
     // Handle resource freeing when project is completed
     if (updatedProject.status === 'completed') {
       if (updatedProject.assignedTrailer) {
