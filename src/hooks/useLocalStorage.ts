@@ -135,13 +135,26 @@ export const useLocalStorage = () => {
   };
 
   const updateProject = async (updatedProject: Project) => {
-    console.log('Saving project to localStorage:', updatedProject.id, updatedProject.name);
-
+    console.log('=== updateProject called ===');
+    console.log('Project ID:', updatedProject.id);
+    console.log('Project name:', updatedProject.name);
+    console.log('Current actualConstructionStart:', updatedProject.actualConstructionStart);
+    
     // Check if first work phase was just completed and set actual construction start
     const currentProject = projects.find(p => p.id === updatedProject.id);
+    console.log('Found current project:', !!currentProject);
+    console.log('Current project actualConstructionStart:', currentProject?.actualConstructionStart);
+    
     if (currentProject && !currentProject.actualConstructionStart) {
+      console.log('No actualConstructionStart yet, checking first work phase...');
       const firstWorkPhase = updatedProject.workPhases?.[0];
-      console.log('Checking first work phase:', firstWorkPhase?.label, 'completed:', firstWorkPhase?.completed, 'completedAt:', firstWorkPhase?.completedAt);
+      console.log('First work phase:', {
+        exists: !!firstWorkPhase,
+        label: firstWorkPhase?.label,
+        completed: firstWorkPhase?.completed,
+        completedAt: firstWorkPhase?.completedAt,
+        id: firstWorkPhase?.id
+      });
       
       if (firstWorkPhase?.completed && firstWorkPhase.completedAt) {
         console.log('Setting actualConstructionStart to:', firstWorkPhase.completedAt);
@@ -149,7 +162,12 @@ export const useLocalStorage = () => {
           ...updatedProject,
           actualConstructionStart: firstWorkPhase.completedAt,
         };
+        console.log('Updated project actualConstructionStart:', updatedProject.actualConstructionStart);
+      } else {
+        console.log('First work phase not completed or missing completedAt');
       }
+    } else {
+      console.log('Skipping actualConstructionStart check - already exists or no current project');
     }
 
     const newProjects = projects.map(project => 
