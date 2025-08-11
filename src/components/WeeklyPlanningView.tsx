@@ -68,10 +68,14 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     setSelectedDate(new Date());
   };
 
-  // Filter projects that are relevant for this week
+  // Filter projects that are relevant for this week using new planning logic
   const allWeekProjects = projects.filter(project => {
-    const plannedStart = new Date(project.planerad_start_datum || project.startDate);
-    const calculatedEnd = new Date(project.beräknat_slut_datum || project.deadline);
+    // Use new planning fields if available, fallback to legacy
+    const plannedStartStr = project.planerad_start_datum || project.startDate;
+    const calculatedEndStr = project.beräknat_slut_datum || project.deadline;
+    
+    const plannedStart = new Date(plannedStartStr);
+    const calculatedEnd = new Date(calculatedEndStr);
     const today = new Date();
     
     // Project is relevant if:
@@ -83,6 +87,21 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
                       isDueThisWeek(project, startOfWeek, endOfWeek);
     
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
+    
+    // Debug for project "54"
+    if (project.name === "54") {
+      console.log('Filter check for project 54:', {
+        plannedStartStr,
+        calculatedEndStr,
+        plannedStart,
+        calculatedEnd,
+        weekStart: startOfWeek,
+        weekEnd: endOfWeek,
+        isRelevant,
+        matchesRegion
+      });
+    }
+    
     return isRelevant && matchesRegion;
   });
 
