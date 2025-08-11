@@ -46,7 +46,7 @@ export const useLocalStorage = () => {
           
           const newWorkPhases = defaultWorkPhases.map((defaultPhase, index) => ({
             ...defaultPhase,
-            id: `workphase-${Date.now()}-${index}`,
+            id: `workphase-${project.id}-${index}`,
             completed: false,
             completedAt: undefined,
             imagesReceived: false,
