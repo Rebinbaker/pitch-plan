@@ -29,7 +29,8 @@ export function generateTestNotifications(projects: Project[]): Notification[] {
   const currentWeek = 33; // Current week number (approximate)
   
   projects.slice(1, 3).forEach((project, index) => {
-    // Extract week number from constructionStartWeek (e.g., "V32" -> 32)
+    // Check if constructionStartWeek exists and extract week number
+    if (!project.constructionStartWeek) return;
     const weekMatch = project.constructionStartWeek.match(/\d+/);
     if (!weekMatch) return;
     

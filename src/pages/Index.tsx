@@ -69,12 +69,15 @@ const Index = () => {
     fetchUsername();
   }, [user]);
 
-  // Generate test notifications for delayed projects on first load
+  // Generate test notifications for delayed projects on first load (only once)
   useEffect(() => {
     const generateNotifications = async () => {
       console.log('NOTIFICATION CHECK: Projects length:', projects.length, 'Notifications length:', notifications.length);
       
-      if (projects.length > 0) {
+      // Only generate notifications if we haven't generated any yet
+      const hasTestNotifications = notifications.some(n => n.id.includes('test-'));
+      
+      if (projects.length > 0 && !hasTestNotifications) {
         const { generateTestNotifications } = await import('@/utils/generateTestNotifications');
         const testNotifications = generateTestNotifications(projects);
         
