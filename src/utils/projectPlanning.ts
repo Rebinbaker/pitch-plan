@@ -145,6 +145,12 @@ export function isStartingThisWeek(project: Project, weekStart: Date, weekEnd: D
   const plannedStartStr = project.planerad_start_datum || project.startDate;
   const plannedStart = new Date(plannedStartStr);
   
+  // Validate date
+  if (isNaN(plannedStart.getTime())) {
+    console.warn('Invalid planned start date for project', project.name, ':', plannedStartStr);
+    return false;
+  }
+  
   const isInWeek = plannedStart >= weekStart && plannedStart <= weekEnd;
   
   // Debug logging for project "54"
@@ -155,10 +161,12 @@ export function isStartingThisWeek(project: Project, weekStart: Date, weekEnd: D
       planerad_start_datum: project.planerad_start_datum,
       startDate: project.startDate,
       plannedStartStr,
-      plannedStart,
-      weekStart,
-      weekEnd,
-      isInWeek
+      plannedStart: plannedStart.toISOString(),
+      weekStart: weekStart.toISOString(),
+      weekEnd: weekEnd.toISOString(),
+      isInWeek,
+      'plannedStart >= weekStart': plannedStart >= weekStart,
+      'plannedStart <= weekEnd': plannedStart <= weekEnd
     });
   }
   
