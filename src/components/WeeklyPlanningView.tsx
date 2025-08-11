@@ -164,7 +164,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleBoardDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (!over || !onUpdateProject) {
@@ -438,7 +438,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onDragEnd={handleBoardDragEnd}
         >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Starting This Week */}
@@ -853,7 +853,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
 
   const weeks = getWeeksInRange();
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleMonthlyDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id || !onUpdateProject) return;
@@ -931,7 +931,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
 
   return (
     <DndContext
-      onDragEnd={handleDragEnd}
+      onDragEnd={handleMonthlyDragEnd}
       modifiers={[restrictToWindowEdges]}
     >
       <div className="space-y-6">
