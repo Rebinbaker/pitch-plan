@@ -187,45 +187,8 @@ export const useLocalStorage = () => {
     console.log('Data successfully saved to localStorage:', !!savedData);
     console.log('Saved data length:', savedData ? JSON.parse(savedData).length : 0);
 
-    // Generate timeline notifications after project update
-    const { checkProjectTimelineNotifications } = await import('@/utils/projectNotifications');
-    const notification = checkProjectTimelineNotifications(updatedProject);
-    
-    if (notification) {
-      console.log('Generated notification:', notification);
-      const currentNotifications = [...notifications];
-      // Check if this notification already exists to avoid duplicates
-      const existingNotification = currentNotifications.find(n => 
-        n.id === notification.id || 
-        (n.projectId === notification.projectId && n.title.includes(notification.projectName))
-      );
-      
-      if (!existingNotification) {
-        // Convert ProjectNotification to Notification format
-        const formattedNotification = {
-          id: notification.id,
-          type: 'deadline_warning' as const,
-          priority: notification.type === 'early_completion' ? 'low' as const : 'medium' as const,
-          title: notification.type === 'early_completion' ? 'Projekt slutfört i förtid' : 
-                 notification.type === 'late_start' ? 'Försenad projektstart' : 'Projektförseining',
-          message: notification.message,
-          projectId: notification.projectId,
-          projectName: notification.projectName,
-          createdAt: notification.createdAt,
-          isRead: false,
-          actionRequired: notification.type === 'delay_warning'
-        };
-        
-        currentNotifications.push(formattedNotification);
-        setNotifications(currentNotifications);
-        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(currentNotifications));
-        console.log('Added notification to storage');
-      } else {
-        console.log('Notification already exists, skipping');
-      }
-    } else {
-      console.log('No notification generated for this project update');
-    }
+    // Note: Timeline notifications are now handled directly in the UI components
+    // where the specific actions occur (like in WeeklyPlanningView for rescheduling)
 
     // Handle resource freeing when project is completed
     if (updatedProject.status === 'completed') {
