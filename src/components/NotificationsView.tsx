@@ -18,12 +18,14 @@ export function NotificationsView({ notifications, onMarkAsRead, onDismiss, onNa
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
   const [showRead, setShowRead] = useState(false);
 
-  const filteredNotifications = notifications.filter(notification => {
-    const matchesPriority = filterPriority === 'all' || notification.priority === filterPriority;
-    const matchesType = filterType === 'all' || notification.type === filterType;
-    const matchesReadStatus = showRead || !notification.isRead;
-    return matchesPriority && matchesType && matchesReadStatus;
-  });
+  const filteredNotifications = notifications
+    .filter(notification => {
+      const matchesPriority = filterPriority === 'all' || notification.priority === filterPriority;
+      const matchesType = filterType === 'all' || notification.type === filterType;
+      const matchesReadStatus = showRead || !notification.isRead;
+      return matchesPriority && matchesType && matchesReadStatus;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getPriorityColor = (priority: NotificationPriority) => {
     switch (priority) {
