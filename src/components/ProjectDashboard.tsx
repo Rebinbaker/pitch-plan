@@ -88,6 +88,15 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
     setSelectedProject(updatedProject);
   };
 
+  // Handle project updates from cards and update selected project if it matches
+  const handleUpdateProjectFromCard = (updatedProject: Project) => {
+    onUpdateProject(updatedProject);
+    // If this is the currently selected project, update it too
+    if (selectedProject && selectedProject.id === updatedProject.id) {
+      setSelectedProject(updatedProject);
+    }
+  };
+
   // Statistics for the header
   const stats = {
     total: projects.length,
@@ -140,7 +149,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
             key={project.id}
             project={project}
             onViewDetails={handleViewDetails}
-            onUpdateProject={onUpdateProject}
+            onUpdateProject={handleUpdateProjectFromCard}
             trailers={trailers}
             teams={teams}
             onUpdateTeam={onUpdateTeam}
