@@ -64,6 +64,8 @@ export function ProjectDetailModal({
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [copiedPhases, setCopiedPhases] = useState<Set<string>>(new Set());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   if (!project) return null;
 
@@ -322,16 +324,31 @@ Tack! 👷‍♂️`;
     );
   };
 
-  const handleRefreshProject = () => {
+  const handleRefreshProject = async () => {
     if (project && projects.length > 0) {
+      setIsRefreshing(true);
+      setRefreshSuccess(false);
+      
+      // Simulate a brief delay for loading effect
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       const freshProject = projects.find(p => p.id === project.id);
       if (freshProject) {
         onUpdateProject(freshProject);
+        setRefreshSuccess(true);
+        
         toast({
           title: "Projekt uppdaterat",
           description: "Projektinformation har hämtats från den senaste datan",
         });
+        
+        // Reset success state after 2 seconds
+        setTimeout(() => {
+          setRefreshSuccess(false);
+        }, 2000);
       }
+      
+      setIsRefreshing(false);
     }
   };
 
@@ -352,12 +369,23 @@ Tack! 👷‍♂️`;
                       variant="ghost"
                       size="sm"
                       onClick={handleRefreshProject}
-                      className="h-8 w-8 p-0"
+                      disabled={isRefreshing}
+                      className={`h-8 w-8 p-0 transition-all duration-300 ${
+                        refreshSuccess 
+                          ? 'text-green-600 hover:text-green-700' 
+                          : 'hover:bg-accent'
+                      }`}
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className={`w-4 h-4 transition-transform duration-500 ${
+                        isRefreshing ? 'animate-spin' : ''
+                      } ${
+                        refreshSuccess ? 'text-green-600' : ''
+                      }`} />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Uppdatera projektdata</TooltipContent>
+                  <TooltipContent>
+                    {refreshSuccess ? 'Uppdaterat!' : 'Uppdatera projektdata'}
+                  </TooltipContent>
                 </Tooltip>
               </div>
               <DialogDescription className="flex items-center gap-2 text-muted-foreground">
