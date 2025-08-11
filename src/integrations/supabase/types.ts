@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      files: {
+        Row: {
+          id: string
+          name: string
+          project_id: string | null
+          size: number
+          type: string
+          uploaded_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          project_id?: string | null
+          size: number
+          type: string
+          uploaded_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          project_id?: string | null
+          size?: number
+          type?: string
+          uploaded_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_required: boolean
+          changed_by_user: string | null
+          created_at: string
+          field_name: string | null
+          id: string
+          is_read: boolean
+          message: string
+          new_value: string | null
+          old_value: string | null
+          priority: string
+          project_id: string | null
+          project_name: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_required?: boolean
+          changed_by_user?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          new_value?: string | null
+          old_value?: string | null
+          priority?: string
+          project_id?: string | null
+          project_name?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_required?: boolean
+          changed_by_user?: string | null
+          created_at?: string
+          field_name?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          new_value?: string | null
+          old_value?: string | null
+          priority?: string
+          project_id?: string | null
+          project_name?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -38,6 +125,153 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          activity_log: Json | null
+          actual_construction_start: string | null
+          address: string | null
+          assigned_trailer: string | null
+          checklist: Json | null
+          completion_percentage: number | null
+          construction_start_week: string | null
+          construction_team: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          deadline: string | null
+          estimated_work_days: number | null
+          id: string
+          name: string
+          notes: string | null
+          region: string | null
+          responsible_seller: string | null
+          rot_status: string | null
+          scaffolding_responsible: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          work_phases: Json | null
+        }
+        Insert: {
+          activity_log?: Json | null
+          actual_construction_start?: string | null
+          address?: string | null
+          assigned_trailer?: string | null
+          checklist?: Json | null
+          completion_percentage?: number | null
+          construction_start_week?: string | null
+          construction_team?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          deadline?: string | null
+          estimated_work_days?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          region?: string | null
+          responsible_seller?: string | null
+          rot_status?: string | null
+          scaffolding_responsible?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          work_phases?: Json | null
+        }
+        Update: {
+          activity_log?: Json | null
+          actual_construction_start?: string | null
+          address?: string | null
+          assigned_trailer?: string | null
+          checklist?: Json | null
+          completion_percentage?: number | null
+          construction_start_week?: string | null
+          construction_team?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          deadline?: string | null
+          estimated_work_days?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          region?: string | null
+          responsible_seller?: string | null
+          rot_status?: string | null
+          scaffolding_responsible?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          work_phases?: Json | null
+        }
+        Relationships: []
+      }
+      scaffolding: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          availability_next_week: string | null
+          created_at: string
+          id: string
+          leader: string | null
+          name: string
+          skills: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_next_week?: string | null
+          created_at?: string
+          id?: string
+          leader?: string | null
+          name: string
+          skills?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_next_week?: string | null
+          created_at?: string
+          id?: string
+          leader?: string | null
+          name?: string
+          skills?: Json | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
