@@ -130,8 +130,28 @@ function calculateEndDateFromProgress(project: Project): string {
 export function isStartingThisWeek(project: Project, weekStart: Date, weekEnd: Date): boolean {
   if (project.status !== 'planned') return false;
   
-  const plannedStart = new Date(project.planerad_start_datum);
-  return plannedStart >= weekStart && plannedStart <= weekEnd;
+  // Use planerad_start_datum if available, otherwise fallback to startDate
+  const plannedStartStr = project.planerad_start_datum || project.startDate;
+  const plannedStart = new Date(plannedStartStr);
+  
+  const isInWeek = plannedStart >= weekStart && plannedStart <= weekEnd;
+  
+  // Debug logging for project "54"
+  if (project.name === "54") {
+    console.log('isStartingThisWeek DEBUG for project 54:', {
+      name: project.name,
+      status: project.status,
+      planerad_start_datum: project.planerad_start_datum,
+      startDate: project.startDate,
+      plannedStartStr,
+      plannedStart,
+      weekStart,
+      weekEnd,
+      isInWeek
+    });
+  }
+  
+  return isInWeek;
 }
 
 /**

@@ -93,14 +93,23 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
   const today = new Date();
 
   allWeekProjects.forEach(project => {
-    // Debug logging for project "54"
+    // Debug logging for project "54" - show migration status
     if (project.name === "54") {
-      console.log('DEBUG Project 54 NEW LOGIC:', {
+      console.log('DEBUG Project 54 FULL DATA:', {
         name: project.name,
         status: project.status,
+        startDate: project.startDate,
+        deadline: project.deadline,
         planerad_start_datum: project.planerad_start_datum,
+        bygg_start_vecka: project.bygg_start_vecka,
+        ungefärlig_arbetstid_dagar: project.ungefärlig_arbetstid_dagar,
         beräknat_slut_datum: project.beräknat_slut_datum,
         första_moment_bockat_datum: project.första_moment_bockat_datum,
+        weekStart: startOfWeek,
+        weekEnd: endOfWeek
+      });
+      
+      console.log('DEBUG Project 54 CATEGORIZATION:', {
         isStartingThisWeek: isStartingThisWeek(project, startOfWeek, endOfWeek),
         isOngoingProject: isOngoingProject(project, today),
         isDueThisWeek: isDueThisWeek(project, startOfWeek, endOfWeek),
@@ -119,6 +128,8 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     } else if (isDueThisWeek(project, startOfWeek, endOfWeek)) {
       completingThisWeek.push(project);
       if (project.name === "54") console.log('Project 54 added to completingThisWeek (NEW LOGIC)');
+    } else {
+      if (project.name === "54") console.log('Project 54 NOT categorized in any group!');
     }
   });
 
