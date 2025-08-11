@@ -55,9 +55,12 @@ export interface Project {
   customerName: string;
   customerPhone: string;
   responsibleSeller: string;
-  constructionTeam: string;
+  constructionTeam?: string; // Made optional since it will be set via checklist
   startDate: string;
   deadline: string;
+  constructionStartWeek: string; // Week number for planned construction start (e.g., "v31")
+  estimatedWorkDays: number; // Estimated work time in days
+  actualConstructionStart?: string; // Date when first checklist item is completed
   rotStatus: ROTStatus;
   status: ProjectStatus;
   region: Region;

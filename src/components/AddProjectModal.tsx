@@ -38,7 +38,8 @@ const projectFormSchema = z.object({
   customerName: z.string().min(1, 'Customer name is required'),
   customerPhone: z.string().min(1, 'Customer phone is required'),
   responsibleSeller: z.string().min(1, 'Responsible seller is required'),
-  constructionTeam: z.string().min(1, 'Construction team is required'),
+  constructionStartWeek: z.string().min(1, 'Construction start week is required'),
+  estimatedWorkDays: z.number().min(1, 'Estimated work days is required'),
   startDate: z.string().min(1, 'Start date is required'),
   deadline: z.string().min(1, 'Deadline is required'),
   rotStatus: z.enum(['Yes', 'No'] as const),
@@ -79,7 +80,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       customerName: '',
       customerPhone: '',
       responsibleSeller: '',
-      constructionTeam: '',
+      constructionStartWeek: '',
+      estimatedWorkDays: 7,
       startDate: '',
       deadline: '',
       rotStatus: 'No',
@@ -107,7 +109,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         customerName: project.customerName,
         customerPhone: project.customerPhone,
         responsibleSeller: project.responsibleSeller,
-        constructionTeam: project.constructionTeam,
+        constructionStartWeek: project.constructionStartWeek || '',
+        estimatedWorkDays: project.estimatedWorkDays || 7,
         startDate: project.startDate,
         deadline: project.deadline,
         rotStatus: project.rotStatus,
@@ -122,7 +125,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         customerName: '',
         customerPhone: '',
         responsibleSeller: '',
-        constructionTeam: '',
+        constructionStartWeek: '',
+        estimatedWorkDays: 7,
         startDate: '',
         deadline: '',
         rotStatus: 'No',
@@ -156,7 +160,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           customerName: data.customerName,
           customerPhone: data.customerPhone,
           responsibleSeller: data.responsibleSeller,
-          constructionTeam: data.constructionTeam,
+          constructionStartWeek: data.constructionStartWeek,
+          estimatedWorkDays: data.estimatedWorkDays,
           startDate: data.startDate,
           deadline: data.deadline,
           rotStatus: data.rotStatus,
@@ -180,7 +185,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
           customerName: data.customerName,
           customerPhone: data.customerPhone,
           responsibleSeller: data.responsibleSeller,
-          constructionTeam: data.constructionTeam,
+          constructionStartWeek: data.constructionStartWeek,
+          estimatedWorkDays: data.estimatedWorkDays,
           startDate: data.startDate,
           deadline: data.deadline,
           rotStatus: data.rotStatus,
@@ -352,29 +358,39 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
 
               <FormField
                 control={form.control}
-                name="constructionTeam"
+                name="constructionStartWeek"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Byggteam</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Välj team" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {teams.map((team) => (
-                          <SelectItem key={team} value={team}>
-                            {team}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Byggstart (vecka)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="t.ex. v31" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="estimatedWorkDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ungefärlig arbetstid (dagar)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      max="365"
+                      placeholder="6-10"
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 7)}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField

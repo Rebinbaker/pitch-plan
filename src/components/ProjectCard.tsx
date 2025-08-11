@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
@@ -95,12 +95,12 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             <span>{project.customerPhone}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span>{project.constructionTeam}</span>
+            <Calendar className="w-4 h-4" />
+            <span>Byggstart: {project.constructionStartWeek}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarDays className="w-4 h-4" />
-            <span>{new Date(project.deadline).toLocaleDateString('sv-SE')}</span>
+            <Clock className="w-4 h-4" />
+            <span>Arbetstid: {project.estimatedWorkDays} dagar</span>
           </div>
         </div>
         

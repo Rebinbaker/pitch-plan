@@ -133,6 +133,18 @@ export const useLocalStorage = () => {
   const updateProject = async (updatedProject: Project) => {
     console.log('Saving project to localStorage:', updatedProject.id, updatedProject.name);
 
+    // Check if first checklist item was just completed and set actual construction start
+    const currentProject = projects.find(p => p.id === updatedProject.id);
+    if (currentProject && !currentProject.actualConstructionStart) {
+      const firstChecklistItem = updatedProject.checklist?.[0];
+      if (firstChecklistItem?.completed && firstChecklistItem.completedAt) {
+        updatedProject = {
+          ...updatedProject,
+          actualConstructionStart: firstChecklistItem.completedAt,
+        };
+      }
+    }
+
     const newProjects = projects.map(project => 
       project.id === updatedProject.id ? updatedProject : project
     );
