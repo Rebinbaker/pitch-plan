@@ -15,6 +15,7 @@ import { ProjectDetailModal } from './ProjectDetailModal';
 import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from '@/hooks/use-toast';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
@@ -168,8 +169,9 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
   const handleBoardDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     
+    setActiveId(null);
+    
     if (!over || !onUpdateProject) {
-      setActiveId(null);
       return;
     }
 
@@ -179,7 +181,6 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     // Calculate new start date based on target week
     const project = projects.find(p => p.id === projectId);
     if (!project) {
-      setActiveId(null);
       return;
     }
 
@@ -189,19 +190,14 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     const projectDuration = Math.ceil((currentDeadline.getTime() - currentStartDate.getTime()) / (1000 * 60 * 60 * 24));
 
     if (targetWeek === 'starting') {
-      // Move to current selected week
       newStartDate = new Date(startOfWeek);
     } else if (targetWeek === 'ongoing') {
-      // Keep in ongoing (no date change needed)
-      setActiveId(null);
-      return;
+      return; // No change needed
     } else if (targetWeek === 'completing') {
-      // Set deadline to end of current week, calculate backwards
       const newDeadline = new Date(endOfWeek);
       newStartDate = new Date(newDeadline);
       newStartDate.setDate(newDeadline.getDate() - projectDuration);
     } else {
-      setActiveId(null);
       return;
     }
 
@@ -209,17 +205,24 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
     const newDeadline = new Date(newStartDate);
     newDeadline.setDate(newStartDate.getDate() + projectDuration);
 
+    // Show immediate feedback
+    toast({
+      title: "Projekt omplanerat",
+      description: `"${project.name}" flyttades till ${targetWeek === 'starting' ? 'startande' : 'avslutande'} denna vecka`,
+      duration: 2000,
+    });
+
     // Create activity log entry
     const oldStartDateObj = new Date(project.startDate);
     const newActivityEntry = {
       id: `activity-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      user: 'System', // In a real app, this would be the current user
+      user: 'System',
       action: 'Projekt omplanerat',
-      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
+      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} till vecka ${getWeek(newStartDate)}`,
       category: 'general' as const,
-      oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
-      newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
+      oldValue: `Vecka ${getWeek(oldStartDateObj)}`,
+      newValue: `Vecka ${getWeek(newStartDate)}`
     };
 
     // Update project
@@ -228,8 +231,6 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
       deadline: newDeadline.toISOString().split('T')[0],
       activityLog: [...(project.activityLog || []), newActivityEntry]
     });
-
-    setActiveId(null);
   };
 
   return (
@@ -855,12 +856,9 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
   const weeks = getWeeksInRange();
 
   const handleMonthlyDragEnd = (event: DragEndEvent) => {
-    console.log('MONTHLY DRAG END CALLED:', event);
     const { active, over } = event;
     
-    console.log('Active:', active?.id, 'Over:', over?.id);
     if (!over || active.id === over.id || !onUpdateProject) {
-      console.log('Early return - no over, same id, or no onUpdateProject');
       return;
     }
     
@@ -869,14 +867,11 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     
     // Extract week number from the drop zone ID
     const weekNumber = parseInt(newWeekId.replace('week-', ''));
-    console.log('Extracted week number:', weekNumber);
     const targetWeek = weeks.find(w => w.weekNumber === weekNumber);
     
-    console.log('Target week found:', !!targetWeek);
     if (!targetWeek) return;
     
     const project = projects.find(p => p.id === projectId);
-    console.log('Project found:', !!project, project?.name);
     if (!project) return;
     
     const oldStartDate = new Date(project.startDate);
@@ -888,16 +883,23 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     const newDeadline = new Date(newStartDate);
     newDeadline.setDate(newStartDate.getDate() + projectDuration);
     
-    // Create activity log entry
+    // Show immediate toast feedback
+    toast({
+      title: "Projekt omplanerat",
+      description: `"${project.name}" flyttades till vecka ${weekNumber}`,
+      duration: 2000,
+    });
+    
+    // Optimistically update the project data
     const newActivityEntry = {
       id: `activity-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      user: 'System', // In a real app, this would be the current user
+      user: 'System',
       action: 'Projekt omplanerat',
-      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')}) till vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`,
+      description: `Projekt prioriterades om från vecka ${getWeek(oldStartDate)} till vecka ${weekNumber}`,
       category: 'general' as const,
-      oldValue: `Vecka ${getWeek(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')})`,
-      newValue: `Vecka ${weekNumber} (${format(newStartDate, 'yyyy-MM-dd')})`
+      oldValue: `Vecka ${getWeek(oldStartDate)}`,
+      newValue: `Vecka ${weekNumber}`
     };
     
     // Update project with new dates and activity log
@@ -907,44 +909,22 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       activityLog: [...(project.activityLog || []), newActivityEntry]
     });
 
-    // Create and add notification for project rescheduling
-    const notification = {
-      id: `reschedule-${projectId}-${Date.now()}`,
-      type: 'project_rescheduled' as const,
-      priority: 'medium' as const,
-      title: 'Projekt omplanerat',
-      message: `"${project.name}" flyttades till vecka ${weekNumber}`,
-      projectId: project.id,
-      projectName: project.name,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      actionRequired: false
-    };
-
-    // Add notification using the React state function
-    console.log('Adding notification via React state');
+    // Add notification asynchronously
     if (onAddNotifications) {
+      const notification = {
+        id: `reschedule-${projectId}-${Date.now()}`,
+        type: 'project_rescheduled' as const,
+        priority: 'medium' as const,
+        title: 'Projekt omplanerat',
+        message: `"${project.name}" flyttades till vecka ${weekNumber}`,
+        projectId: project.id,
+        projectName: project.name,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        actionRequired: false
+      };
       onAddNotifications([notification]);
-      console.log('Notification added via React state');
-    } else {
-      // Fallback to localStorage if function not available
-      console.log('Fallback: Adding notification to localStorage');
-      const existingNotifications = JSON.parse(localStorage.getItem('lovable_notifications') || '[]');
-      console.log('Existing notifications count:', existingNotifications.length);
-      const updatedNotifications = [...existingNotifications, notification];
-      localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
-      console.log('Updated notifications count:', updatedNotifications.length);
     }
-      
-      // Show toast notification
-      console.log('Showing toast notification');
-      import('@/hooks/use-toast').then(({ toast }) => {
-        toast({
-          title: "Projekt omplanerat",
-          description: `"${project.name}" flyttades till vecka ${weekNumber}`,
-          duration: 3000,
-        });
-      });
   };
 
   return (
