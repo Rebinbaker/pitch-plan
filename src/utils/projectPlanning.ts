@@ -177,8 +177,20 @@ export function isOngoingProject(project: Project, today: Date): boolean {
  * @returns boolean
  */
 export function isDueThisWeek(project: Project, weekStart: Date, weekEnd: Date): boolean {
-  const calculatedEnd = new Date(project.beräknat_slut_datum);
-  return calculatedEnd >= weekStart && calculatedEnd <= weekEnd;
+  // Use beräknat_slut_datum if available, otherwise fallback to deadline
+  const calculatedEndStr = project.beräknat_slut_datum || project.deadline;
+  const calculatedEnd = new Date(calculatedEndStr);
+  
+  // Validate date
+  if (isNaN(calculatedEnd.getTime())) {
+    console.warn('Invalid calculated end date for project', project.name, ':', calculatedEndStr);
+    return false;
+  }
+  
+  const isDue = calculatedEnd >= weekStart && calculatedEnd <= weekEnd;
+  
+  // This applies to BOTH planned projects with deadline this week AND ongoing projects calculated to finish this week
+  return isDue;
 }
 
 /**

@@ -98,13 +98,15 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
   const today = new Date();
 
   allWeekProjects.forEach(project => {
-    // Categorize based on new business logic
+    // Priority order: starting this week > due this week > ongoing
     if (isStartingThisWeek(project, startOfWeek, endOfWeek)) {
       startingThisWeek.push(project);
-    } else if (isOngoingProject(project, today)) {
-      ongoingProjects.push(project);
     } else if (isDueThisWeek(project, startOfWeek, endOfWeek)) {
+      // This covers both planned projects ending this week AND ongoing projects calculated to finish this week
       completingThisWeek.push(project);
+    } else if (isOngoingProject(project, today)) {
+      // Only ongoing projects that are NOT finishing this week
+      ongoingProjects.push(project);
     }
   });
 
