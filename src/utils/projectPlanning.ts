@@ -153,23 +153,6 @@ export function isStartingThisWeek(project: Project, weekStart: Date, weekEnd: D
   
   const isInWeek = plannedStart >= weekStart && plannedStart <= weekEnd;
   
-  // Debug logging for project "54"
-  if (project.name === "54") {
-    console.log('isStartingThisWeek DEBUG for project 54:', {
-      name: project.name,
-      status: project.status,
-      planerad_start_datum: project.planerad_start_datum,
-      startDate: project.startDate,
-      plannedStartStr,
-      plannedStart: plannedStart.toISOString(),
-      weekStart: weekStart.toISOString(),
-      weekEnd: weekEnd.toISOString(),
-      isInWeek,
-      'plannedStart >= weekStart': plannedStart >= weekStart,
-      'plannedStart <= weekEnd': plannedStart <= weekEnd
-    });
-  }
-  
   return isInWeek;
 }
 
