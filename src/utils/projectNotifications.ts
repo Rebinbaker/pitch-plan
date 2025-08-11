@@ -5,7 +5,7 @@ export interface ProjectNotification {
   id: string;
   projectId: string;
   projectName: string;
-  type: 'early_completion' | 'delay_warning';
+  type: 'early_completion' | 'delay_warning' | 'late_start';
   message: string;
   daysEarly?: number;
   daysLate?: number;
@@ -14,6 +14,27 @@ export interface ProjectNotification {
 }
 
 export function checkProjectTimelineNotifications(project: Project): ProjectNotification | null {
+  // Check for late start if project has started
+  if (project.actualConstructionStart && project.constructionStartWeek) {
+    const actualStart = parseISO(project.actualConstructionStart);
+    const { weekNumberToDate } = require('@/utils/weekCalculations');
+    const plannedStartDate = parseISO(weekNumberToDate(project.constructionStartWeek));
+    const daysLate = differenceInDays(actualStart, plannedStartDate);
+    
+    if (daysLate > 0) {
+      return {
+        id: `notification-${project.id}-late-start-${Date.now()}`,
+        projectId: project.id,
+        projectName: project.name,
+        type: 'late_start',
+        message: `Projekt "${project.name}" startade ${daysLate} dag${daysLate > 1 ? 'ar' : ''} senare än planerat (${project.constructionStartWeek}).`,
+        daysLate,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+    }
+  }
+
   if (!project.actualConstructionStart || !project.estimatedWorkDays) {
     return null;
   }
