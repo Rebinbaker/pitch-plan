@@ -66,8 +66,19 @@ export function calculateBeraknatSlutDatum(project: Project): string {
     return calculateEndDateFromProgress(project);
   } else {
     // Calculate from planned start date + estimated work days
-    const plannedStart = new Date(project.planerad_start_datum);
-    const endDate = addDays(plannedStart, project.ungefärlig_arbetstid_dagar - 1);
+    const plannedStartStr = project.planerad_start_datum || project.startDate;
+    const plannedStart = new Date(plannedStartStr);
+    
+    // Validate the date
+    if (isNaN(plannedStart.getTime())) {
+      console.warn('Invalid plannedStart date:', plannedStartStr, 'using current date as fallback');
+      const fallbackStart = new Date();
+      const endDate = addDays(fallbackStart, (project.ungefärlig_arbetstid_dagar || 7) - 1);
+      return format(endDate, 'yyyy-MM-dd');
+    }
+    
+    const workDays = project.ungefärlig_arbetstid_dagar || 7;
+    const endDate = addDays(plannedStart, workDays - 1);
     return format(endDate, 'yyyy-MM-dd');
   }
 }
