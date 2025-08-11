@@ -19,7 +19,6 @@ export interface ConstructionTeam {
   id: string;
   name: string;
   type: TeamType;
-  leader?: string;
   currentJob?: string;
   availabilityNextWeek: AvailabilityStatus;
   performanceNotes?: string;

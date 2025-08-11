@@ -15,7 +15,7 @@ import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Project } from '@/types/project';
 import logo from '../assets/logo.png';
@@ -44,7 +44,7 @@ const Index = () => {
     markNotificationAsRead,
     dismissNotification,
     addNotifications
-  } = useSupabaseData();
+  } = useLocalStorage();
 
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
@@ -69,7 +69,29 @@ const Index = () => {
     fetchUsername();
   }, [user]);
 
-  // No longer generate test notifications - real data from Supabase
+  // Generate test notifications for delayed projects on first load (only once)
+  useEffect(() => {
+    const generateNotifications = async () => {
+      console.log('NOTIFICATION CHECK: Projects length:', projects.length, 'Notifications length:', notifications.length);
+      
+      // Only generate notifications if we haven't generated any yet
+      const hasTestNotifications = notifications.some(n => n.id.includes('test-'));
+      
+      if (projects.length > 0 && !hasTestNotifications) {
+        const { generateTestNotifications } = await import('@/utils/generateTestNotifications');
+        const testNotifications = generateTestNotifications(projects);
+        
+        console.log('NOTIFICATION CHECK: Generated test notifications:', testNotifications.length);
+        
+        if (testNotifications.length > 0) {
+          console.log('NOTIFICATION CHECK: Adding notifications:', testNotifications);
+          addNotifications(testNotifications);
+        }
+      }
+    };
+
+    generateNotifications();
+  }, [projects]);
 
   const handleAddProject = () => {
     setIsAddProjectModalOpen(true);
