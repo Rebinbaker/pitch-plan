@@ -137,7 +137,10 @@ export const useLocalStorage = () => {
     const currentProject = projects.find(p => p.id === updatedProject.id);
     if (currentProject && !currentProject.actualConstructionStart) {
       const firstWorkPhase = updatedProject.workPhases?.[0];
+      console.log('Checking first work phase:', firstWorkPhase?.label, 'completed:', firstWorkPhase?.completed, 'completedAt:', firstWorkPhase?.completedAt);
+      
       if (firstWorkPhase?.completed && firstWorkPhase.completedAt) {
+        console.log('Setting actualConstructionStart to:', firstWorkPhase.completedAt);
         updatedProject = {
           ...updatedProject,
           actualConstructionStart: firstWorkPhase.completedAt,
