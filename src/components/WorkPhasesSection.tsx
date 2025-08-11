@@ -502,9 +502,13 @@ Tack! 👷‍♂️`;
                 id={phase.id}
                 checked={phase.completed}
                 onCheckedChange={() => {
+                  console.log('=== CHECKBOX CLICKED ===');
                   console.log('Checkbox clicked for phase:', phase.id, phase.label);
+                  console.log('Phase object:', phase);
                   console.log('Phase disabled?', phase.requiresDailyInspection && phase.completed && !phase.imagesReceived);
+                  console.log('About to call handlePhaseToggle...');
                   handlePhaseToggle(phase.id);
+                  console.log('handlePhaseToggle call completed');
                 }}
                 disabled={phase.requiresDailyInspection && phase.completed && !phase.imagesReceived}
                 className="data-[state=checked]:bg-success data-[state=checked]:border-success h-4 w-4"
