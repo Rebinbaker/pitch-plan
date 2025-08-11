@@ -2,25 +2,45 @@ import { Project } from '@/types/project';
 import { Notification } from '@/types/notification';
 
 export function generateTestNotifications(projects: Project[]): Notification[] {
+  console.log('GENERATING TEST NOTIFICATIONS for projects:', projects.length);
   const testNotifications: Notification[] = [];
   
-  // Find projects that would logically be late based on their construction start weeks
-  const currentDate = new Date();
-  const currentWeek = Math.ceil((currentDate.getTime() - new Date(currentDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+  // Always create at least one test notification to verify the system works
+  if (projects.length > 0) {
+    const firstProject = projects[0];
+    console.log('GENERATING for first project:', firstProject.name, 'Week:', firstProject.constructionStartWeek);
+    
+    // Create a delayed start notification for the first project
+    testNotifications.push({
+      id: `test-delay-${firstProject.id}-${Date.now()}`,
+      type: 'deadline_warning',
+      priority: 'high',
+      title: 'Försenad projektstart',
+      message: `Projekt "${firstProject.name}" startade senare än planerat (${firstProject.constructionStartWeek}). Kontrollera tidplanen.`,
+      projectId: firstProject.id,
+      projectName: firstProject.name,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      actionRequired: true
+    });
+  }
   
-  projects.forEach((project, index) => {
+  // Create additional test notifications for projects with V32 or earlier weeks (which are in the past)
+  const currentWeek = 33; // Current week number (approximate)
+  
+  projects.slice(1, 3).forEach((project, index) => {
     // Extract week number from constructionStartWeek (e.g., "V32" -> 32)
     const weekMatch = project.constructionStartWeek.match(/\d+/);
     if (!weekMatch) return;
     
     const plannedWeek = parseInt(weekMatch[0]);
     
-    // If the planned week was earlier than current week and project has actualConstructionStart
-    if (plannedWeek < currentWeek && project.actualConstructionStart) {
+    // If the planned week was V32 or earlier (which is in the past)
+    if (plannedWeek <= 32) {
       const daysLate = (currentWeek - plannedWeek) * 7; // Rough calculation
       
       testNotifications.push({
-        id: `test-notification-${project.id}-${Date.now()}`,
+        id: `test-notification-${project.id}-${Date.now()}-${index}`,
         type: 'deadline_warning',
         priority: 'medium',
         title: 'Försenad projektstart',

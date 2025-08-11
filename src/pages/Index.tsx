@@ -72,18 +72,23 @@ const Index = () => {
   // Generate test notifications for delayed projects on first load
   useEffect(() => {
     const generateNotifications = async () => {
-      if (projects.length > 0 && notifications.length === 0) {
+      console.log('NOTIFICATION CHECK: Projects length:', projects.length, 'Notifications length:', notifications.length);
+      
+      if (projects.length > 0) {
         const { generateTestNotifications } = await import('@/utils/generateTestNotifications');
         const testNotifications = generateTestNotifications(projects);
         
+        console.log('NOTIFICATION CHECK: Generated test notifications:', testNotifications.length);
+        
         if (testNotifications.length > 0) {
+          console.log('NOTIFICATION CHECK: Adding notifications:', testNotifications);
           addNotifications(testNotifications);
         }
       }
     };
 
     generateNotifications();
-  }, [projects, notifications.length]);
+  }, [projects]);
 
   const handleAddProject = () => {
     setIsAddProjectModalOpen(true);
