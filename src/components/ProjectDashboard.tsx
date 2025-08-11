@@ -166,15 +166,16 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         </div>
       )}
 
-      <ProjectDetailModal
-        project={selectedProject}
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
-        onUpdateProject={handleUpdateProjectFromModal}
-        trailers={trailers}
-        teams={teams}
-        onUpdateTrailer={onUpdateTrailer}
-      />
+        <ProjectDetailModal
+          project={selectedProject}
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetailModal}
+          onUpdateProject={handleUpdateProjectFromModal}
+          trailers={trailers}
+          teams={teams}
+          onUpdateTrailer={onUpdateTrailer}
+          projects={projects}
+        />
     </div>
   );
 }

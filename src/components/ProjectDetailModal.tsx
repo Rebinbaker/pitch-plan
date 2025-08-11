@@ -32,7 +32,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Mail,
-  MessageCircle
+  MessageCircle,
+  RefreshCw
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +47,8 @@ interface ProjectDetailModalProps {
   onUpdateProject: (updatedProject: Project) => void;
   trailers?: any[];
   teams?: any[];
-  onUpdateTrailer?: (trailer: any) => void; // Add this prop
+  onUpdateTrailer?: (trailer: any) => void;
+  projects?: Project[]; // Add projects array to get fresh data
 }
 
 export function ProjectDetailModal({ 
@@ -56,7 +58,8 @@ export function ProjectDetailModal({
   onUpdateProject,
   trailers = [],
   teams = [],
-  onUpdateTrailer // Add this prop
+  onUpdateTrailer,
+  projects = []
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -319,15 +322,44 @@ Tack! 👷‍♂️`;
     );
   };
 
+  const handleRefreshProject = () => {
+    if (project && projects.length > 0) {
+      const freshProject = projects.find(p => p.id === project.id);
+      if (freshProject) {
+        onUpdateProject(freshProject);
+        toast({
+          title: "Projekt uppdaterat",
+          description: "Projektinformation har hämtats från den senaste datan",
+        });
+      }
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <TooltipProvider>
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <DialogTitle className="text-2xl font-bold">
-                {project.name}
-              </DialogTitle>
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold">
+                  {project.name}
+                </DialogTitle>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRefreshProject}
+                      className="h-8 w-8 p-0"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Uppdatera projektdata</TooltipContent>
+                </Tooltip>
+              </div>
               <DialogDescription className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>{project.address}</span>
@@ -742,5 +774,6 @@ Tack! 👷‍♂️`;
         }}
       />
     </Dialog>
+    </TooltipProvider>
   );
 }
