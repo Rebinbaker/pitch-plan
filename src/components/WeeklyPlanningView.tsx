@@ -98,15 +98,41 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
   const today = new Date();
 
   allWeekProjects.forEach(project => {
+    // Debug logging for project "871"
+    if (project.name === "871") {
+      console.log('DEBUG Project 871 FULL DATA:', {
+        name: project.name,
+        status: project.status,
+        startDate: project.startDate,
+        deadline: project.deadline,
+        planerad_start_datum: project.planerad_start_datum,
+        bygg_start_vecka: project.bygg_start_vecka,
+        ungefärlig_arbetstid_dagar: project.ungefärlig_arbetstid_dagar,
+        beräknat_slut_datum: project.beräknat_slut_datum,
+        weekStart: startOfWeek,
+        weekEnd: endOfWeek,
+        categorization: {
+          isStartingThisWeek: isStartingThisWeek(project, startOfWeek, endOfWeek),
+          isOngoingProject: isOngoingProject(project, today),
+          isDueThisWeek: isDueThisWeek(project, startOfWeek, endOfWeek)
+        }
+      });
+    }
+    
     // Priority order: starting this week > due this week > ongoing
     if (isStartingThisWeek(project, startOfWeek, endOfWeek)) {
       startingThisWeek.push(project);
+      if (project.name === "871") console.log('Project 871 added to startingThisWeek');
     } else if (isDueThisWeek(project, startOfWeek, endOfWeek)) {
       // This covers both planned projects ending this week AND ongoing projects calculated to finish this week
       completingThisWeek.push(project);
+      if (project.name === "871") console.log('Project 871 added to completingThisWeek');
     } else if (isOngoingProject(project, today)) {
       // Only ongoing projects that are NOT finishing this week
       ongoingProjects.push(project);
+      if (project.name === "871") console.log('Project 871 added to ongoingProjects');
+    } else {
+      if (project.name === "871") console.log('Project 871 NOT categorized in any group!');
     }
   });
 
