@@ -256,6 +256,7 @@ const Index = () => {
               onUpdateProject={handleUpdateProject}
               trailers={scaffolding}
               onUpdateTrailer={updateScaffolding}
+              onAddNotifications={addNotifications}
             />
           </TabsContent>
 

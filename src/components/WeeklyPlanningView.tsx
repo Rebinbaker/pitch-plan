@@ -21,9 +21,10 @@ interface WeeklyPlanningViewProps {
   onUpdateProject?: (projectId: string, updates: Partial<Project>) => void;
   trailers?: any[];
   onUpdateTrailer?: (trailer: any) => void;
+  onAddNotifications?: (notifications: any[]) => void;
 }
 
-export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer }: WeeklyPlanningViewProps) {
+export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer, onAddNotifications }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>('board');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -482,7 +483,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
       ) : viewMode === 'calendar' ? (
         <CalendarView projects={thisWeekProjects} startOfWeek={startOfWeek} onViewDetails={handleViewDetails} />
       ) : (
-        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} onViewDetails={handleViewDetails} trailers={trailers} />
+        <MonthlyView projects={projects} dateRange={monthlyDateRange} regionFilter={regionFilter} onUpdateProject={onUpdateProject} onViewDetails={handleViewDetails} trailers={trailers} onAddNotifications={onAddNotifications} />
       )}
 
       <ProjectDetailModal
@@ -799,7 +800,7 @@ interface MonthlyViewProps {
   onViewDetails?: (project: Project) => void;
 }
 
-function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [] }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[] }) {
+function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -920,14 +921,20 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       actionRequired: false
     };
 
-    // Add notification using the correct localStorage key
-    console.log('Adding notification to localStorage');
-    if (typeof window !== 'undefined') {
+    // Add notification using the React state function
+    console.log('Adding notification via React state');
+    if (onAddNotifications) {
+      onAddNotifications([notification]);
+      console.log('Notification added via React state');
+    } else {
+      // Fallback to localStorage if function not available
+      console.log('Fallback: Adding notification to localStorage');
       const existingNotifications = JSON.parse(localStorage.getItem('lovable_notifications') || '[]');
       console.log('Existing notifications count:', existingNotifications.length);
       const updatedNotifications = [...existingNotifications, notification];
       localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
       console.log('Updated notifications count:', updatedNotifications.length);
+    }
       
       // Show toast notification
       console.log('Showing toast notification');
@@ -938,7 +945,6 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
           duration: 3000,
         });
       });
-    }
   };
 
   return (
