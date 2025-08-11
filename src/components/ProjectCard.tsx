@@ -98,7 +98,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             <Calendar className="w-4 h-4" />
             <span>
               {project.actualConstructionStart 
-                ? `Faktisk byggstart: ${new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')}`
+                ? `Byggstart: ${new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')}`
                 : `Planerad byggstart: ${project.constructionStartWeek}`
               }
             </span>
