@@ -245,31 +245,49 @@ export type Database = {
       teams: {
         Row: {
           availability_next_week: string | null
+          contact_info: string | null
           created_at: string
+          current_job: string | null
           id: string
           leader: string | null
+          members: Json | null
           name: string
+          performance_notes: string | null
+          sellers: Json | null
           skills: Json | null
+          type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           availability_next_week?: string | null
+          contact_info?: string | null
           created_at?: string
+          current_job?: string | null
           id?: string
           leader?: string | null
+          members?: Json | null
           name: string
+          performance_notes?: string | null
+          sellers?: Json | null
           skills?: Json | null
+          type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           availability_next_week?: string | null
+          contact_info?: string | null
           created_at?: string
+          current_job?: string | null
           id?: string
           leader?: string | null
+          members?: Json | null
           name?: string
+          performance_notes?: string | null
+          sellers?: Json | null
           skills?: Json | null
+          type?: string | null
           updated_at?: string
           user_id?: string
         }

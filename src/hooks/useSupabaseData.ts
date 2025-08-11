@@ -129,9 +129,15 @@ export const useSupabaseData = () => {
     const formattedTeams: ConstructionTeam[] = data.map(team => ({
       id: team.id,
       name: team.name,
-      type: 'Internt' as any,
+      type: team.type as any || 'Internt',
+      leader: team.leader,
+      currentJob: team.current_job,
       availabilityNextWeek: team.availability_next_week as any,
-      skills: team.skills as any || []
+      performanceNotes: team.performance_notes,
+      contactInfo: team.contact_info,
+      skills: team.skills as any || [],
+      members: team.members as any || [],
+      sellers: team.sellers as any || []
     }));
 
     setTeams(formattedTeams);
@@ -375,8 +381,15 @@ export const useSupabaseData = () => {
       .from('teams')
       .update({
         name: updatedTeam.name,
+        type: updatedTeam.type,
+        leader: updatedTeam.leader,
+        current_job: updatedTeam.currentJob,
         availability_next_week: updatedTeam.availabilityNextWeek,
-        skills: updatedTeam.skills as any
+        performance_notes: updatedTeam.performanceNotes,
+        contact_info: updatedTeam.contactInfo,
+        skills: updatedTeam.skills as any,
+        members: updatedTeam.members as any,
+        sellers: updatedTeam.sellers as any
       })
       .eq('id', updatedTeam.id)
       .eq('user_id', user.id);
@@ -399,8 +412,15 @@ export const useSupabaseData = () => {
       .insert({
         user_id: user.id,
         name: newTeam.name,
+        type: newTeam.type,
+        leader: newTeam.leader,
+        current_job: newTeam.currentJob,
         availability_next_week: newTeam.availabilityNextWeek,
-        skills: newTeam.skills as any
+        performance_notes: newTeam.performanceNotes,
+        contact_info: newTeam.contactInfo,
+        skills: newTeam.skills as any,
+        members: newTeam.members as any,
+        sellers: newTeam.sellers as any
       });
 
     if (error) {
