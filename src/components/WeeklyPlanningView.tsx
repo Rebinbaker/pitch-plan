@@ -224,28 +224,31 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
       
       // Calculate deadline and activity log entry
       const newDeadline = new Date(newStartDate);
-      newDeadline.setDate(newStartDate.getDate() + projectDuration);
+      newDeadline.setDate(newStartDate.getDate() + (project.ungefärlig_arbetstid_dagar || projectDuration));
       
-      const oldStartDateObj = new Date(project.startDate);
+      const oldStartDateObj = new Date(project.planerad_start_datum || project.startDate);
       const newActivityEntry = {
         id: `activity-${Date.now()}`,
         timestamp: new Date().toISOString(),
         user: 'System',
         action: 'Projekt omplanerat',
-        description: `Projekt prioriterades om från vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')}) till vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`,
+        description: `Projekt omplanerat från vecka ${dateToWeekString(oldStartDateObj)} till vecka ${newWeekString}`,
         category: 'general' as const,
-        oldValue: `Vecka ${getWeek(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
-        newValue: `Vecka ${getWeek(newStartDate)} (${format(newStartDate, 'yyyy-MM-dd')})`
+        oldValue: `${dateToWeekString(oldStartDateObj)} (${format(oldStartDateObj, 'yyyy-MM-dd')})`,
+        newValue: `${newWeekString} (${format(newStartDate, 'yyyy-MM-dd')})`
       };
       
       // Update project with new planning data
       onUpdateProject(projectId, {
         bygg_start_vecka: newWeekString,
         planerad_start_datum: calculatePlannedStartDate(newWeekString),
+        beräknat_slut_datum: format(newDeadline, 'yyyy-MM-dd'),
         startDate: newStartDate.toISOString().split('T')[0], // Legacy compatibility
         deadline: newDeadline.toISOString().split('T')[0], // Legacy compatibility
         activityLog: [...(project.activityLog || []), newActivityEntry]
       });
+      
+      console.log(`Moved project ${project.name} to week ${newWeekString}, planerad_start_datum: ${calculatePlannedStartDate(newWeekString)}`);
       
       setActiveId(null);
       return;
