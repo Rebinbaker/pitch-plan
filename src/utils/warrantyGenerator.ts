@@ -80,12 +80,20 @@ export const uploadGeneratedWarranty = async (
   customerAddress: string
 ): Promise<string> => {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('Warranty: auth check result:', { user: user?.id, authError });
-    if (!user || authError) throw new Error('User not authenticated');
+    // Get current session first to ensure we have valid auth
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    console.log('Warranty: session check result:', { session: session?.user?.id, sessionError });
+    
+    if (!session?.user || sessionError) {
+      throw new Error('User not authenticated - no valid session');
+    }
+    
+    const user = session.user;
+    console.log('Warranty: authenticated user:', user.id);
 
-    // Upload PDF to storage
+    // Upload PDF to storage with user folder structure
     const filePath = `${user.id}/${fileName}`;
+    console.log('Warranty: uploading to path:', filePath);
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('generated-warranties')
       .upload(filePath, pdfBytes, {
