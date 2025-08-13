@@ -846,6 +846,7 @@ interface MonthlyViewProps {
 
 function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
   
   console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId);
   if (!dateRange?.from || !dateRange?.to) {
@@ -994,11 +995,21 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
   return (
     <div style={{ contain: 'layout style paint', transform: 'translateZ(0)' }}>
       <DndContext
-        onDragStart={(event) => setActiveId(event.active.id as string)}
+        onDragStart={(event) => {
+          setActiveId(event.active.id as string);
+          // Apply optimistic update immediately
+          const projectId = event.active.id as string;
+          const draggedProject = projects.find(p => p.id === projectId);
+          if (draggedProject) {
+            setOptimisticUpdates(prev => new Map(prev.set(projectId, { isDragging: true })));
+          }
+        }}
         onDragEnd={(event) => {
+          // Clear optimistic updates first to prevent flicker
+          setOptimisticUpdates(new Map());
           setActiveId(null);
-          // Batch the update to prevent flickering
-          setTimeout(() => handleMonthlyDragEnd(event), 0);
+          // Process the actual update
+          handleMonthlyDragEnd(event);
         }}
         modifiers={[restrictToWindowEdges]}
       >
