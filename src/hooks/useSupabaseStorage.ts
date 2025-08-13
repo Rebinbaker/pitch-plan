@@ -104,6 +104,14 @@ export const useSupabaseStorage = () => {
   const updateProject = async (updatedProject: Project) => {
     try {
       if (user && migrationStatus === 'completed') {
+        // Helper function to convert empty strings to null for date fields
+        const formatDateField = (dateValue: string | undefined | null): string | null => {
+          if (!dateValue || dateValue.trim() === '') {
+            return null;
+          }
+          return dateValue;
+        };
+
         const { error } = await supabase
           .from('projects' as any)
           .update({
@@ -119,10 +127,10 @@ export const useSupabaseStorage = () => {
             notes: updatedProject.notes,
             assigned_trailer: updatedProject.assignedTrailer,
             scaffolding_responsible: updatedProject.scaffoldingResponsible,
-            start_date: updatedProject.startDate,
-            deadline: updatedProject.deadline,
+            start_date: formatDateField(updatedProject.startDate),
+            deadline: formatDateField(updatedProject.deadline),
             estimated_work_days: updatedProject.estimatedWorkDays,
-            actual_construction_start: updatedProject.actualConstructionStart,
+            actual_construction_start: formatDateField(updatedProject.actualConstructionStart),
             completion_percentage: updatedProject.completionPercentage,
             checklist: updatedProject.checklist || [],
             work_phases: updatedProject.workPhases || [],
@@ -157,6 +165,14 @@ export const useSupabaseStorage = () => {
   const addProject = async (newProject: Project) => {
     try {
       if (user && migrationStatus === 'completed') {
+        // Helper function to convert empty strings to null for date fields
+        const formatDateField = (dateValue: string | undefined | null): string | null => {
+          if (!dateValue || dateValue.trim() === '') {
+            return null;
+          }
+          return dateValue;
+        };
+
         const { error } = await supabase
           .from('projects' as any)
           .insert({
@@ -172,10 +188,10 @@ export const useSupabaseStorage = () => {
             notes: newProject.notes,
             assigned_trailer: newProject.assignedTrailer,
             scaffolding_responsible: newProject.scaffoldingResponsible,
-            start_date: newProject.startDate,
-            deadline: newProject.deadline,
+            start_date: formatDateField(newProject.startDate),
+            deadline: formatDateField(newProject.deadline),
             estimated_work_days: newProject.estimatedWorkDays,
-            actual_construction_start: newProject.actualConstructionStart,
+            actual_construction_start: formatDateField(newProject.actualConstructionStart),
             completion_percentage: newProject.completionPercentage,
             checklist: newProject.checklist || [],
             work_phases: newProject.workPhases || [],
