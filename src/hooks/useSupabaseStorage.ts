@@ -15,6 +15,64 @@ export const useSupabaseStorage = () => {
   const { user } = useAuth();
   const localStorageHook = useLocalStorage();
   const [migrationStatus, setMigrationStatus] = useState<'pending' | 'migrating' | 'completed' | 'error'>('pending');
+  const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load projects from Supabase when migration is completed
+  useEffect(() => {
+    if (user && migrationStatus === 'completed') {
+      loadSupabaseProjects();
+    }
+  }, [user, migrationStatus]);
+
+  const loadSupabaseProjects = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('projects' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedProjects = data.map((project: any) => ({
+        id: project.id,
+        name: project.name,
+        address: project.address || '',
+        customerName: project.customer_name || '',
+        customerPhone: project.customer_phone || '',
+        responsibleSeller: project.responsible_seller || '',
+        constructionTeam: project.construction_team || '',
+        constructionStartWeek: project.construction_start_week || '',
+        rotStatus: project.rot_status as any || 'No',
+        status: project.status as any,
+        notes: project.notes || '',
+        assignedTrailer: project.assigned_trailer || '',
+        scaffoldingResponsible: project.scaffolding_responsible || '',
+        startDate: project.start_date || '',
+        deadline: project.deadline || '',
+        estimatedWorkDays: project.estimated_work_days || 0,
+        actualConstructionStart: project.actual_construction_start || '',
+        completionPercentage: project.completion_percentage || 0,
+        checklist: project.checklist || [],
+        workPhases: project.work_phases || [],
+        activityLog: project.activity_log || [],
+        region: project.region || 'Stockholm',
+      }));
+      
+      setSupabaseProjects(mappedProjects);
+    } catch (error) {
+      console.error('Error loading Supabase projects:', error);
+      // Fallback to localStorage if Supabase fails
+      setMigrationStatus('pending');
+      localStorage.removeItem('supabase_migration_completed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // For now, return localStorage data but with enhanced error handling and migration preparation
   useEffect(() => {
@@ -75,6 +133,8 @@ export const useSupabaseStorage = () => {
           .eq('id', updatedProject.id);
         
         if (error) throw error;
+        // Reload projects after update
+        await loadSupabaseProjects();
       } else {
         await localStorageHook.updateProject(updatedProject);
       }
@@ -125,6 +185,8 @@ export const useSupabaseStorage = () => {
           });
         
         if (error) throw error;
+        // Reload projects after adding
+        await loadSupabaseProjects();
       } else {
         await localStorageHook.addProject(newProject);
       }
@@ -253,48 +315,10 @@ export const useSupabaseStorage = () => {
     }
   };
 
-  // Get data from Supabase or localStorage
-  const getProjects = async (): Promise<Project[]> => {
-    if (user && migrationStatus === 'completed') {
-      const { data, error } = await supabase
-        .from('projects' as any)
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data.map((project: any) => ({
-        id: project.id,
-        name: project.name,
-        address: project.address || '',
-        customerName: project.customer_name || '',
-        customerPhone: project.customer_phone || '',
-        responsibleSeller: project.responsible_seller || '',
-        constructionTeam: project.construction_team || '',
-        constructionStartWeek: project.construction_start_week || '',
-        rotStatus: project.rot_status as any || 'Ej aktiverat',
-        status: project.status as any,
-        notes: project.notes || '',
-        assignedTrailer: project.assigned_trailer || '',
-        scaffoldingResponsible: project.scaffolding_responsible || '',
-        startDate: project.start_date || '',
-        deadline: project.deadline || '',
-        estimatedWorkDays: project.estimated_work_days || 0,
-        actualConstructionStart: project.actual_construction_start || '',
-        completionPercentage: project.completion_percentage || 0,
-        checklist: project.checklist || [],
-        workPhases: project.work_phases || [],
-        activityLog: project.activity_log || [],
-        region: project.region || '',
-      }));
-    }
-    return localStorageHook.projects;
-  };
-
   return {
     ...localStorageHook,
-    projects: user && migrationStatus === 'completed' ? [] : localStorageHook.projects,
-    getProjects,
+    projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
+    loading: loading || localStorageHook.loading,
     migrationStatus,
     updateProject,
     addProject,
@@ -308,5 +332,6 @@ export const useSupabaseStorage = () => {
     addNotifications,
     checkMigrationNeeded,
     markMigrationCompleted,
+    loadSupabaseProjects,
   };
 };
