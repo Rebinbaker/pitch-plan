@@ -847,6 +847,7 @@ interface MonthlyViewProps {
 const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
+  const [frozenProjects, setFrozenProjects] = useState<Project[]>([]);
   
   console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId);
   if (!dateRange?.from || !dateRange?.to) {
@@ -858,8 +859,11 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     );
   }
 
+  // Use frozen projects during drag to prevent visual jumps
+  const projectsToUse = frozenProjects.length > 0 ? frozenProjects : projects;
+  
   // Filter projects within the date range
-  const monthlyProjects = projects.filter(project => {
+  const monthlyProjects = projectsToUse.filter(project => {
     const startDate = new Date(project.startDate);
     const deadline = new Date(project.deadline);
     const hasOverlap = (startDate <= dateRange.to! && deadline >= dateRange.from!) ||
@@ -997,19 +1001,17 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
       <DndContext
         onDragStart={(event) => {
           setActiveId(event.active.id as string);
-          // Apply optimistic update immediately
-          const projectId = event.active.id as string;
-          const draggedProject = projects.find(p => p.id === projectId);
-          if (draggedProject) {
-            setOptimisticUpdates(prev => new Map(prev.set(projectId, { isDragging: true })));
-          }
+          // Freeze current state to prevent visual jumps
+          setFrozenProjects([...projects]);
         }}
         onDragEnd={(event) => {
-          // Clear optimistic updates first to prevent flicker
-          setOptimisticUpdates(new Map());
-          setActiveId(null);
-          // Process the actual update
+          // Keep frozen state during update, then clear it
           handleMonthlyDragEnd(event);
+          // Clear frozen state after a brief delay to allow smooth transition
+          setTimeout(() => {
+            setFrozenProjects([]);
+            setActiveId(null);
+          }, 50);
         }}
         modifiers={[restrictToWindowEdges]}
       >
