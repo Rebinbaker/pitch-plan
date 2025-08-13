@@ -65,50 +65,13 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    console.log('Setting up canvas click handler for field:', selectedField);
+    console.log('Canvas ready for coordinate placement');
 
-    const handleCanvasClick = (e: any) => {
-      console.log('Canvas clicked!', e);
-      console.log('Selected field:', selectedField);
-      console.log('Pointer:', e.pointer);
-      
-      if (e.pointer && selectedField) {
-        const x = e.pointer.x;
-        const y = e.pointer.y;
-        
-        console.log('Placing marker at:', x, y, 'for field:', selectedField);
-        
-        // Remove existing marker for this field
-        removeMarkerForField(selectedField);
-        
-        // Add new marker
-        addMarker(x, y, selectedField);
-        
-        // Update coordinates
-        setCoordinates(prev => ({
-          ...prev,
-          [selectedField]: {
-            x,
-            y,
-            fontSize: 12,
-            fontColor: '#000000',
-            maxWidth: 200
-          }
-        }));
-        
-        console.log('Marker placed successfully');
-      } else {
-        console.log('Missing pointer or selectedField:', { pointer: e.pointer, selectedField });
-      }
-    };
+    // Just ensure canvas is interactive - clicks are now handled by onClick
+    fabricCanvas.selection = false; // Disable selection
+    fabricCanvas.hoverCursor = 'crosshair';
+    fabricCanvas.defaultCursor = 'crosshair';
 
-    // Remove existing listeners and add new one
-    fabricCanvas.off('mouse:down');
-    fabricCanvas.on('mouse:down', handleCanvasClick);
-
-    return () => {
-      fabricCanvas.off('mouse:down', handleCanvasClick);
-    };
   }, [fabricCanvas, selectedField]);
 
   const loadPDFIntoCanvas = async (canvas: FabricCanvas) => {
@@ -299,25 +262,61 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
             <CardTitle>PDF-mall med koordinater</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
               <canvas 
                 ref={canvasRef} 
-                className="max-w-full h-auto"
+                className="max-w-full h-auto cursor-crosshair"
                 style={{ display: 'block', minHeight: '400px' }}
+                onClick={(e) => {
+                  console.log('Canvas direct click event!', e);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  
+                  console.log('Click coordinates:', x, y);
+                  console.log('Selected field:', selectedField);
+                  
+                  if (selectedField) {
+                    // Remove existing marker for this field
+                    removeMarkerForField(selectedField);
+                    
+                    // Add new marker
+                    addMarker(x, y, selectedField);
+                    
+                    // Update coordinates
+                    setCoordinates(prev => ({
+                      ...prev,
+                      [selectedField]: {
+                        x,
+                        y,
+                        fontSize: 12,
+                        fontColor: '#000000',
+                        maxWidth: 200
+                      }
+                    }));
+                    
+                    toast({
+                      title: "Koordinat placerad!",
+                      description: `${FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS]} har placerats på position (${Math.round(x)}, ${Math.round(y)})`,
+                    });
+                  } else {
+                    toast({
+                      title: "Välj ett fält först",
+                      description: "Välj vilket fält du vill placera från dropdown-menyn",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               />
-            </div>
-            {!pdfLoaded ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <div className="text-muted-foreground">
-                  Laddar PDF-mall...
+              {!pdfLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <div className="text-muted-foreground">Laddar PDF-mall...</div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-4 text-sm text-success">
-                ✓ PDF-mall laddad! Klicka för att placera koordinater.
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
