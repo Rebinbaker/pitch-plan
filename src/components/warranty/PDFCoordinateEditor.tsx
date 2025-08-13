@@ -263,12 +263,12 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
           </CardHeader>
           <CardContent>
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
-              <canvas 
-                ref={canvasRef} 
-                className="max-w-full h-auto cursor-crosshair"
-                style={{ display: 'block', minHeight: '400px' }}
+              {/* Simple clickable div overlay for coordinate placement */}
+              <div
+                className="absolute inset-0 bg-gray-100 cursor-crosshair z-10"
+                style={{ minHeight: '400px' }}
                 onClick={(e) => {
-                  console.log('Canvas direct click event!', e);
+                  console.log('Overlay clicked!', e);
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = e.clientX - rect.left;
                   const y = e.clientY - rect.top;
@@ -277,11 +277,41 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                   console.log('Selected field:', selectedField);
                   
                   if (selectedField) {
-                    // Remove existing marker for this field
-                    removeMarkerForField(selectedField);
+                    // Add visual marker directly to the DOM
+                    const existingMarker = document.querySelector(`[data-field="${selectedField}"]`);
+                    if (existingMarker) {
+                      existingMarker.remove();
+                    }
                     
-                    // Add new marker
-                    addMarker(x, y, selectedField);
+                    const marker = document.createElement('div');
+                    marker.setAttribute('data-field', selectedField);
+                    marker.style.position = 'absolute';
+                    marker.style.left = `${x - 8}px`;
+                    marker.style.top = `${y - 8}px`;
+                    marker.style.width = '16px';
+                    marker.style.height = '16px';
+                    marker.style.borderRadius = '50%';
+                    marker.style.backgroundColor = getFieldColor(selectedField);
+                    marker.style.border = '2px solid white';
+                    marker.style.zIndex = '20';
+                    marker.style.pointerEvents = 'none';
+                    
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.left = `${x + 12}px`;
+                    label.style.top = `${y - 6}px`;
+                    label.style.fontSize = '12px';
+                    label.style.fontWeight = 'bold';
+                    label.style.color = getFieldColor(selectedField);
+                    label.style.backgroundColor = 'white';
+                    label.style.padding = '2px 4px';
+                    label.style.borderRadius = '3px';
+                    label.style.zIndex = '20';
+                    label.style.pointerEvents = 'none';
+                    label.textContent = FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField;
+                    
+                    e.currentTarget.appendChild(marker);
+                    e.currentTarget.appendChild(label);
                     
                     // Update coordinates
                     setCoordinates(prev => ({
@@ -307,9 +337,27 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                     });
                   }
                 }}
+              >
+                {/* Instruction text */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center text-gray-600">
+                    <h3 className="font-semibold mb-2">PDF-mall laddad: {template.name}</h3>
+                    <p className="text-sm mb-2">Klicka här för att placera koordinater</p>
+                    <p className="text-xs">Valt fält: <span className="font-semibold" style={{ color: getFieldColor(selectedField) }}>
+                      {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
+                    </span></p>
+                  </div>
+                </div>
+              </div>
+              
+              <canvas 
+                ref={canvasRef} 
+                className="max-w-full h-auto"
+                style={{ display: 'block', minHeight: '400px', position: 'relative', zIndex: '1' }}
               />
+              
               {!pdfLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-30">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                     <div className="text-muted-foreground">Laddar PDF-mall...</div>
