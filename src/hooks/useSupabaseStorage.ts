@@ -131,8 +131,10 @@ export const useSupabaseStorage = () => {
 
   // Supabase functions with localStorage fallback
   const updateProject = async (updatedProject: Project) => {
+    console.log('updateProject called for:', updatedProject.id, 'user:', user?.id, 'migrationStatus:', migrationStatus);
     try {
       if (user && migrationStatus === 'completed') {
+        console.log('updateProject: Using Supabase storage');
         // Helper function to convert empty strings to null for date fields
         const formatDateField = (dateValue: string | undefined | null): string | null => {
           if (!dateValue || dateValue.trim() === '') {

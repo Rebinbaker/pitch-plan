@@ -123,6 +123,7 @@ export function ProjectChecklist({
   };
 
   const openWhatsApp = (itemId: string, project: Project) => {
+    console.log('WhatsApp: openWhatsApp called for item:', itemId);
     const state = whatsappStates[itemId];
     const groupName = state?.customGroupName || project.address;
     const url = generateWhatsAppURL(project, groupName);
@@ -136,6 +137,7 @@ export function ProjectChecklist({
         openedAt: Date.now()
       }
     }));
+    console.log('WhatsApp: state updated to opened for item:', itemId);
     
     // Start countdown timer
     setTimers(prev => ({ ...prev, [itemId]: 120 })); // 2 minutes = 120 seconds
