@@ -23,6 +23,7 @@ import TimeTrackingView from '@/components/TimeTrackingView';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Project } from '@/types/project';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { signOut, user } = useAuth();
@@ -85,13 +86,13 @@ const Index = () => {
     }
   }, [user, checkMigrationNeeded]);
 
-  // Generate test notifications for delayed projects on first load (only once)
+  // Generate test notifications for projects on first load (works for both localStorage and Supabase)
   useEffect(() => {
     const generateNotifications = async () => {
       console.log('NOTIFICATION CHECK: Projects length:', projects.length, 'Notifications length:', notifications.length);
       
-      // Only generate notifications if we haven't generated any yet
-      const hasTestNotifications = notifications.some(n => n.id.includes('test-'));
+      // Only generate notifications if we haven't generated any yet AND we have projects
+      const hasTestNotifications = notifications.some(n => n.id.includes('team-') || n.id.includes('plan-') || n.id.includes('proj-') || n.id.includes('file-') || n.id.includes('gen-'));
       
       if (projects.length > 0 && !hasTestNotifications) {
         const { generateTestNotifications } = await import('@/utils/generateTestNotifications');
@@ -101,13 +102,20 @@ const Index = () => {
         
         if (testNotifications.length > 0) {
           console.log('NOTIFICATION CHECK: Adding notifications:', testNotifications);
-          addNotifications(testNotifications);
+          await addNotifications(testNotifications);
+          
+          toast({
+            title: "Testnotifikationer genererade",
+            description: `${testNotifications.length} notifikationer har lagts till för testning.`,
+          });
         }
       }
     };
 
-    generateNotifications();
-  }, [projects]);
+    // Add a small delay to ensure other data is loaded first
+    const timeoutId = setTimeout(generateNotifications, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [projects, notifications.length, addNotifications]);
 
   const handleAddProject = () => {
     setIsAddProjectModalOpen(true);
