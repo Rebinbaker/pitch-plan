@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Project } from '@/types/project';
-import { ScaffoldingTrailer } from '@/types/scaffolding';
+import { ScaffoldingTrailer, ScaffoldingStatus, ScaffoldingOwnership } from '@/types/scaffolding';
 import { ConstructionTeam } from '@/types/team';
 import { ProjectFile } from '@/types/files';
 import { Notification } from '@/types/notification';
@@ -16,12 +16,14 @@ export const useSupabaseStorage = () => {
   const localStorageHook = useLocalStorage();
   const [migrationStatus, setMigrationStatus] = useState<'pending' | 'migrating' | 'completed' | 'error'>('pending');
   const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
+  const [supabaseScaffolding, setSupabaseScaffolding] = useState<ScaffoldingTrailer[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load projects from Supabase when migration is completed
+  // Load projects and scaffolding from Supabase when migration is completed
   useEffect(() => {
     if (user && migrationStatus === 'completed') {
       loadSupabaseProjects();
+      loadSupabaseScaffolding();
     }
   }, [user, migrationStatus]);
 
@@ -74,6 +76,35 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const loadSupabaseScaffolding = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('scaffolding' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedScaffolding = data.map((scaffold: any) => ({
+        id: scaffold.id,
+        name: scaffold.name,
+        status: scaffold.status as ScaffoldingStatus,
+        ownership: 'Egna ställningar' as ScaffoldingOwnership,
+        assignedProject: '',
+        location: '',
+        moverNote: scaffold.description || '',
+        lastUpdated: scaffold.updated_at || scaffold.created_at,
+      }));
+      
+      setSupabaseScaffolding(mappedScaffolding);
+    } catch (error) {
+      console.error('Error loading Supabase scaffolding:', error);
+    }
+  };
+
   // For now, return localStorage data but with enhanced error handling and migration preparation
   useEffect(() => {
     if (user && migrationStatus === 'pending') {
@@ -89,10 +120,8 @@ export const useSupabaseStorage = () => {
   }, [user, migrationStatus]);
 
   const checkMigrationNeeded = (): boolean => {
-    // Check if localStorage data exists and Supabase migration hasn't been completed
-    const hasLocalData = localStorage.getItem('lovable_projects') !== null;
-    const migrationCompleted = localStorage.getItem('supabase_migration_completed') === 'true';
-    return hasLocalData && !migrationCompleted;
+    // For now, always return false to use Supabase data directly
+    return false;
   };
 
   const markMigrationCompleted = () => {
@@ -224,7 +253,28 @@ export const useSupabaseStorage = () => {
 
   const updateScaffolding = async (updatedTrailer: Partial<ScaffoldingTrailer> & { id: string }) => {
     try {
-      await localStorageHook.updateScaffolding(updatedTrailer);
+      if (user && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('scaffolding' as any)
+          .update({
+            name: updatedTrailer.name,
+            status: updatedTrailer.status,
+            description: updatedTrailer.moverNote,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', updatedTrailer.id);
+        
+        if (error) throw error;
+        // Reload scaffolding after update
+        await loadSupabaseScaffolding();
+      } else {
+        await localStorageHook.updateScaffolding(updatedTrailer);
+      }
+      
+      toast({
+        title: "Ställning uppdaterad",
+        description: `${updatedTrailer.name} har uppdaterats framgångsrikt.`,
+      });
     } catch (error) {
       console.error('Error updating scaffolding:', error);
       toast({
@@ -238,7 +288,23 @@ export const useSupabaseStorage = () => {
 
   const addScaffolding = async (newTrailer: ScaffoldingTrailer) => {
     try {
-      await localStorageHook.addScaffolding(newTrailer);
+      if (user && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('scaffolding' as any)
+          .insert({
+            name: newTrailer.name,
+            status: newTrailer.status,
+            description: newTrailer.moverNote,
+            user_id: user.id,
+          });
+        
+        if (error) throw error;
+        // Reload scaffolding after adding
+        await loadSupabaseScaffolding();
+      } else {
+        await localStorageHook.addScaffolding(newTrailer);
+      }
+      
       toast({
         title: "Ställning skapad",
         description: `${newTrailer.name} har skapats framgångsrikt.`,
@@ -334,6 +400,7 @@ export const useSupabaseStorage = () => {
   return {
     ...localStorageHook,
     projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
+    scaffolding: migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding,
     loading: loading || localStorageHook.loading,
     migrationStatus,
     updateProject,
@@ -349,5 +416,6 @@ export const useSupabaseStorage = () => {
     checkMigrationNeeded,
     markMigrationCompleted,
     loadSupabaseProjects,
+    loadSupabaseScaffolding,
   };
 };
