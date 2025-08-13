@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { FileText, Camera, Upload, Download, Eye, Search, X } from 'lucide-react';
 import { ProjectFile, FileType } from '@/types/files';
 import { Project } from '@/types/project';
+import { FilePreviewModal } from './FilePreviewModal';
 
 interface FilesViewProps {
   files: ProjectFile[];
@@ -21,6 +22,7 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterType, setFilterType] = useState<FileType | 'all'>('all');
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,7 +219,15 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedFile(file);
+                      setIsPreviewOpen(true);
+                    }}
+                  >
                     <Eye className="w-4 h-4 mr-1" />
                     Visa
                   </Button>
@@ -239,6 +249,15 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
           </div>
         </div>
       )}
+
+      <FilePreviewModal
+        file={selectedFile}
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedFile(null);
+        }}
+      />
     </div>
   );
 }
