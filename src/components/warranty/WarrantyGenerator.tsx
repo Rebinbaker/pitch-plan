@@ -18,6 +18,7 @@ interface WarrantyGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerated: () => void;
+  onFileUploaded?: (file: { name: string; url: string; type: 'warranty' }) => void;
 }
 
 export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
@@ -25,6 +26,7 @@ export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
   isOpen,
   onClose,
   onGenerated,
+  onFileUploaded,
 }) => {
   const [templates, setTemplates] = useState<WarrantyTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -113,6 +115,19 @@ export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
         formData.customerName,
         formData.customerAddress
       );
+
+      // Save to project files if callback provided
+      if (onFileUploaded) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('generated-warranties')
+          .getPublicUrl(filePath);
+        
+        onFileUploaded({
+          name: fileName,
+          url: publicUrl,
+          type: 'warranty'
+        });
+      }
 
       // Download the file
       await downloadWarranty(filePath);

@@ -21,6 +21,7 @@ interface ProjectChecklistProps {
   teams?: any[];
   onUpdateProject?: (project: Project) => void;
   onUpdateTrailer?: (trailer: any) => void; // Add this prop to handle scaffolding updates
+  onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
 }
 
 export function ProjectChecklist({ 
@@ -32,7 +33,8 @@ export function ProjectChecklist({
   trailers = [],
   teams = [],
   onUpdateProject,
-  onUpdateTrailer // Add this prop
+  onUpdateTrailer, // Add this prop
+  onFileUploaded
 }: ProjectChecklistProps) {
   const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(
@@ -1577,6 +1579,17 @@ Tack!`);
               description: "Garantibeviset har skapats och sparats",
             });
           }}
+          onFileUploaded={onFileUploaded ? (file) => {
+            onFileUploaded({
+              name: file.name,
+              url: file.url,
+              type: file.type,
+              projectId: project.id,
+              uploadedBy: 'current-user', // This should be the actual user ID
+              description: 'Automatiskt genererat garantibevis',
+              tags: ['guaranty', 'certificate']
+            });
+          } : undefined}
         />
       )}
     </Card>

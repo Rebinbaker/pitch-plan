@@ -1,4 +1,4 @@
-export type FileType = 'photo' | 'pdf' | 'inspection' | 'report' | 'other';
+export type FileType = 'photo' | 'pdf' | 'inspection' | 'report' | 'warranty' | 'other';
 
 export interface ProjectFile {
   id: string;

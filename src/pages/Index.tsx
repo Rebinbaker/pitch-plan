@@ -251,6 +251,7 @@ const Index = () => {
                 selectedProjectId={selectedProjectId}
                 onClearSelection={() => setSelectedProjectId(null)}
                 onAddNotifications={addNotifications}
+                onFileUploaded={uploadFile}
               />
             </TabsContent>
 
@@ -287,6 +288,7 @@ const Index = () => {
                 trailers={scaffolding}
                 onUpdateTrailer={updateScaffolding}
                 onAddNotifications={addNotifications}
+                onFileUploaded={uploadFile}
               />
             </TabsContent>
 

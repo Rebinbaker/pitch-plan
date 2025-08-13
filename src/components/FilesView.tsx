@@ -34,6 +34,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
       case 'photo': return Camera;
       case 'pdf': return FileText;
       case 'inspection': return FileText;
+      case 'warranty': return FileText;
       default: return FileText;
     }
   };
@@ -43,6 +44,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
       case 'photo': return 'bg-green-500';
       case 'pdf': return 'bg-red-500';
       case 'inspection': return 'bg-blue-500';
+      case 'warranty': return 'bg-purple-500';
       default: return 'bg-gray-500';
     }
   };
@@ -115,6 +117,7 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
               <SelectItem value="photo">Foton</SelectItem>
               <SelectItem value="pdf">PDFs</SelectItem>
               <SelectItem value="inspection">Inspektioner</SelectItem>
+              <SelectItem value="warranty">Garantibevis</SelectItem>
               <SelectItem value="other">Övrigt</SelectItem>
             </SelectContent>
           </Select>

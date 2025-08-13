@@ -49,6 +49,7 @@ interface ProjectDetailModalProps {
   teams?: any[];
   onUpdateTrailer?: (trailer: any) => void;
   projects?: Project[]; // Add projects array to get fresh data
+  onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
 }
 
 export function ProjectDetailModal({ 
@@ -59,7 +60,8 @@ export function ProjectDetailModal({
   trailers = [],
   teams = [],
   onUpdateTrailer,
-  projects = []
+  projects = [],
+  onFileUploaded
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -548,6 +550,7 @@ Tack! 👷‍♂️`;
               teams={teams}
               onUpdateProject={onUpdateProject}
               onUpdateTrailer={onUpdateTrailer}
+              onFileUploaded={onFileUploaded}
             />
           </TabsContent>
 
