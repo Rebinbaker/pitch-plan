@@ -17,7 +17,6 @@ import { TeamScheduleView } from './TeamScheduleView';
 import { LeaveManagement } from './LeaveManagement';
 import { WorkloadTrendChart } from './WorkloadTrendChart';
 import { AddTeamMemberModal } from './AddTeamMemberModal';
-import { PersonalScheduleView } from './PersonalScheduleView';
 
 interface TeamDetailModalProps {
   team: ConstructionTeam;
