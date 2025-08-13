@@ -16,6 +16,7 @@ import { TeamMemberCard } from './TeamMemberCard';
 import { TeamScheduleView } from './TeamScheduleView';
 import { LeaveManagement } from './LeaveManagement';
 import { WorkloadTrendChart } from './WorkloadTrendChart';
+import { AddTeamMemberModal } from './AddTeamMemberModal';
 
 interface TeamDetailModalProps {
   team: ConstructionTeam;
@@ -289,22 +290,61 @@ export function TeamDetailModal({
               </TabsContent>
 
               <TabsContent value="members" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {team.members?.map(member => (
-                    <TeamMemberCard
-                      key={member.id}
-                      member={member}
-                      workloadMetrics={workloadMetrics.get(member.id)}
-                      isLeader={team.leader === `${member.firstName} ${member.lastName}`}
-                      onUpdateMember={(updatedMember) => {
-                        const updatedMembers = team.members?.map(m => 
-                          m.id === updatedMember.id ? updatedMember : m
-                        );
-                        onUpdateTeam({ ...team, members: updatedMembers });
-                      }}
-                    />
-                  ))}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium">Teammedlemmar</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Hantera och lägg till medlemmar i teamet
+                    </p>
+                  </div>
+                  <AddTeamMemberModal 
+                    team={team} 
+                    onUpdateTeam={onUpdateTeam}
+                    trigger={
+                      <Button>
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Lägg till medlemmar
+                      </Button>
+                    }
+                  />
                 </div>
+                
+                {team.members && team.members.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {team.members.map(member => (
+                      <TeamMemberCard
+                        key={member.id}
+                        member={member}
+                        workloadMetrics={workloadMetrics.get(member.id)}
+                        isLeader={team.leader === `${member.firstName} ${member.lastName}`}
+                        onUpdateMember={(updatedMember) => {
+                          const updatedMembers = team.members?.map(m => 
+                            m.id === updatedMember.id ? updatedMember : m
+                          );
+                          onUpdateTeam({ ...team, members: updatedMembers });
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <UserCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">Inga teammedlemmar än</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Börja bygga ditt team genom att lägga till medlemmar
+                    </p>
+                    <AddTeamMemberModal 
+                      team={team} 
+                      onUpdateTeam={onUpdateTeam}
+                      trigger={
+                        <Button size="lg">
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Lägg till första medlemmen
+                        </Button>
+                      }
+                    />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="schedule">

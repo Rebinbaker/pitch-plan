@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Users, Phone, Briefcase, Star, Plus, UserPlus } from 'lucide-react';
 import { TeamDetailModal } from './team/TeamDetailModal';
+import { AddTeamMemberModal } from './team/AddTeamMemberModal';
 import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
@@ -159,27 +160,45 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
               })()
             )}
             
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Redigera teaminfo
-                </Button>
-              </DialogTrigger>
-              <DialogContent onClick={(e) => e.stopPropagation()}>
-                <DialogHeader>
-                  <DialogTitle>Redigera {team.name}</DialogTitle>
-                </DialogHeader>
-                <TeamEditForm
-                  team={team}
-                  onSave={(updated) => onUpdateTeam(updated)}
-                />
-              </DialogContent>
-            </Dialog>
+            <div className="space-y-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Redigera teaminfo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent onClick={(e) => e.stopPropagation()}>
+                  <DialogHeader>
+                    <DialogTitle>Redigera {team.name}</DialogTitle>
+                  </DialogHeader>
+                  <TeamEditForm
+                    team={team}
+                    onSave={(updated) => onUpdateTeam(updated)}
+                  />
+                </DialogContent>
+              </Dialog>
+              
+              <AddTeamMemberModal 
+                team={team} 
+                onUpdateTeam={onUpdateTeam}
+                trigger={
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Lägg till medlemmar
+                  </Button>
+                }
+              />
+            </div>
           </CardContent>
         </Card>
         
