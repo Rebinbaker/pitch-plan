@@ -1038,8 +1038,8 @@ function MonthlyWeekCard({ week, onViewDetails, trailers = [] }: MonthlyWeekCard
     <Card 
       ref={setNodeRef}
       className={cn(
-        "shadow-card transition-colors",
-        isOver && "ring-2 ring-primary/50 bg-primary/5"
+        "shadow-card transition-all duration-300 ease-in-out",
+        isOver && "ring-2 ring-primary/50 bg-primary/5 scale-[1.02]"
       )}
     >
       <CardHeader>
@@ -1090,8 +1090,13 @@ function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyPr
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    opacity: isDragging ? 0.5 : 1,
-  } : { opacity: isDragging ? 0.5 : 1 };
+    opacity: isDragging ? 0.7 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+    transition: isDragging ? 'none' : 'all 0.2s ease-in-out',
+  } : { 
+    opacity: 1,
+    transition: 'all 0.2s ease-in-out'
+  };
 
   return (
     <ProjectHoverCard project={project}>
@@ -1099,7 +1104,7 @@ function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyPr
         ref={setNodeRef}
         style={style}
         {...attributes}
-        className="border rounded p-3 space-y-2 relative"
+        className="border rounded p-3 space-y-2 relative transition-all duration-200 ease-in-out hover:shadow-md"
       >
         {/* Drag handle - larger and more visible */}
         <div 
