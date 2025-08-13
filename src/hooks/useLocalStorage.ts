@@ -284,6 +284,14 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.FILES, JSON.stringify(newFiles));
   };
 
+  const deleteFile = async (fileId: string) => {
+    console.log('Deleting file from localStorage:', fileId);
+
+    const newFiles = files.filter(file => file.id !== fileId);
+    setFiles(newFiles);
+    localStorage.setItem(STORAGE_KEYS.FILES, JSON.stringify(newFiles));
+  };
+
   const markNotificationAsRead = async (notificationId: string) => {
     console.log('Marking notification as read in localStorage:', notificationId);
 
@@ -325,6 +333,7 @@ export const useLocalStorage = () => {
     updateTeam,
     addTeam,
     uploadFile,
+    deleteFile,
     markNotificationAsRead,
     dismissNotification,
     addNotifications

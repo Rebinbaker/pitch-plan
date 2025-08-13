@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { FileText, Camera, Upload, Download, Eye, Search } from 'lucide-react';
+import { FileText, Camera, Upload, Download, Eye, Search, X } from 'lucide-react';
 import { ProjectFile, FileType } from '@/types/files';
 import { Project } from '@/types/project';
 
@@ -13,9 +13,10 @@ interface FilesViewProps {
   files: ProjectFile[];
   projects: Project[];
   onUploadFile: (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => void;
+  onDeleteFile: (fileId: string) => void;
 }
 
-export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
+export function FilesView({ files, projects, onUploadFile, onDeleteFile }: FilesViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterType, setFilterType] = useState<FileType | 'all'>('all');
@@ -172,9 +173,19 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
                     <FileIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
                     <span className="break-words leading-tight">{file.name}</span>
                   </CardTitle>
-                  <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white flex-shrink-0`}>
-                    {file.type}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white flex-shrink-0`}>
+                      {file.type}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteFile(file.id)}
+                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">

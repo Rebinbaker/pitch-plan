@@ -46,6 +46,7 @@ const Index = () => {
     updateTeam,
     addTeam,
     uploadFile,
+    deleteFile,
     markNotificationAsRead,
     dismissNotification,
     addNotifications,
@@ -278,6 +279,7 @@ const Index = () => {
                 files={files}
                 projects={projects}
                 onUploadFile={uploadFile}
+                onDeleteFile={deleteFile}
               />
             </TabsContent>
 

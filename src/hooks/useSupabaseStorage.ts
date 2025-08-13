@@ -378,6 +378,24 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const deleteFile = async (fileId: string) => {
+    try {
+      await localStorageHook.deleteFile(fileId);
+      toast({
+        title: "Fil borttagen",
+        description: "Filen har tagits bort framgångsrikt.",
+      });
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        variant: "destructive",
+        title: "Fel vid borttagning",
+        description: "Kunde inte ta bort filen. Försök igen.",
+      });
+      throw error;
+    }
+  };
+
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       await localStorageHook.markNotificationAsRead(notificationId);
@@ -418,6 +436,7 @@ export const useSupabaseStorage = () => {
     updateTeam,
     addTeam,
     uploadFile,
+    deleteFile,
     markNotificationAsRead,
     dismissNotification,
     addNotifications,
