@@ -31,7 +31,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      console.log('User detected, navigating to home:', user.email);
+      // Force redirect using window.location to ensure it works
+      window.location.href = '/';
     }
   }, [user, navigate]);
 
