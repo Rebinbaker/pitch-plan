@@ -165,6 +165,11 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
             src={fileUrl}
             className="w-full h-full rounded-md"
             title={`Preview of ${file.name}`}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            onError={() => {
+              // If iframe fails, provide download option
+              console.log('Iframe failed to load, showing download option');
+            }}
           />
         </div>
       );
@@ -186,6 +191,9 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
       <div className="w-full h-[400px] border rounded-md flex items-center justify-center bg-muted">
         <div className="text-center space-y-2">
           <p className="text-muted-foreground">Förhandsvisning inte tillgänglig för denna filtyp</p>
+          <p className="text-xs text-muted-foreground">
+            Webbläsaren kan blockera vissa PDF-filer av säkerhetsskäl
+          </p>
           <Button onClick={handleDownload} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Ladda ner för att visa
@@ -222,6 +230,11 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
               {file.description}
             </div>
           )}
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800">
+            <p className="font-medium">Tips:</p>
+            <p>Om förhandsvisningen inte fungerar kan du ladda ner filen för att öppna den lokalt.</p>
+          </div>
           
           {renderPreview()}
           
