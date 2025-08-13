@@ -27,7 +27,11 @@ interface WeeklyPlanningViewProps {
 
 export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer, onAddNotifications }: WeeklyPlanningViewProps) {
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>('board');
+  const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>(() => {
+    // Persist view mode in localStorage to prevent reset during re-renders
+    const saved = localStorage.getItem('planningViewMode');
+    return (saved as 'calendar' | 'board' | 'monthly') || 'board';
+  });
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [monthlyDateRange, setMonthlyDateRange] = useState<{from: Date | undefined, to: Date | undefined} | undefined>(() => {
     // Default to current month
@@ -293,7 +297,10 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
               </SelectContent>
             </Select>
             
-            <Select value={viewMode} onValueChange={(value: 'calendar' | 'board' | 'monthly') => setViewMode(value)}>
+            <Select value={viewMode} onValueChange={(value: 'calendar' | 'board' | 'monthly') => {
+              setViewMode(value);
+              localStorage.setItem('planningViewMode', value);
+            }}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
