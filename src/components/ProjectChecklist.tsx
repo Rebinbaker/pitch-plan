@@ -178,10 +178,9 @@ export function ProjectChecklist({
     // Clear timer when confirmed
     setTimers(prev => ({ ...prev, [itemId]: 0 }));
     
-    // Mark checklist item as completed
-    console.log('WhatsApp: calling handleItemToggle');
-    handleItemToggle(itemId);
-    console.log('WhatsApp: handleItemToggle completed');
+    // Don't call handleItemToggle to avoid triggering redirect
+    // User can manually check off the item if needed
+    console.log('WhatsApp: group confirmed without triggering project update');
   };
 
   const resetWhatsAppStatus = (itemId: string) => {
