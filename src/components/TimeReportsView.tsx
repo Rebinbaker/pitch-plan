@@ -24,7 +24,7 @@ const TimeReportsView = () => {
   const [generateLoading, setGenerateLoading] = useState(false);
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
 
   useEffect(() => {
     if (user?.id) {
@@ -92,7 +92,7 @@ const TimeReportsView = () => {
         .eq('user_id', user!.id);
 
       // Add team filter if selected
-      if (selectedTeam) {
+      if (selectedTeam && selectedTeam !== 'all') {
         query = query.eq('team_id', selectedTeam);
       }
 
@@ -141,7 +141,7 @@ const TimeReportsView = () => {
       }
 
       // Add team filter to title if selected
-      if (selectedTeam) {
+      if (selectedTeam && selectedTeam !== 'all') {
         const selectedTeamData = teams.find(t => t.id === selectedTeam);
         if (selectedTeamData) {
           title += ` - ${selectedTeamData.name}`;
@@ -158,7 +158,7 @@ const TimeReportsView = () => {
           .eq('user_id', user!.id);
 
         // Add team filter if selected
-        if (selectedTeam) {
+        if (selectedTeam && selectedTeam !== 'all') {
           query = query.eq('team_id', selectedTeam);
         }
 
@@ -205,7 +205,7 @@ const TimeReportsView = () => {
             end_date: format(new Date(period.end), 'yyyy-MM-dd'),
             total_hours: totalHours,
             billable_hours: billableHours,
-            team_ids: selectedTeam ? [selectedTeam] : null,
+            team_ids: selectedTeam && selectedTeam !== 'all' ? [selectedTeam] : null,
             report_data: reportData
           })
           .select()
@@ -336,7 +336,7 @@ const TimeReportsView = () => {
                   <SelectValue placeholder="Alla team" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Alla team</SelectItem>
+                  <SelectItem value="all">Alla team</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
