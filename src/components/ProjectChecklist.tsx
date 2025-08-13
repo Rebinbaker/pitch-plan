@@ -941,245 +941,229 @@ Tack!`);
                       )}
                       
                     {/* Enhanced WhatsApp Integration */}
-                    {isWhatsApp && project && (
-                      <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <MessageCircle className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-medium text-primary">WhatsApp Grupp</span>
-                        </div>
-                        
-                        {/* Group name preview/edit */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Gruppnamn:</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => setShowGroupNameEdit(prev => ({
-                                ...prev,
-                                [item.id]: !prev[item.id]
-                              }))}
-                            >
-                              {showGroupNameEdit[item.id] ? 'Spara' : 'Ändra'}
-                            </Button>
-                          </div>
-                          
-                          {showGroupNameEdit[item.id] ? (
-                            <Input
-                              className="h-7 text-xs"
-                              value={whatsappStates[item.id]?.customGroupName || project.address}
-                              onChange={(e) => updateGroupName(item.id, e.target.value)}
-                              placeholder="Ange gruppnamn"
-                            />
-                           ) : (
-                             <div className="flex items-center justify-between p-2 bg-background/50 rounded">
-                               <span className="text-xs font-medium">
-                                 {whatsappStates[item.id]?.customGroupName || project.address}
-                               </span>
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 className="h-6 w-6 p-0 ml-2"
-                                 onClick={() => copyToClipboard(whatsappStates[item.id]?.customGroupName || project.address)}
-                               >
-                                 <Copy className="h-3 w-3" />
-                               </Button>
-                             </div>
-                           )}
-                        </div>
+                     {isWhatsApp && project && whatsappStates[item.id]?.status !== 'confirmed' && (
+                       <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
+                         <div className="flex items-center gap-2">
+                           <MessageCircle className="w-4 h-4 text-primary" />
+                           <span className="text-xs font-medium text-primary">WhatsApp Grupp</span>
+                         </div>
+                         
+                         {/* Group name preview/edit */}
+                         <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                             <span className="text-xs text-muted-foreground">Gruppnamn:</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 px-2 text-xs"
+                               onClick={() => setShowGroupNameEdit(prev => ({
+                                 ...prev,
+                                 [item.id]: !prev[item.id]
+                               }))}
+                             >
+                               {showGroupNameEdit[item.id] ? 'Spara' : 'Ändra'}
+                             </Button>
+                           </div>
+                           
+                           {showGroupNameEdit[item.id] ? (
+                             <Input
+                               className="h-7 text-xs"
+                               value={whatsappStates[item.id]?.customGroupName || project.address}
+                               onChange={(e) => updateGroupName(item.id, e.target.value)}
+                               placeholder="Ange gruppnamn"
+                             />
+                            ) : (
+                              <div className="flex items-center justify-between p-2 bg-background/50 rounded">
+                                <span className="text-xs font-medium">
+                                  {whatsappStates[item.id]?.customGroupName || project.address}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 ml-2"
+                                  onClick={() => copyToClipboard(whatsappStates[item.id]?.customGroupName || project.address)}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                         </div>
 
-                        {/* Status and actions */}
-                        {(() => {
-                          const state = whatsappStates[item.id];
-                          const status = state?.status || 'idle';
-                          
-                          switch (status) {
-                            case 'idle':
-                              return (
-                                <div className="space-y-2">
-                                  <p className="text-xs text-muted-foreground">
-                                    Klicka för att öppna WhatsApp och skapa en grupp med förslaget namn.
-                                  </p>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => openWhatsApp(item.id, project)}
-                                    className="w-full h-8 text-xs bg-[#25D366] hover:bg-[#25D366]/80 text-white"
-                                  >
-                                    <MessageCircle className="w-3 h-3 mr-1" />
-                                    Öppna WhatsApp
-                                  </Button>
-                                </div>
-                              );
-                            
-                            case 'opened':
-                              const timeLeft = timers[item.id] || 0;
-                              const minutes = Math.floor(timeLeft / 60);
-                              const seconds = timeLeft % 60;
-                              const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                              
-                              return (
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs text-amber-600">
-                                      <Clock className="w-3 h-3" />
-                                      <span>WhatsApp öppnad - väntar på bekräftelse</span>
-                                    </div>
-                                    {timeLeft > 0 && (
-                                      <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                                        {timeDisplay}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Har du skapat gruppen? Bekräfta när du är klar.
-                                    {timeLeft > 0 && (
-                                      <span className="block mt-1 text-amber-600">
-                                        Påminnelse om {timeDisplay}
-                                      </span>
-                                    )}
-                                  </p>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={() => confirmWhatsAppGroup(item.id)}
-                                      className="flex-1 h-8 text-xs"
-                                    >
-                                      <Check className="w-3 h-3 mr-1" />
-                                      Grupp skapad
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => resetWhatsAppStatus(item.id)}
-                                      className="h-8 text-xs"
-                                    >
-                                      Börja om
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            
-                            case 'confirmed':
-                              return (
-                                <div className="flex items-center gap-2 text-xs text-success">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>WhatsApp-grupp skapad och bekräftad</span>
-                                </div>
-                              );
-                            
-                            default:
-                              return null;
-                          }
-                        })()}
-                      </div>
-                    )}
-
-                    {/* Container Booking Integration */}
-                    {isContainerBooking && project && (
-                      <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-medium text-primary">Container Hemtag</span>
-                        </div>
-                        
-                        {/* Address preview */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Adress:</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 ml-2"
-                              onClick={() => copyToClipboard(project.address)}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          
-                          <div className="p-2 bg-background/50 rounded">
-                            <span className="text-xs font-medium">{project.address}</span>
-                          </div>
-                        </div>
-
-                        {/* Status and actions */}
-                        {(() => {
-                          const state = containerStates[item.id];
-                          const status = state?.status || 'idle';
-                          
-                          switch (status) {
-                            case 'idle':
-                              return (
-                                <div className="space-y-2">
-                                  <p className="text-xs text-muted-foreground">
-                                    Kopiera adressen för att hitta rätt mail tråd för att boka hem container.
-                                  </p>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => openOutlook(item.id, project)}
-                                    className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
-                                  >
-                                    <Mail className="w-3 h-3 mr-1" />
-                                    Kopiera email-innehåll
-                                  </Button>
-                                </div>
-                              );
-                            
-                            case 'opened':
-                              const timeLeft = timers[item.id] || 0;
-                              const minutes = Math.floor(timeLeft / 60);
-                              const seconds = timeLeft % 60;
-                              const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                              
-                              return (
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2 text-xs text-amber-600">
-                                    <Clock className="w-3 h-3" />
-                                    <span>Outlook öppnad - väntar på bekräftelse</span>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Har du skickat emailet för container hemtag? Bekräfta när du är klar.
-                                    {timeLeft > 0 && (
-                                      <span className="block mt-1 text-amber-600">
-                                        Påminnelse om {timeDisplay}
-                                      </span>
-                                    )}
-                                  </p>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={() => confirmContainerBooking(item.id)}
-                                      className="flex-1 h-8 text-xs"
-                                    >
-                                      <Check className="w-3 h-3 mr-1" />
-                                      Email skickat
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => resetContainerStatus(item.id)}
-                                      className="h-8 text-xs"
-                                    >
-                                      Börja om
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            
-                            case 'confirmed':
-                              return (
-                                <div className="flex items-center gap-2 text-xs text-success">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>Container hemtag bokad och bekräftad</span>
-                                </div>
-                              );
-                            
-                            default:
-                              return null;
-                          }
-                        })()}
+                         {/* Status and actions */}
+                         {(() => {
+                           const state = whatsappStates[item.id];
+                           const status = state?.status || 'idle';
+                           
+                           switch (status) {
+                             case 'idle':
+                               return (
+                                 <div className="space-y-2">
+                                   <p className="text-xs text-muted-foreground">
+                                     Klicka för att öppna WhatsApp och skapa en grupp med förslaget namn.
+                                   </p>
+                                   <Button
+                                     size="sm"
+                                     onClick={() => openWhatsApp(item.id, project)}
+                                     className="w-full h-8 text-xs bg-[#25D366] hover:bg-[#25D366]/80 text-white"
+                                   >
+                                     <MessageCircle className="w-3 h-3 mr-1" />
+                                     Öppna WhatsApp
+                                   </Button>
+                                 </div>
+                               );
+                             
+                             case 'opened':
+                               const timeLeft = timers[item.id] || 0;
+                               const minutes = Math.floor(timeLeft / 60);
+                               const seconds = timeLeft % 60;
+                               const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                               
+                               return (
+                                 <div className="space-y-2">
+                                   <div className="flex items-center justify-between">
+                                     <div className="flex items-center gap-2 text-xs text-amber-600">
+                                       <Clock className="w-3 h-3" />
+                                       <span>WhatsApp öppnad - väntar på bekräftelse</span>
+                                     </div>
+                                     {timeLeft > 0 && (
+                                       <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                                         {timeDisplay}
+                                       </div>
+                                     )}
+                                   </div>
+                                   <p className="text-xs text-muted-foreground">
+                                     Har du skapat gruppen? Bekräfta när du är klar.
+                                     {timeLeft > 0 && (
+                                       <span className="block mt-1 text-amber-600">
+                                         Påminnelse om {timeDisplay}
+                                       </span>
+                                     )}
+                                   </p>
+                                   <div className="flex gap-2">
+                                     <Button
+                                       size="sm"
+                                       onClick={() => confirmWhatsAppGroup(item.id)}
+                                       className="flex-1 h-8 text-xs"
+                                     >
+                                       <Check className="w-3 h-3 mr-1" />
+                                       Grupp skapad
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => resetWhatsAppStatus(item.id)}
+                                       className="h-8 text-xs"
+                                     >
+                                       Börja om
+                                     </Button>
+                                   </div>
+                                 </div>
+                               );
+                             
+                             default:
+                               return null;
+                           }
+                         })()}
                        </div>
                      )}
+
+                    {/* Container Booking Integration */}
+                     {isContainerBooking && project && containerStates[item.id]?.status !== 'confirmed' && (
+                       <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
+                         <div className="flex items-center gap-2">
+                           <Mail className="w-4 h-4 text-primary" />
+                           <span className="text-xs font-medium text-primary">Container Hemtag</span>
+                         </div>
+                         
+                         {/* Address preview */}
+                         <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                             <span className="text-xs text-muted-foreground">Adress:</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0 ml-2"
+                               onClick={() => copyToClipboard(project.address)}
+                             >
+                               <Copy className="h-3 w-3" />
+                             </Button>
+                           </div>
+                           
+                           <div className="p-2 bg-background/50 rounded">
+                             <span className="text-xs font-medium">{project.address}</span>
+                           </div>
+                         </div>
+
+                         {/* Status and actions */}
+                         {(() => {
+                           const state = containerStates[item.id];
+                           const status = state?.status || 'idle';
+                           
+                           switch (status) {
+                             case 'idle':
+                               return (
+                                 <div className="space-y-2">
+                                   <p className="text-xs text-muted-foreground">
+                                     Kopiera adressen för att hitta rätt mail tråd för att boka hem container.
+                                   </p>
+                                   <Button
+                                     size="sm"
+                                     onClick={() => openOutlook(item.id, project)}
+                                     className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
+                                   >
+                                     <Mail className="w-3 h-3 mr-1" />
+                                     Kopiera email-innehåll
+                                   </Button>
+                                 </div>
+                               );
+                             
+                             case 'opened':
+                               const timeLeft = timers[item.id] || 0;
+                               const minutes = Math.floor(timeLeft / 60);
+                               const seconds = timeLeft % 60;
+                               const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                               
+                               return (
+                                 <div className="space-y-2">
+                                   <div className="flex items-center gap-2 text-xs text-amber-600">
+                                     <Clock className="w-3 h-3" />
+                                     <span>Outlook öppnad - väntar på bekräftelse</span>
+                                   </div>
+                                   <p className="text-xs text-muted-foreground">
+                                     Har du skickat emailet för container hemtag? Bekräfta när du är klar.
+                                     {timeLeft > 0 && (
+                                       <span className="block mt-1 text-amber-600">
+                                         Påminnelse om {timeDisplay}
+                                       </span>
+                                     )}
+                                   </p>
+                                   <div className="flex gap-2">
+                                     <Button
+                                       size="sm"
+                                       onClick={() => confirmContainerBooking(item.id)}
+                                       className="flex-1 h-8 text-xs"
+                                     >
+                                       <Check className="w-3 h-3 mr-1" />
+                                       Email skickat
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => resetContainerStatus(item.id)}
+                                       className="h-8 text-xs"
+                                     >
+                                       Börja om
+                                     </Button>
+                                   </div>
+                                 </div>
+                               );
+                             
+                             default:
+                               return null;
+                           }
+                         })()}
+                        </div>
+                      )}
 
                      {/* Enhanced Container Order Integration */}
                      {isContainerOrder && project && (
