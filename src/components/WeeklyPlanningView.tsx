@@ -850,8 +850,9 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
   const [activeId, setActiveId] = useState<string | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
   const [frozenProjects, setFrozenProjects] = useState<Project[]>([]);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
-  console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId);
+  console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId, 'isTransitioning:', isTransitioning);
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -1003,17 +1004,19 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
       <DndContext
         onDragStart={(event) => {
           setActiveId(event.active.id as string);
+          setIsTransitioning(true);
           // Freeze current state to prevent visual jumps
           setFrozenProjects([...projects]);
         }}
         onDragEnd={(event) => {
-          // Keep frozen state during update, then clear it
+          // Process the update but don't change visual state yet
           handleMonthlyDragEnd(event);
-          // Clear frozen state after a brief delay to allow smooth transition
+          // Clear state in a way that prevents visual jump
           setTimeout(() => {
+            setIsTransitioning(false);
             setFrozenProjects([]);
             setActiveId(null);
-          }, 50);
+          }, 100);
         }}
         modifiers={[restrictToWindowEdges]}
       >
