@@ -4,6 +4,7 @@ export const mockNotifications: Notification[] = [
   {
     id: 'notif-1',
     type: 'material_order',
+    category: 'general',
     priority: 'high',
     title: 'Brådskande materialbeställning',
     message: 'Projektet startar om 2 dagar men material inte beställt än',
@@ -16,6 +17,7 @@ export const mockNotifications: Notification[] = [
   {
     id: 'notif-2',
     type: 'checklist_incomplete',
+    category: 'general',
     priority: 'medium',
     title: 'Checklista ofullständig',
     message: 'Projektdeadline imorgon men checklista endast 55% klar',
@@ -28,6 +30,7 @@ export const mockNotifications: Notification[] = [
   {
     id: 'notif-3',
     type: 'inspection_missing',
+    category: 'general',
     priority: 'medium',
     title: 'Slutbesiktning saknas',
     message: 'Projekt avslutades för 3 dagar sedan men slutbesiktning inte uppladdad',
@@ -40,6 +43,7 @@ export const mockNotifications: Notification[] = [
   {
     id: 'notif-4',
     type: 'deadline_warning',
+    category: 'general',
     priority: 'low',
     title: 'Deadline närmar sig',
     message: 'Projektdeadline om 5 dagar - på rätt spår',
