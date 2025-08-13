@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Shield, User, Crown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Trash2, Shield, User, Crown, FileText, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserRole } from '@/hooks/useUserRole';
+import { WarrantyTemplateManager } from '@/components/warranty/WarrantyTemplateManager';
 
 interface UserData {
   id: string;
@@ -21,6 +23,7 @@ interface UserData {
 export const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('users');
 
   const fetchUsers = async () => {
     try {
@@ -191,7 +194,7 @@ export const AdminPanel: React.FC = () => {
               Administratörspanel
             </CardTitle>
             <CardDescription>
-              Hantera användare och roller i systemet
+              Hantera användare, roller och garantimallar
             </CardDescription>
           </div>
           <Button 
@@ -204,6 +207,19 @@ export const AdminPanel: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Användare
+            </TabsTrigger>
+            <TabsTrigger value="warranties" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Garantimallar
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users" className="mt-6">
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -293,11 +309,17 @@ export const AdminPanel: React.FC = () => {
           </Table>
         </div>
         
-        {users.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            Inga användare hittades
-          </div>
-        )}
+            {users.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Inga användare hittades
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="warranties" className="mt-6">
+            <WarrantyTemplateManager />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

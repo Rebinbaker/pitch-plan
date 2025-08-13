@@ -47,6 +47,47 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_warranties: {
+        Row: {
+          customer_address: string
+          customer_name: string
+          generated_at: string
+          generated_by: string
+          generated_pdf_url: string
+          id: string
+          project_id: string
+          template_id: string
+        }
+        Insert: {
+          customer_address: string
+          customer_name: string
+          generated_at?: string
+          generated_by: string
+          generated_pdf_url: string
+          id?: string
+          project_id: string
+          template_id: string
+        }
+        Update: {
+          customer_address?: string
+          customer_name?: string
+          generated_at?: string
+          generated_by?: string
+          generated_pdf_url?: string
+          id?: string
+          project_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_warranties_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -555,6 +596,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      warranty_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          field_coordinates: Json
+          id: string
+          name: string
+          pdf_url: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          field_coordinates?: Json
+          id?: string
+          name: string
+          pdf_url: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          field_coordinates?: Json
+          id?: string
+          name?: string
+          pdf_url?: string
+          updated_at?: string
         }
         Relationships: []
       }

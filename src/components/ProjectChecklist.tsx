@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
-import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package } from 'lucide-react';
+import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
+import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -68,6 +69,9 @@ export function ProjectChecklist({
     status: 'idle' | 'opened' | 'confirmed';
     openedAt?: number;
   }}>({});
+  
+  // Warranty generator state
+  const [showWarrantyGenerator, setShowWarrantyGenerator] = useState(false);
 
   const materialTypes: MaterialType[] = [
     'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
@@ -1480,6 +1484,32 @@ Tack!`);
           })}
         </div>
         
+        {/* Warranty Generator Section */}
+        {project && completionPercentage >= 80 && (
+          <div className="mt-6 p-4 bg-success/5 border border-success/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-success flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Garantibevis
+                </h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Projektet är nästan klart. Generera garantibevis för kunden.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowWarrantyGenerator(true)}
+                variant="outline"
+                size="sm"
+                className="bg-success/10 border-success/30 text-success hover:bg-success/20"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Generera garantibevis
+              </Button>
+            </div>
+          </div>
+        )}
+
         {isEditable && (
           <div className="mt-6 flex gap-2">
             <Button 
@@ -1534,6 +1564,21 @@ Tack!`);
           </div>
         )}
       </CardContent>
+      
+      {/* Warranty Generator Modal */}
+      {project && (
+        <WarrantyGenerator
+          project={project}
+          isOpen={showWarrantyGenerator}
+          onClose={() => setShowWarrantyGenerator(false)}
+          onGenerated={() => {
+            toast({
+              title: "Garantibevis genererat",
+              description: "Garantibeviset har skapats och sparats",
+            });
+          }}
+        />
+      )}
     </Card>
   );
 }
