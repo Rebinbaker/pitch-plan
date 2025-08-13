@@ -244,11 +244,29 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                   
                   {/* PDF as background with clickable overlay */}
                   <div className="relative">
-                    <iframe
-                      src={pdfImageUrl}
+                    <object
+                      data={pdfImageUrl}
+                      type="application/pdf"
                       className="w-full min-h-[700px] border-none"
                       title={`PDF Mall: ${template.name}`}
-                    />
+                    >
+                      <embed
+                        src={pdfImageUrl}
+                        type="application/pdf"
+                        className="w-full min-h-[700px]"
+                      />
+                      <p className="p-4 text-center text-muted-foreground">
+                        Kan inte visa PDF direkt. 
+                        <a 
+                          href={pdfImageUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline ml-1"
+                        >
+                          Öppna PDF i ny flik
+                        </a>
+                      </p>
+                    </object>
                     
                     {/* Clickable overlay for coordinate placement */}
                     <div
