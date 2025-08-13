@@ -1487,7 +1487,7 @@ Tack!`);
         </div>
         
         {/* Warranty Generator Section */}
-        {project && completionPercentage >= 80 && (
+        {project && allWorkPhasesConfirmed && (
           <div className="mt-6 p-4 bg-success/5 border border-success/20 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
