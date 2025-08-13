@@ -683,8 +683,17 @@ Tack!`);
     const isScaffoldingDismantling = updatedItem?.label === 'Nedmontering av ställningar';
     
     if (isScaffoldingDismantling && updatedItem?.completed && project?.assignedTrailer && onUpdateTrailer) {
+      console.log('SCAFFOLDING RELEASE: Starting release process', {
+        itemLabel: updatedItem.label,
+        itemCompleted: updatedItem.completed,
+        assignedTrailer: project.assignedTrailer,
+        trailersAvailable: trailers.length
+      });
+      
       // Find the assigned trailer and release it
       const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
+      console.log('SCAFFOLDING RELEASE: Found trailer', assignedTrailer);
+      
       if (assignedTrailer) {
         const updatedTrailer = {
           ...assignedTrailer,
@@ -692,6 +701,12 @@ Tack!`);
           assignedProject: undefined,
           lastUpdated: new Date().toISOString().split('T')[0]
         };
+        
+        console.log('SCAFFOLDING RELEASE: Updating trailer', {
+          originalTrailer: assignedTrailer,
+          updatedTrailer: updatedTrailer
+        });
+        
         onUpdateTrailer(updatedTrailer);
         
         // Also clear the trailer assignment from the project
@@ -702,6 +717,12 @@ Tack!`);
             checklist: updatedChecklist,
             completionPercentage: newCompletionPercentage,
           };
+          
+          console.log('SCAFFOLDING RELEASE: Updating project', {
+            originalProject: project,
+            updatedProject: updatedProjectWithoutTrailer
+          });
+          
           onUpdateProject(updatedProjectWithoutTrailer);
           
           // Show success message
@@ -714,7 +735,16 @@ Tack!`);
           // Exit early since we've already updated the project
           return;
         }
+      } else {
+        console.log('SCAFFOLDING RELEASE: No trailer found with ID', project.assignedTrailer);
       }
+    } else {
+      console.log('SCAFFOLDING RELEASE: Conditions not met', {
+        isScaffoldingDismantling,
+        itemCompleted: updatedItem?.completed,
+        hasAssignedTrailer: !!project?.assignedTrailer,
+        hasUpdateTrailerFunction: !!onUpdateTrailer
+      });
     }
     
     onChecklistUpdate(updatedChecklist);
