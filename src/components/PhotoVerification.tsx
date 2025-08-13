@@ -26,27 +26,45 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
   const { toast } = useToast();
 
   const startCamera = async () => {
+    console.log('Starting camera...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'environment', // Use back camera on mobile
+          facingMode: 'user', // Changed to 'user' for front camera (better for selfies)
           width: { ideal: 1280 },
           height: { ideal: 720 }
         } 
       });
       
+      console.log('Camera stream obtained:', stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
-        setError(null);
+        console.log('Video element set with stream');
+        
+        // Wait for video to load and play
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          videoRef.current?.play().then(() => {
+            console.log('Video playing successfully');
+            setIsCameraActive(true);
+            setError(null);
+          }).catch(err => {
+            console.error('Error playing video:', err);
+            setError('Kunde inte starta video-uppspelning');
+          });
+        };
       }
     } catch (error: any) {
+      console.error('Camera error:', error);
       let errorMessage = 'Kunde inte starta kameran';
       
       if (error.name === 'NotAllowedError') {
         errorMessage = 'Du måste tillåta kameraåtkomst';
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'Ingen kamera hittades';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = 'Kameran används redan av ett annat program';
       }
       
       setError(errorMessage);
