@@ -7,20 +7,22 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
 
+  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Laddar...</p>
+          <p className="mt-4 text-muted-foreground">Laddar data...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  // Check both user and session to be extra sure
+  if (!user || !session) {
     return <Navigate to="/auth" replace />;
   }
 
