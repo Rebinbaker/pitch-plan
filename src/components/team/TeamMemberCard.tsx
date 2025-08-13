@@ -68,7 +68,11 @@ export function TeamMemberCard({
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onUpdateMember(member)}
+          >
             <Edit className="w-4 h-4" />
           </Button>
         </div>

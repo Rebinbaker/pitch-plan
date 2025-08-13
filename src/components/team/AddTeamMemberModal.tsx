@@ -36,7 +36,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
   const addMemberToList = () => {
     if (!currentMember.firstName || !currentMember.lastName) return;
 
-    const member: Partial<TeamMember> = {
+    const member: Partial<TeamMember> & { isLeader?: boolean } = {
       id: `member-${Date.now()}-${Math.random()}`,
       firstName: currentMember.firstName,
       lastName: currentMember.lastName,
@@ -45,7 +45,8 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
       phone: currentMember.phone || undefined,
       skills: currentMember.skills 
         ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
-        : []
+        : [],
+      isLeader: currentMember.isLeader
     };
 
     setNewMembers([...newMembers, member]);
@@ -69,15 +70,13 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
 
     const updatedMembers = [...(team.members || []), ...newMembers as TeamMember[]];
     
-    // Update team leader if any new member is marked as leader
+    // Find the new leader among the added members
+    const newLeader = newMembers.find((member: any) => member.isLeader);
+    
     let updatedTeam = { ...team, members: updatedMembers };
     
-    const newLeader = newMembers.find((_, index) => 
-      index === newMembers.findIndex(m => currentMember.isLeader && m.id === currentMember.firstName + currentMember.lastName)
-    );
-    
-    if (currentMember.isLeader && currentMember.firstName && currentMember.lastName) {
-      updatedTeam.leader = `${currentMember.firstName} ${currentMember.lastName}`;
+    if (newLeader) {
+      updatedTeam.leader = `${newLeader.firstName} ${newLeader.lastName}`;
     }
 
     // Update team skills with new member skills
@@ -89,6 +88,15 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
 
     onUpdateTeam(updatedTeam);
     setNewMembers([]);
+    setCurrentMember({
+      firstName: '',
+      lastName: '',
+      position: '',
+      email: '',
+      phone: '',
+      skills: '',
+      isLeader: false
+    });
     setOpen(false);
   };
 
@@ -241,16 +249,19 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
                   {newMembers.map((member) => (
                     <div key={member.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {member.firstName} {member.lastName}
-                          </span>
-                          {member.position && (
-                            <Badge variant="outline" className="text-xs">
-                              {member.position}
-                            </Badge>
-                          )}
-                        </div>
+                         <div className="flex items-center gap-2">
+                           <span className="font-medium">
+                             {member.firstName} {member.lastName}
+                           </span>
+                           {(member as any).isLeader && (
+                             <Crown className="w-4 h-4 text-warning" />
+                           )}
+                           {member.position && (
+                             <Badge variant="outline" className="text-xs">
+                               {member.position}
+                             </Badge>
+                           )}
+                         </div>
                         
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                           {member.email && (
