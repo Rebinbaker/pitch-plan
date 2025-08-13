@@ -17,6 +17,7 @@ import { TeamScheduleView } from './TeamScheduleView';
 import { LeaveManagement } from './LeaveManagement';
 import { WorkloadTrendChart } from './WorkloadTrendChart';
 import { AddTeamMemberModal } from './AddTeamMemberModal';
+import { PersonalScheduleView } from './PersonalScheduleView';
 
 interface TeamDetailModalProps {
   team: ConstructionTeam;
@@ -116,7 +117,7 @@ export function TeamDetailModal({
 
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="overview" className="h-full flex flex-col">
-            <TabsList className="grid grid-cols-5 w-full flex-shrink-0">
+            <TabsList className="grid grid-cols-6 w-full flex-shrink-0">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Översikt
@@ -136,6 +137,10 @@ export function TeamDetailModal({
               <TabsTrigger value="leave" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Ledighet
+              </TabsTrigger>
+              <TabsTrigger value="personal" className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Personliga scheman
               </TabsTrigger>
             </TabsList>
 
@@ -366,6 +371,13 @@ export function TeamDetailModal({
                 <LeaveManagement 
                   team={team}
                   onLeaveRequestUpdate={() => calculateTeamWorkload()}
+                />
+              </TabsContent>
+
+              <TabsContent value="personal">
+                <PersonalScheduleView 
+                  team={team}
+                  onUpdateSchedule={() => calculateTeamWorkload()}
                 />
               </TabsContent>
             </div>
