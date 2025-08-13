@@ -134,7 +134,18 @@ export const WarrantyTemplateManager = () => {
 
       if (getError) throw getError;
 
-      // Delete from database first
+      // Delete any generated warranties that reference this template first
+      const { error: generatedError } = await supabase
+        .from('generated_warranties')
+        .delete()
+        .eq('template_id', templateId);
+
+      if (generatedError) {
+        console.warn('Could not delete generated warranties:', generatedError);
+        // Continue anyway since we want to delete the template
+      }
+
+      // Delete from database
       const { error: dbError } = await supabase
         .from('warranty_templates')
         .delete()
