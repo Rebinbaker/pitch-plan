@@ -987,29 +987,22 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
       localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
       console.log('Updated notifications count:', updatedNotifications.length);
     }
-      
-      // Show toast notification
-      console.log('Showing toast notification');
-      import('@/hooks/use-toast').then(({ toast }) => {
-        toast({
-          title: "Projekt omplanerat",
-          description: `"${project.name}" flyttades till vecka ${weekNumber}`,
-          duration: 3000,
-        });
-      });
   };
 
   return (
     <DndContext
       onDragStart={(event) => setActiveId(event.active.id as string)}
       onDragEnd={(event) => {
-        handleMonthlyDragEnd(event);
-        // Small delay to allow smooth visual transition
-        setTimeout(() => setActiveId(null), 150);
+        // Prevent multiple rapid updates by debouncing
+        const timeoutId = setTimeout(() => {
+          handleMonthlyDragEnd(event);
+          setActiveId(null);
+        }, 100);
+        return () => clearTimeout(timeoutId);
       }}
       modifiers={[restrictToWindowEdges]}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 will-change-auto">
         <div className="text-center">
           <h3 className="text-xl font-bold">
             Månadsplanering: {format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}
@@ -1019,7 +1012,9 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 will-change-auto"
+             style={{ transform: 'translateZ(0)' }} // Force hardware acceleration
+        >
           {weeks.map((week, index) => (
             <MonthlyWeekCard key={index} week={week} onViewDetails={onViewDetails} trailers={trailers} />
           ))}
