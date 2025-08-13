@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Save, Trash2, ExternalLink } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WarrantyTemplate, FieldCoordinates } from '@/types/warranty';
@@ -31,7 +31,7 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
 }) => {
   const [coordinates, setCoordinates] = useState<FieldCoordinates>(template.field_coordinates);
   const [selectedField, setSelectedField] = useState<string>('customerName');
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfImageUrl, setPdfImageUrl] = useState<string | null>(null);
   const [pdfLoaded, setPdfLoaded] = useState(false);
 
   useEffect(() => {
@@ -58,16 +58,14 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
 
       console.log('PDF downloaded successfully, size:', pdfData.size);
 
-      // Create a URL for the PDF blob
+      // Create a URL for the PDF blob and display as image
       const pdfUrl = URL.createObjectURL(pdfData);
-      
-      // Store the PDF URL for use in the UI
-      setPdfUrl(pdfUrl);
+      setPdfImageUrl(pdfUrl);
       setPdfLoaded(true);
       
       toast({
         title: "PDF laddat",
-        description: "PDF-mallen har laddats. Öppna PDF:en i ny flik och använd koordinat-området för att placera markörer.",
+        description: "PDF-mallen har laddats. Välj ett fält och klicka på PDF:en för att placera koordinater.",
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
@@ -223,79 +221,71 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
             <CardTitle>PDF-mall med koordinater</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
-              {/* PDF Download Link and Instructions */}
-              {pdfUrl && pdfLoaded && (
-                <div className="p-4 bg-blue-50 border-b border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold text-blue-900">PDF-mall: {template.name}</h4>
-                      <p className="text-sm text-blue-700">Öppna PDF:en i ny flik för att se mallen medan du placerar koordinater</p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(pdfUrl, '_blank')}
-                      className="bg-blue-600 text-white hover:bg-blue-700"
+            <div className="border border-border rounded-lg overflow-hidden bg-background relative">
+              {pdfLoaded && pdfImageUrl ? (
+                <div className="relative">
+                  <div className="p-4 bg-muted border-b border-border">
+                    <h4 className="font-semibold text-foreground mb-2">PDF-mall: {template.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Välj ett fält från listan till höger och klicka på PDF:en för att placera koordinater
+                    </p>
+                    {selectedField && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: getFieldColor(selectedField) }}
+                        />
+                        <span className="text-sm font-medium">
+                          Valt fält: {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS]}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* PDF as background with clickable overlay */}
+                  <div className="relative">
+                    <iframe
+                      src={pdfImageUrl}
+                      className="w-full min-h-[700px] border-none"
+                      title={`PDF Mall: ${template.name}`}
+                    />
+                    
+                    {/* Clickable overlay for coordinate placement */}
+                    <div
+                      className="absolute inset-0 cursor-crosshair bg-transparent hover:bg-primary/5 transition-colors"
+                      onClick={handleCoordinateClick}
+                      title="Klicka för att placera koordinater"
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Öppna PDF
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Coordinate Placement Area */}
-              <div
-                className="bg-white border-2 border-dashed border-gray-300 cursor-crosshair relative"
-                style={{ minHeight: '500px', aspectRatio: '210/297' }} // A4 proportions
-                onClick={handleCoordinateClick}
-              >
-                {/* Instructions */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-center p-8 bg-white/90 rounded-lg shadow-sm">
-                    <div className="text-lg font-semibold text-gray-700 mb-2">
-                      Koordinat-placeringsområde
-                    </div>
-                    <div className="text-sm text-gray-600 mb-4">
-                      1. Öppna PDF:en i ny flik ovan<br/>
-                      2. Välj fält från dropdown till höger<br/>
-                      3. Klicka här för att placera koordinater
-                    </div>
-                    <div className="text-xs px-3 py-1 rounded" style={{ 
-                      backgroundColor: getFieldColor(selectedField) + '20',
-                      color: getFieldColor(selectedField),
-                      border: `1px solid ${getFieldColor(selectedField)}40`
-                    }}>
-                      Valt fält: {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
+                      {/* Existing coordinate markers */}
+                      {Object.entries(coordinates).map(([fieldName, coord]) => (
+                        <div key={fieldName}>
+                          <div
+                            className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-10"
+                            style={{
+                              left: `${coord.x}px`,
+                              top: `${coord.y}px`,
+                              backgroundColor: getFieldColor(fieldName),
+                              transform: 'translate(-50%, -50%)'
+                            }}
+                          />
+                          <div
+                            className="absolute z-10 text-xs font-bold text-white px-2 py-1 rounded shadow-lg whitespace-nowrap"
+                            style={{
+                              left: `${coord.x + 12}px`,
+                              top: `${coord.y - 6}px`,
+                              backgroundColor: getFieldColor(fieldName),
+                              transform: 'translateY(-50%)'
+                            }}
+                          >
+                            {FIELD_LABELS[fieldName as keyof typeof FIELD_LABELS]}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-                
-                {/* Grid lines for reference */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* Vertical lines */}
-                  {[...Array(10)].map((_, i) => (
-                    <div
-                      key={`v-${i}`}
-                      className="absolute top-0 bottom-0 border-l border-gray-200"
-                      style={{ left: `${(i + 1) * 10}%` }}
-                    />
-                  ))}
-                  {/* Horizontal lines */}
-                  {[...Array(14)].map((_, i) => (
-                    <div
-                      key={`h-${i}`}
-                      className="absolute left-0 right-0 border-t border-gray-200"
-                      style={{ top: `${(i + 1) * 7}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Loading state */}
-              {!pdfLoaded && (
-                <div className="flex items-center justify-center bg-gray-50 min-h-[400px]">
+              ) : (
+                <div className="flex items-center justify-center bg-muted min-h-[400px]">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                     <div className="text-muted-foreground">Laddar PDF-mall...</div>
@@ -314,12 +304,12 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
           </CardHeader>
           <CardContent>
             <Select value={selectedField} onValueChange={setSelectedField}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background border-border">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border-border z-[100]">
                 {Object.entries(FIELD_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
+                  <SelectItem key={key} value={key} className="focus:bg-accent focus:text-accent-foreground">
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-3 h-3 rounded-full" 
