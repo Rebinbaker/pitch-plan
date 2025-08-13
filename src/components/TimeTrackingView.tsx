@@ -93,10 +93,7 @@ const TimeTrackingView = memo(() => {
     try {
       const { data, error } = await supabase
         .from('time_entries')
-        .select(`
-          *,
-          profiles(username, display_name)
-        `)
+        .select('*')
         .eq('user_id', user!.id)
         .order('start_time', { ascending: false })
         .limit(20);
