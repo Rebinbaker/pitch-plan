@@ -1,7 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 import { ProjectFile } from '@/types/files';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FilePreviewModalProps {
   file: ProjectFile | null;
@@ -10,24 +12,98 @@ interface FilePreviewModalProps {
 }
 
 export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProps) {
+  const [fileUrl, setFileUrl] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!file || !isOpen) {
+      setFileUrl('');
+      return;
+    }
+
+    const getFileUrl = async () => {
+      setLoading(true);
+      try {
+        // Check if it's a Supabase storage URL
+        if (file.url.includes('supabase') && file.url.includes('/storage/v1/object/')) {
+          // Extract bucket and path from the URL
+          const urlParts = file.url.split('/storage/v1/object/');
+          if (urlParts.length > 1) {
+            const pathParts = urlParts[1].split('/');
+            const bucket = pathParts[0];
+            const filePath = pathParts.slice(1).join('/');
+            
+            // Generate signed URL for private buckets
+            const { data, error } = await supabase.storage
+              .from(bucket)
+              .createSignedUrl(filePath, 3600); // 1 hour expiry
+            
+            if (error) {
+              console.error('Error creating signed URL:', error);
+              setFileUrl(file.url); // Fallback to original URL
+            } else {
+              setFileUrl(data.signedUrl);
+            }
+          } else {
+            setFileUrl(file.url);
+          }
+        } else {
+          setFileUrl(file.url);
+        }
+      } catch (error) {
+        console.error('Error processing file URL:', error);
+        setFileUrl(file.url);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getFileUrl();
+  }, [file, isOpen]);
+
   if (!file) return null;
 
-  const handleDownload = () => {
-    // Create a temporary link to download the file
-    const link = document.createElement('a');
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    if (fileUrl) {
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const renderPreview = () => {
+    if (loading) {
+      return (
+        <div className="w-full h-[400px] border rounded-md flex items-center justify-center bg-muted">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Laddar...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!fileUrl) {
+      return (
+        <div className="w-full h-[400px] border rounded-md flex items-center justify-center bg-muted">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Kunde inte ladda filen</p>
+            <Button onClick={handleDownload} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Ladda ner för att visa
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     if (file.type === 'pdf' || file.type === 'warranty' || file.type === 'inspection') {
       return (
         <div className="w-full h-[600px] border rounded-md">
           <iframe
-            src={file.url}
+            src={fileUrl}
             className="w-full h-full rounded-md"
             title={`Preview of ${file.name}`}
           />
@@ -39,7 +115,7 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
       return (
         <div className="w-full max-h-[600px] overflow-auto">
           <img
-            src={file.url}
+            src={fileUrl}
             alt={file.name}
             className="w-full h-auto rounded-md"
           />
@@ -67,7 +143,7 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
           <div className="flex items-center justify-between">
             <DialogTitle className="flex-1 pr-4">{file.name}</DialogTitle>
             <div className="flex items-center gap-2">
-              <Button onClick={handleDownload} variant="outline" size="sm">
+              <Button onClick={handleDownload} variant="outline" size="sm" disabled={!fileUrl}>
                 <Download className="w-4 h-4 mr-1" />
                 Ladda ner
               </Button>
@@ -76,6 +152,9 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
               </Button>
             </div>
           </div>
+          <DialogDescription className="sr-only">
+            Förhandsgranskning av {file.name}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
