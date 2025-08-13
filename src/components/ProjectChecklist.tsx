@@ -38,16 +38,12 @@ export function ProjectChecklist({
 }: ProjectChecklistProps) {
   const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(() => {
-    // Check if the checklist item "Avvarat material?" is completed
-    const avvaratMaterialItem = checklist.find(item => item.label === 'Avvarat material?');
-    
-    if (avvaratMaterialItem?.completed) {
-      // If item is completed, use the saved value from project data
-      return project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
-             project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null;
+    // Always use the saved value from project data if it exists
+    if (project?.avvaratMaterial?.hasLeftoverMaterial === true) {
+      return 'yes';
+    } else if (project?.avvaratMaterial?.hasLeftoverMaterial === false) {
+      return 'no';
     }
-    
-    // If not completed, return null (no selection)
     return null;
   });
 
