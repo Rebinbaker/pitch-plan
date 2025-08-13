@@ -24,17 +24,25 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
     const getFileUrl = async () => {
       setLoading(true);
       try {
+        console.log('Original file URL:', file.url);
+        
         // Check if it's a Supabase storage URL
         if (file.url.includes('supabase') && file.url.includes('/storage/v1/object/')) {
           // Extract bucket and path from the URL
           // Expected format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
+          // or: https://[project].supabase.co/storage/v1/object/[bucket]/[path]
           const urlParts = file.url.split('/storage/v1/object/');
           if (urlParts.length > 1) {
-            const pathWithPublic = urlParts[1];
-            // Remove 'public/' prefix if it exists
-            const pathParts = pathWithPublic.startsWith('public/') 
-              ? pathWithPublic.substring(7).split('/') 
-              : pathWithPublic.split('/');
+            let pathWithPossiblePublic = urlParts[1];
+            console.log('Path after object:', pathWithPossiblePublic);
+            
+            // Remove 'public/' prefix if it exists for private buckets
+            if (pathWithPossiblePublic.startsWith('public/')) {
+              pathWithPossiblePublic = pathWithPossiblePublic.substring(7);
+            }
+            
+            const pathParts = pathWithPossiblePublic.split('/');
+            console.log('Path parts:', pathParts);
             
             if (pathParts.length > 0) {
               const bucket = pathParts[0];
@@ -42,21 +50,46 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
               
               console.log('Trying to create signed URL for bucket:', bucket, 'path:', filePath);
               
-              // Generate signed URL for private buckets
-              const { data, error } = await supabase.storage
-                .from(bucket)
-                .createSignedUrl(filePath, 3600); // 1 hour expiry
+              // Check if bucket is public
+              const publicBuckets = ['videos']; // Add known public buckets here
               
-              if (error) {
-                console.error('Error creating signed URL:', error);
-                setFileUrl(file.url); // Fallback to original URL
+              if (publicBuckets.includes(bucket)) {
+                // For public buckets, use the original URL
+                console.log('Using public URL for bucket:', bucket);
+                setFileUrl(file.url);
               } else {
-                setFileUrl(data.signedUrl);
+                // Generate signed URL for private buckets
+                const { data, error } = await supabase.storage
+                  .from(bucket)
+                  .createSignedUrl(filePath, 3600); // 1 hour expiry
+                
+                if (error) {
+                  console.error('Error creating signed URL:', error);
+                  // Try downloading the file directly
+                  const { data: downloadData, error: downloadError } = await supabase.storage
+                    .from(bucket)
+                    .download(filePath);
+                  
+                  if (downloadError) {
+                    console.error('Error downloading file:', downloadError);
+                    setFileUrl(''); // Set empty to show error state
+                  } else {
+                    // Create blob URL for preview
+                    const blob = new Blob([downloadData], { type: downloadData.type || 'application/pdf' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    setFileUrl(blobUrl);
+                  }
+                } else {
+                  console.log('Signed URL created successfully:', data.signedUrl);
+                  setFileUrl(data.signedUrl);
+                }
               }
             } else {
+              console.log('No valid path parts found');
               setFileUrl(file.url);
             }
           } else {
+            console.log('URL does not match expected format');
             setFileUrl(file.url);
           }
         } else {
