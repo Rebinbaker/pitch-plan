@@ -6,6 +6,9 @@ export interface TeamMember {
   firstName: string;
   lastName: string;
   skills: string[];
+  position?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface Seller {
@@ -26,4 +29,5 @@ export interface ConstructionTeam {
   skills: string[];
   members?: TeamMember[];
   sellers?: Seller[]; // Sellers assigned to this team
+  leader?: string;
 }

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Users, Phone, Briefcase, Star, Plus, UserPlus } from 'lucide-react';
+import { TeamDetailModal } from './team/TeamDetailModal';
 import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
@@ -142,8 +143,10 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
       {/* Teams List */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredTeams.map(team => (
-          <Card key={team.id} className="shadow-card">
-            <CardHeader className="pb-3">
+          <Dialog key={team.id}>
+            <DialogTrigger asChild>
+              <Card className="shadow-card hover:shadow-hover transition-shadow cursor-pointer">
+                <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -263,8 +266,19 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
                   />
                 </DialogContent>
               </Dialog>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl h-[90vh]">
+              <TeamDetailModal
+                team={team}
+                open={true}
+                onOpenChange={() => {}}
+                onUpdateTeam={onUpdateTeam}
+                timeEntries={[]}
+              />
+            </DialogContent>
+          </Dialog>
         ))}
       </div>
     </div>

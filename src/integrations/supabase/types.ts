@@ -47,6 +47,65 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          requested_by: string
+          start_date: string
+          status: string
+          team_id: string
+          team_member_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          requested_by: string
+          start_date: string
+          status?: string
+          team_id: string
+          team_member_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          requested_by?: string
+          start_date?: string
+          status?: string
+          team_id?: string
+          team_member_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_required: boolean
@@ -241,6 +300,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      team_schedules: {
+        Row: {
+          created_at: string
+          date: string
+          hours_planned: number | null
+          id: string
+          notes: string | null
+          status: string
+          team_id: string
+          team_member_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          hours_planned?: number | null
+          id?: string
+          notes?: string | null
+          status?: string
+          team_id: string
+          team_member_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          hours_planned?: number | null
+          id?: string
+          notes?: string | null
+          status?: string
+          team_id?: string
+          team_member_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teams: {
         Row: {
