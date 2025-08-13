@@ -35,12 +35,12 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   const [pdfLoaded, setPdfLoaded] = useState(false);
 
   useEffect(() => {
-    loadPDF();
+    loadTemplate();
   }, []);
 
-  const loadPDF = async () => {
+  const loadTemplate = async () => {
     try {
-      console.log('Loading PDF from URL:', template.pdf_url);
+      console.log('Loading template from URL:', template.pdf_url);
       
       const { data: signedUrlData, error: urlError } = await supabase.storage
         .from('warranty-templates')
@@ -55,21 +55,21 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
         throw new Error('No signed URL received');
       }
 
-      console.log('PDF signed URL created successfully');
+      console.log('Template signed URL created successfully');
       
       // Set the signed URL as image source
       setPdfImageUrl(signedUrlData.signedUrl);
       setPdfLoaded(true);
       
       toast({
-        title: "PDF laddat",
-        description: "PDF-mallen är redo. Välj ett fält och klicka för att placera koordinater.",
+        title: "Mall laddad",
+        description: "Bildmallen är redo. Välj ett fält och klicka för att placera koordinater.",
       });
     } catch (error) {
-      console.error('Error loading PDF:', error);
+      console.error('Error loading template:', error);
       toast({
         title: "Fel",
-        description: `Kunde inte ladda PDF-mall: ${error instanceof Error ? error.message : 'Okänt fel'}`,
+        description: `Kunde inte ladda bildmall: ${error instanceof Error ? error.message : 'Okänt fel'}`,
         variant: "destructive",
       });
     }
@@ -216,16 +216,16 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
-            <CardTitle>PDF-mall med koordinater</CardTitle>
+            <CardTitle>Bildmall med koordinater</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="border border-border rounded-lg overflow-hidden bg-background relative">
               {pdfLoaded && pdfImageUrl ? (
                 <div className="relative">
                   <div className="p-4 bg-muted border-b border-border">
-                    <h4 className="font-semibold text-foreground mb-2">PDF-mall: {template.name}</h4>
+                    <h4 className="font-semibold text-foreground mb-2">Bildmall: {template.name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Välj ett fält från listan till höger och klicka på PDF:en för att placera koordinater
+                      Välj ett fält från listan till höger och klicka på bilden för att placera koordinater
                     </p>
                     {selectedField && (
                       <div className="flex items-center gap-2 mt-2">
@@ -240,25 +240,15 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                     )}
                   </div>
                   
-                  {/* PDF as embed with clickable overlay */}
+                  {/* Image with clickable overlay */}
                   <div className="relative">
-                    <div className="bg-white min-h-[700px] flex items-center justify-center border-2 border-dashed border-border rounded">
-                      <div className="text-center p-8">
-                        <h3 className="text-lg font-semibold mb-4">PDF Koordinat-editor</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Klicka nedan för att öppna PDF:en i ny flik och sedan använd detta område för att placera koordinater
-                        </p>
-                        <Button 
-                          onClick={() => window.open(pdfImageUrl!, '_blank')}
-                          className="mb-4"
-                        >
-                          Öppna PDF i ny flik
-                        </Button>
-                        <div className="text-sm text-muted-foreground">
-                          Välj ett fält och klicka här för att placera koordinater baserat på PDF:en
-                        </div>
-                      </div>
-                    </div>
+                    <img
+                      src={pdfImageUrl}
+                      alt={`Bildmall: ${template.name}`}
+                      className="w-full h-auto max-w-full cursor-crosshair"
+                      onClick={handleCoordinateClick}
+                      style={{ minHeight: '400px', objectFit: 'contain' }}
+                    />
                     
                     {/* Clickable overlay for coordinate placement */}
                     <div
@@ -298,7 +288,7 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                 <div className="flex items-center justify-center bg-muted min-h-[400px]">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <div className="text-muted-foreground">Laddar PDF-mall...</div>
+                    <div className="text-muted-foreground">Laddar bildmall...</div>
                   </div>
                 </div>
               )}
@@ -332,7 +322,7 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground mt-2">
-              Klicka på PDF:en för att placera markör för valt fält.
+              Klicka på bilden för att placera markör för valt fält.
             </p>
           </CardContent>
         </Card>

@@ -46,12 +46,12 @@ export const WarrantyTemplateManager = () => {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg')) {
       setUploadingFile(file);
     } else {
       toast({
         title: "Fel filformat",
-        description: "Vänligen välj en PDF-fil",
+        description: "Vänligen välj en PNG eller JPEG-fil",
         variant: "destructive",
       });
     }
@@ -61,7 +61,7 @@ export const WarrantyTemplateManager = () => {
     if (!uploadingFile || !templateName.trim()) {
       toast({
         title: "Saknad information",
-        description: "Vänligen ange mallnamn och välj en PDF-fil",
+        description: "Vänligen ange mallnamn och välj en bildfil (PNG/JPEG)",
         variant: "destructive",
       });
       return;
@@ -71,7 +71,7 @@ export const WarrantyTemplateManager = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('User not authenticated');
 
-      // Upload PDF to storage
+      // Upload image to storage
       const fileName = `${Date.now()}_${uploadingFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('warranty-templates')
@@ -84,7 +84,7 @@ export const WarrantyTemplateManager = () => {
         .from('warranty_templates')
         .insert({
           name: templateName,
-          pdf_url: uploadData.path,
+          pdf_url: uploadData.path, // Keeping same field name for compatibility
           field_coordinates: {} as any,
           created_by: user.user.id
         })
@@ -159,7 +159,7 @@ export const WarrantyTemplateManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Ladda upp ny garantimall</CardTitle>
+          <CardTitle>Ladda upp ny garantimall (PNG/JPEG)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -172,11 +172,11 @@ export const WarrantyTemplateManager = () => {
             />
           </div>
           <div>
-            <Label htmlFor="pdf-upload">PDF-fil</Label>
+            <Label htmlFor="image-upload">Bildfil (PNG/JPEG)</Label>
             <Input
-              id="pdf-upload"
+              id="image-upload"
               type="file"
-              accept=".pdf"
+              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
               onChange={handleFileUpload}
             />
           </div>
