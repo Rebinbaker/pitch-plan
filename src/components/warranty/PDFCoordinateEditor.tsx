@@ -84,13 +84,63 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
 
   const loadPDFIntoCanvas = async (canvas: FabricCanvas) => {
     try {
-      const { data: pdfData } = await supabase.storage
+      console.log('Loading PDF from URL:', template.pdf_url);
+      
+      const { data: pdfData, error } = await supabase.storage
         .from('warranty-templates')
         .download(template.pdf_url);
 
-      if (!pdfData) throw new Error('Could not download PDF');
+      if (error) {
+        console.error('Error downloading PDF:', error);
+        throw error;
+      }
 
-      // For now, show a placeholder since rendering PDF to canvas requires additional libraries
+      if (!pdfData) {
+        console.error('No PDF data received');
+        throw new Error('No PDF data received');
+      }
+
+      console.log('PDF downloaded successfully, size:', pdfData.size);
+
+      // Create a URL for the PDF blob to display it
+      const pdfUrl = URL.createObjectURL(pdfData);
+      
+      // Show the PDF URL in an iframe as a simple viewer
+      const pdfContainer = document.createElement('div');
+      pdfContainer.style.position = 'absolute';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.left = '0';
+      pdfContainer.style.width = '100%';
+      pdfContainer.style.height = '100%';
+      pdfContainer.style.backgroundColor = '#f0f0f0';
+      pdfContainer.style.border = '1px solid #ccc';
+      pdfContainer.style.borderRadius = '8px';
+      pdfContainer.style.overflow = 'hidden';
+
+      // Add text overlay for instructions since PDF rendering is complex
+      const instructionText = document.createElement('div');
+      instructionText.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #666;">
+          <h3>PDF-mall laddad: ${template.name}</h3>
+          <p>Klicka på canvasen för att placera textfält</p>
+          <p>PDF-fil: ${template.pdf_url}</p>
+          <div style="margin-top: 20px;">
+            <a href="${pdfUrl}" target="_blank" style="color: #0066cc; text-decoration: underline;">
+              Öppna PDF i ny flik för referens
+            </a>
+          </div>
+        </div>
+      `;
+      pdfContainer.appendChild(instructionText);
+
+      // Add the container to the canvas container
+      const canvasContainer = canvas.getElement().parentElement;
+      if (canvasContainer) {
+        canvasContainer.style.position = 'relative';
+        canvasContainer.appendChild(pdfContainer);
+      }
+      
+      // Set a light gray background for the canvas
       canvas.backgroundColor = '#f8f9fa';
       canvas.renderAll();
       
@@ -104,13 +154,13 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
       setPdfLoaded(true);
       toast({
         title: "PDF laddat",
-        description: "PDF-mallen har laddats. Klicka för att placera koordinater.",
+        description: "PDF-mallen har laddats. Klicka för att placera koordinater. Öppna PDF i ny flik för referens.",
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
       toast({
         title: "Fel",
-        description: "Kunde inte ladda PDF-mall",
+        description: `Kunde inte ladda PDF-mall: ${error instanceof Error ? error.message : 'Okänt fel'}`,
         variant: "destructive",
       });
     }
