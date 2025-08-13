@@ -8,8 +8,9 @@ import { Notification } from '@/types/notification';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from '@/hooks/use-toast';
 
-// This hook provides a migration path from localStorage to Supabase
-// It starts with localStorage but prepares for Supabase migration
+import { supabase } from '@/integrations/supabase/client';
+
+// This hook provides Supabase storage with localStorage fallback
 export const useSupabaseStorage = () => {
   const { user } = useAuth();
   const localStorageHook = useLocalStorage();
@@ -41,10 +42,43 @@ export const useSupabaseStorage = () => {
     setMigrationStatus('completed');
   };
 
-  // Enhanced versions of localStorage functions with better error handling
+  // Supabase functions with localStorage fallback
   const updateProject = async (updatedProject: Project) => {
     try {
-      await localStorageHook.updateProject(updatedProject);
+      if (user && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            name: updatedProject.name,
+            address: updatedProject.address,
+            customer_name: updatedProject.customerName,
+            customer_phone: updatedProject.customerPhone,
+            responsible_seller: updatedProject.responsibleSeller,
+            construction_team: updatedProject.constructionTeam,
+            construction_start_week: updatedProject.constructionStartWeek,
+            rot_status: updatedProject.rotStatus,
+            status: updatedProject.status,
+            notes: updatedProject.notes,
+            assigned_trailer: updatedProject.assignedTrailer,
+            scaffolding_responsible: updatedProject.scaffoldingResponsible,
+            start_date: updatedProject.startDate,
+            deadline: updatedProject.deadline,
+            estimated_work_days: updatedProject.estimatedWorkDays,
+            actual_construction_start: updatedProject.actualConstructionStart,
+            completion_percentage: updatedProject.completionPercentage,
+            checklist: updatedProject.checklist || [],
+            work_phases: updatedProject.workPhases || [],
+            activity_log: updatedProject.activityLog || [],
+            region: updatedProject.region,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', updatedProject.id);
+        
+        if (error) throw error;
+      } else {
+        await localStorageHook.updateProject(updatedProject);
+      }
+      
       toast({
         title: "Projekt uppdaterat",
         description: `${updatedProject.name} har uppdaterats framgångsrikt.`,
@@ -62,7 +96,40 @@ export const useSupabaseStorage = () => {
 
   const addProject = async (newProject: Project) => {
     try {
-      await localStorageHook.addProject(newProject);
+      if (user && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('projects')
+          .insert({
+            id: newProject.id,
+            name: newProject.name,
+            address: newProject.address,
+            customer_name: newProject.customerName,
+            customer_phone: newProject.customerPhone,
+            responsible_seller: newProject.responsibleSeller,
+            construction_team: newProject.constructionTeam,
+            construction_start_week: newProject.constructionStartWeek,
+            rot_status: newProject.rotStatus,
+            status: newProject.status,
+            notes: newProject.notes,
+            assigned_trailer: newProject.assignedTrailer,
+            scaffolding_responsible: newProject.scaffoldingResponsible,
+            start_date: newProject.startDate,
+            deadline: newProject.deadline,
+            estimated_work_days: newProject.estimatedWorkDays,
+            actual_construction_start: newProject.actualConstructionStart,
+            completion_percentage: newProject.completionPercentage,
+            checklist: newProject.checklist || [],
+            work_phases: newProject.workPhases || [],
+            activity_log: newProject.activityLog || [],
+            region: newProject.region,
+            user_id: user.id,
+          });
+        
+        if (error) throw error;
+      } else {
+        await localStorageHook.addProject(newProject);
+      }
+      
       toast({
         title: "Projekt skapat",
         description: `${newProject.name} har skapats framgångsrikt.`,
@@ -187,8 +254,48 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  // Get data from Supabase or localStorage
+  const getProjects = async (): Promise<Project[]> => {
+    if (user && migrationStatus === 'completed') {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data.map(project => ({
+        id: project.id,
+        name: project.name,
+        address: project.address || '',
+        customerName: project.customer_name || '',
+        customerPhone: project.customer_phone || '',
+        responsibleSeller: project.responsible_seller || '',
+        constructionTeam: project.construction_team || '',
+        constructionStartWeek: project.construction_start_week || '',
+        rotStatus: project.rot_status || '',
+        status: project.status,
+        notes: project.notes || '',
+        assignedTrailer: project.assigned_trailer || '',
+        scaffoldingResponsible: project.scaffolding_responsible || '',
+        startDate: project.start_date || '',
+        deadline: project.deadline || '',
+        estimatedWorkDays: project.estimated_work_days || 0,
+        actualConstructionStart: project.actual_construction_start || '',
+        completionPercentage: project.completion_percentage || 0,
+        checklist: project.checklist || [],
+        workPhases: project.work_phases || [],
+        activityLog: project.activity_log || [],
+        region: project.region || '',
+      }));
+    }
+    return localStorageHook.projects;
+  };
+
   return {
     ...localStorageHook,
+    projects: user && migrationStatus === 'completed' ? [] : localStorageHook.projects,
+    getProjects,
     migrationStatus,
     updateProject,
     addProject,

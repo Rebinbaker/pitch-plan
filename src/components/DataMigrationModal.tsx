@@ -17,6 +17,7 @@ import { ConstructionTeam } from '@/types/team';
 import { ProjectFile } from '@/types/files';
 import { Notification } from '@/types/notification';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DataMigrationModalProps {
   isOpen: boolean;
@@ -58,8 +59,33 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          // Simulate database migration - to be implemented in next phase
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const { error } = await supabase.from('projects').insert({
+            id: projectToInsert.id,
+            name: projectToInsert.name,
+            address: projectToInsert.address,
+            customer_name: projectToInsert.customerName,
+            customer_phone: projectToInsert.customerPhone,
+            responsible_seller: projectToInsert.responsibleSeller,
+            construction_team: projectToInsert.constructionTeam,
+            construction_start_week: projectToInsert.constructionStartWeek,
+            rot_status: projectToInsert.rotStatus,
+            status: projectToInsert.status,
+            notes: projectToInsert.notes,
+            assigned_trailer: projectToInsert.assignedTrailer,
+            scaffolding_responsible: projectToInsert.scaffoldingResponsible,
+            start_date: projectToInsert.startDate,
+            deadline: projectToInsert.deadline,
+            estimated_work_days: projectToInsert.estimatedWorkDays,
+            actual_construction_start: projectToInsert.actualConstructionStart,
+            completion_percentage: projectToInsert.completionPercentage,
+            checklist: projectToInsert.checklist || [],
+            work_phases: projectToInsert.workPhases || [],
+            activity_log: projectToInsert.activityLog || [],
+            region: projectToInsert.region,
+            user_id: user.id,
+          });
+          
+          if (error) throw error;
         }
       }
       setProgress(25);
@@ -77,8 +103,15 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          // Simulate database migration - to be implemented in next phase
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const { error } = await supabase.from('scaffolding').insert({
+            id: trailerToInsert.id,
+            name: trailerToInsert.name,
+            description: trailerToInsert.description,
+            status: trailerToInsert.status,
+            user_id: user.id,
+          });
+          
+          if (error) throw error;
         }
       }
       setProgress(50);
@@ -96,8 +129,22 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          // Simulate database migration - to be implemented in next phase
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const { error } = await supabase.from('teams').insert({
+            id: teamToInsert.id,
+            name: teamToInsert.name,
+            type: teamToInsert.type,
+            leader: teamToInsert.leader,
+            members: teamToInsert.members || [],
+            sellers: teamToInsert.sellers || [],
+            skills: teamToInsert.skills || [],
+            current_job: teamToInsert.currentJob,
+            contact_info: teamToInsert.contactInfo,
+            performance_notes: teamToInsert.performanceNotes,
+            availability_next_week: teamToInsert.availabilityNextWeek,
+            user_id: user.id,
+          });
+          
+          if (error) throw error;
         }
       }
       setProgress(75);
@@ -114,8 +161,18 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             uploaded_at: file.uploadedAt || new Date().toISOString(),
           };
 
-          // Simulate database migration - to be implemented in next phase
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const { error } = await supabase.from('files').insert({
+            id: fileToInsert.id,
+            name: fileToInsert.name,
+            type: fileToInsert.type,
+            size: fileToInsert.size,
+            url: fileToInsert.url,
+            project_id: fileToInsert.projectId,
+            user_id: user.id,
+            uploaded_at: fileToInsert.uploaded_at,
+          });
+          
+          if (error) throw error;
         }
       }
       setProgress(90);
@@ -132,8 +189,25 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             created_at: notification.createdAt || new Date().toISOString(),
           };
 
-          // Simulate database migration - to be implemented in next phase
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const { error } = await supabase.from('notifications').insert({
+            id: notificationToInsert.id,
+            title: notificationToInsert.title,
+            message: notificationToInsert.message,
+            type: notificationToInsert.type,
+            priority: notificationToInsert.priority,
+            is_read: notificationToInsert.isRead,
+            action_required: notificationToInsert.actionRequired,
+            project_id: notificationToInsert.projectId,
+            project_name: notificationToInsert.projectName,
+            field_name: notificationToInsert.fieldName,
+            old_value: notificationToInsert.oldValue,
+            new_value: notificationToInsert.newValue,
+            changed_by_user: notificationToInsert.changedByUser,
+            user_id: user.id,
+            created_at: notificationToInsert.created_at,
+          });
+          
+          if (error) throw error;
         }
       }
       setProgress(100);
