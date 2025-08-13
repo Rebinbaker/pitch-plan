@@ -125,12 +125,34 @@ export const WarrantyTemplateManager = () => {
 
   const deleteTemplate = async (templateId: string) => {
     try {
-      const { error } = await supabase
+      // First get the template to find the file path
+      const { data: template, error: getError } = await supabase
+        .from('warranty_templates')
+        .select('pdf_url')
+        .eq('id', templateId)
+        .single();
+
+      if (getError) throw getError;
+
+      // Delete from database first
+      const { error: dbError } = await supabase
         .from('warranty_templates')
         .delete()
         .eq('id', templateId);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // Try to delete the file from storage (don't fail if this doesn't work)
+      if (template?.pdf_url) {
+        try {
+          await supabase.storage
+            .from('warranty-templates')
+            .remove([template.pdf_url]);
+        } catch (storageError) {
+          console.warn('Could not delete storage file:', storageError);
+          // Continue anyway since database deletion succeeded
+        }
+      }
 
       toast({
         title: "Mall borttagen",
@@ -142,7 +164,7 @@ export const WarrantyTemplateManager = () => {
       console.error('Error deleting template:', error);
       toast({
         title: "Fel",
-        description: "Kunde inte ta bort mall",
+        description: `Kunde inte ta bort mall: ${error.message || 'Okänt fel'}`,
         variant: "destructive",
       });
     }
