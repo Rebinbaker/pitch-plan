@@ -80,11 +80,12 @@ export const uploadGeneratedWarranty = async (
   customerAddress: string
 ): Promise<string> => {
   try {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('User not authenticated');
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Warranty: auth check result:', { user: user?.id, authError });
+    if (!user || authError) throw new Error('User not authenticated');
 
     // Upload PDF to storage
-    const filePath = `${user.user.id}/${fileName}`;
+    const filePath = `${user.id}/${fileName}`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('generated-warranties')
       .upload(filePath, pdfBytes, {
@@ -103,7 +104,7 @@ export const uploadGeneratedWarranty = async (
         generated_pdf_url: uploadData.path,
         customer_name: customerName,
         customer_address: customerAddress,
-        generated_by: user.user.id
+        generated_by: user.id
       })
       .select()
       .single();
@@ -113,7 +114,7 @@ export const uploadGeneratedWarranty = async (
     return uploadData.path;
   } catch (error) {
     console.error('Error uploading generated warranty:', error);
-    throw new Error('Failed to save warranty certificate');
+    throw error; // Re-throw the original error instead of generic message
   }
 };
 
