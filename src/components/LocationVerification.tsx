@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, AlertCircle, Check } from 'lucide-react';
+import { MapPin, AlertCircle, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ interface LocationVerificationProps {
     longitude: number;
     address: string;
     verified: boolean;
+    distanceKm?: number;
   }) => void;
   disabled?: boolean;
 }
@@ -25,6 +26,7 @@ export const LocationVerification: React.FC<LocationVerificationProps> = ({
     longitude: number;
     address: string;
     verified: boolean;
+    distanceKm?: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,16 +59,24 @@ export const LocationVerification: React.FC<LocationVerificationProps> = ({
       // Get address from coordinates using reverse geocoding
       const address = await reverseGeocode(latitude, longitude);
       
-      // Check if location is near project address (within 100m)
-      const isVerified = projectAddress ? 
-        await isLocationNearProject(latitude, longitude, projectAddress) : 
-        true;
+      // Check if location is near project address and calculate distance
+      let isVerified = true;
+      let distanceKm = 0;
+      
+      if (projectAddress) {
+        const projectCoords = await geocodeAddress(projectAddress);
+        if (projectCoords) {
+          distanceKm = calculateDistance(latitude, longitude, projectCoords.lat, projectCoords.lng);
+          isVerified = distanceKm <= 1.0; // Within 1km radius
+        }
+      }
 
       const locationData = {
         latitude,
         longitude,
         address,
-        verified: isVerified
+        verified: isVerified,
+        distanceKm
       };
 
       setCurrentLocation(locationData);
@@ -75,13 +85,13 @@ export const LocationVerification: React.FC<LocationVerificationProps> = ({
       if (!isVerified && projectAddress) {
         toast({
           title: "Platskontroll misslyckades",
-          description: "Du är inte tillräckligt nära projektadressen",
+          description: `Du är ${distanceKm.toFixed(1)}km från projektadressen (max 1.0km)`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Plats verifierad",
-          description: "Din position har registrerats",
+          description: distanceKm > 0 ? `${distanceKm.toFixed(1)}km från projekt` : "Din position har registrerats",
         });
       }
 
@@ -114,21 +124,40 @@ export const LocationVerification: React.FC<LocationVerificationProps> = ({
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=sv`
       );
       const data = await response.json();
-      return data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      return data.locality ? `${data.locality}, ${data.countryName}` : `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch {
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
   };
 
-  const isLocationNearProject = async (lat: number, lng: number, projectAddr: string): Promise<boolean> => {
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
     try {
-      // Simple distance calculation (in real app, you'd use proper geocoding service)
-      // For now, we'll return true as a placeholder
-      // In production, you'd geocode the project address and calculate distance
-      return true;
-    } catch {
-      return false;
+      // Simple geocoding using OpenStreetMap Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
     }
+    return null;
   };
 
   return (
@@ -149,16 +178,41 @@ export const LocationVerification: React.FC<LocationVerificationProps> = ({
         <Alert variant={currentLocation.verified ? "default" : "destructive"}>
           <Check className="h-4 w-4" />
           <AlertDescription>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="font-medium">
                 {currentLocation.verified ? "✅ Plats verifierad" : "❌ Plats ej verifierad"}
+                {currentLocation.distanceKm !== undefined && currentLocation.distanceKm > 0 && (
+                  <span className="ml-2 text-sm">
+                    ({currentLocation.distanceKm.toFixed(1)}km från projekt)
+                  </span>
+                )}
               </div>
               <div className="text-sm">{currentLocation.address}</div>
+              <div className="text-xs text-muted-foreground">
+                GPS: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+              </div>
               {projectAddress && (
                 <div className="text-xs text-muted-foreground">
                   Projektadress: {projectAddress}
+                  <br />
+                  Accepterad radie: 1.0km
                 </div>
               )}
+              {/* Google Maps link */}
+              <div className="pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`;
+                    window.open(url, '_blank');
+                  }}
+                  className="text-xs h-7"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Öppna i Google Maps
+                </Button>
+              </div>
             </div>
           </AlertDescription>
         </Alert>
