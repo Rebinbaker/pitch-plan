@@ -87,8 +87,7 @@ const TimeReportsView = () => {
         .from('time_entries')
         .select(`
           *,
-          profiles(username, display_name),
-          teams(name)
+          profiles(username, display_name)
         `)
         .eq('user_id', user!.id);
 
@@ -154,8 +153,7 @@ const TimeReportsView = () => {
           .from('time_entries')
           .select(`
             *,
-            profiles(username, display_name),
-            teams(name)
+            profiles(username, display_name)
           `)
           .eq('user_id', user!.id);
 
@@ -251,16 +249,25 @@ const TimeReportsView = () => {
       // Create CSV content
       const entries = report.report_data?.entries || [];
       const csvHeaders = ['Användare', 'Team', 'Datum', 'Starttid', 'Sluttid', 'Timmar', 'Arbetmoment', 'Beskrivning'];
-      const csvRows = entries.map((entry: any) => [
-        userName,
-        entry.teams?.name || 'Inget team',
-        format(new Date(entry.start_time), 'yyyy-MM-dd'),
-        format(new Date(entry.start_time), 'HH:mm'),
-        entry.end_time ? format(new Date(entry.end_time), 'HH:mm') : '',
-        entry.duration_hours || '',
-        entry.work_phase_name || 'Ingen arbetsfas',
-        entry.description || ''
-      ]);
+      const csvRows = entries.map((entry: any) => {
+        // Get team name by looking up team_id in our teams array
+        let teamName = 'Inget team';
+        if (entry.team_id && teams.length > 0) {
+          const team = teams.find(t => t.id === entry.team_id);
+          teamName = team?.name || 'Inget team';
+        }
+        
+        return [
+          userName,
+          teamName,
+          format(new Date(entry.start_time), 'yyyy-MM-dd'),
+          format(new Date(entry.start_time), 'HH:mm'),
+          entry.end_time ? format(new Date(entry.end_time), 'HH:mm') : '',
+          entry.duration_hours || '',
+          entry.work_phase_name || 'Ingen arbetsfas',
+          entry.description || ''
+        ];
+      });
 
       const csvContent = [csvHeaders, ...csvRows]
         .map(row => row.map(field => `"${field}"`).join(','))
