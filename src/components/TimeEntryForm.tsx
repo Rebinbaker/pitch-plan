@@ -54,6 +54,24 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   const [timerProjectId, setTimerProjectId] = useState<string>('');
   const [timerDescription, setTimerDescription] = useState<string>('');
 
+  // All available work phases including scaffolding work
+  const allWorkPhases = [
+    'Uppmontering av ställningar',
+    'Rivning av pannor, läkt, nockregel',
+    'Montering av ny råspont',
+    'Montering av nockregel + trekantslist',
+    'Montering av underlagsduk',
+    'Montering av strö- & bärläkt',
+    'Montering av nockband, fotplåt',
+    'Montering av nya pannor',
+    'Skrapa & måla plåt, nya beslag',
+    'Montering av snörasskydd',
+    'Hängrännor & stuprör',
+    'Bortforsling och städning',
+    'Nedmontering av ställningar',
+    'Annat arbete'
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -191,13 +209,22 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               </Select>
             </div>
             <div>
-              <Label htmlFor="timer-description">Beskrivning</Label>
-              <Input 
-                id="timer-description"
-                value={timerDescription}
-                onChange={(e) => setTimerDescription(e.target.value)}
-                placeholder="Vad arbetar du med?"
-              />
+              <Label htmlFor="timer-description">Arbetmoment</Label>
+              <Select 
+                value={timerDescription} 
+                onValueChange={setTimerDescription}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Välj arbetmoment" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border z-50">
+                  {allWorkPhases.map((phase) => (
+                    <SelectItem key={phase} value={phase} className="hover:bg-muted">
+                      {phase}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -302,13 +329,22 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="description">Beskrivning</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Beskrivning av arbetet..."
-              />
+              <Label htmlFor="description">Arbetmoment</Label>
+              <Select 
+                value={formData.description} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Välj arbetmoment" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border z-50">
+                  {allWorkPhases.map((phase) => (
+                    <SelectItem key={phase} value={phase} className="hover:bg-muted">
+                      {phase}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
