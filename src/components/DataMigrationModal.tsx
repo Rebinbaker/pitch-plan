@@ -44,6 +44,29 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
     setError(null);
 
     try {
+      // Check if user already has data in Supabase
+      const { data: existingProjects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (existingProjects && existingProjects.length > 0) {
+        // User already has data in Supabase, just mark migration as complete
+        localStorage.setItem('supabase_migration_completed', 'true');
+        setStep('success');
+        toast({
+          title: "Migrering slutförd",
+          description: "Din data finns redan i molnet.",
+        });
+        
+        setTimeout(() => {
+          onMigrationComplete();
+          onClose();
+        }, 2000);
+        return;
+      }
+
       // Step 1: Migrate projects
       setCurrentOperation('Migrerar projekt...');
       setProgress(10);
@@ -52,40 +75,35 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedProjects) {
         const projects: Project[] = JSON.parse(savedProjects);
         for (const project of projects) {
-          const projectToInsert = {
-            ...project,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
           const { error } = await supabase.from('projects' as any).insert({
-            id: projectToInsert.id,
-            name: projectToInsert.name,
-            address: projectToInsert.address,
-            customer_name: projectToInsert.customerName,
-            customer_phone: projectToInsert.customerPhone,
-            responsible_seller: projectToInsert.responsibleSeller,
-            construction_team: projectToInsert.constructionTeam,
-            construction_start_week: projectToInsert.constructionStartWeek,
-            rot_status: projectToInsert.rotStatus,
-            status: projectToInsert.status,
-            notes: projectToInsert.notes,
-            assigned_trailer: projectToInsert.assignedTrailer,
-            scaffolding_responsible: projectToInsert.scaffoldingResponsible,
-            start_date: projectToInsert.startDate,
-            deadline: projectToInsert.deadline,
-            estimated_work_days: projectToInsert.estimatedWorkDays,
-            actual_construction_start: projectToInsert.actualConstructionStart,
-            completion_percentage: projectToInsert.completionPercentage,
-            checklist: projectToInsert.checklist || [],
-            work_phases: projectToInsert.workPhases || [],
-            activity_log: projectToInsert.activityLog || [],
-            region: projectToInsert.region,
+            name: project.name,
+            address: project.address || '',
+            customer_name: project.customerName || '',
+            customer_phone: project.customerPhone || '',
+            responsible_seller: project.responsibleSeller || '',
+            construction_team: project.constructionTeam || null,
+            construction_start_week: project.constructionStartWeek || null,
+            rot_status: project.rotStatus || 'No',
+            status: project.status || 'planned',
+            notes: project.notes || '',
+            assigned_trailer: project.assignedTrailer || null,
+            scaffolding_responsible: project.scaffoldingResponsible || null,
+            start_date: project.startDate || null,
+            deadline: project.deadline || null,
+            estimated_work_days: project.estimatedWorkDays || null,
+            actual_construction_start: project.actualConstructionStart || null,
+            completion_percentage: project.completionPercentage || 0,
+            checklist: project.checklist || [],
+            work_phases: project.workPhases || [],
+            activity_log: project.activityLog || [],
+            region: project.region || 'Stockholm',
             user_id: user.id,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('Project migration error:', error);
+            throw new Error(`Fel vid migrering av projekt: ${error.message}`);
+          }
         }
       }
       setProgress(25);
@@ -96,22 +114,17 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedScaffolding) {
         const scaffolding: ScaffoldingTrailer[] = JSON.parse(savedScaffolding);
         for (const trailer of scaffolding) {
-          const trailerToInsert = {
-            ...trailer,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
           const { error } = await supabase.from('scaffolding' as any).insert({
-            id: trailerToInsert.id,
-            name: trailerToInsert.name,
-            description: (trailerToInsert as any).description || '',
-            status: trailerToInsert.status,
+            name: trailer.name,
+            description: (trailer as any).description || '',
+            status: trailer.status || 'Tillgänglig',
             user_id: user.id,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('Scaffolding migration error:', error);
+            throw new Error(`Fel vid migrering av ställningar: ${error.message}`);
+          }
         }
       }
       setProgress(50);
@@ -122,29 +135,24 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedTeams) {
         const teams: ConstructionTeam[] = JSON.parse(savedTeams);
         for (const team of teams) {
-          const teamToInsert = {
-            ...team,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
           const { error } = await supabase.from('teams' as any).insert({
-            id: teamToInsert.id,
-            name: teamToInsert.name,
-            type: teamToInsert.type,
-            leader: (teamToInsert as any).leader || '',
-            members: teamToInsert.members || [],
-            sellers: teamToInsert.sellers || [],
-            skills: teamToInsert.skills || [],
-            current_job: teamToInsert.currentJob,
-            contact_info: teamToInsert.contactInfo,
-            performance_notes: teamToInsert.performanceNotes,
-            availability_next_week: teamToInsert.availabilityNextWeek,
+            name: team.name,
+            type: team.type || 'Internt',
+            leader: (team as any).leader || null,
+            members: team.members || [],
+            sellers: team.sellers || [],
+            skills: team.skills || [],
+            current_job: team.currentJob || null,
+            contact_info: team.contactInfo || null,
+            performance_notes: team.performanceNotes || null,
+            availability_next_week: team.availabilityNextWeek || 'Tillgänglig',
             user_id: user.id,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('Team migration error:', error);
+            throw new Error(`Fel vid migrering av team: ${error.message}`);
+          }
         }
       }
       setProgress(75);
@@ -155,24 +163,19 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedFiles) {
         const files: ProjectFile[] = JSON.parse(savedFiles);
         for (const file of files) {
-          const fileToInsert = {
-            ...file,
-            user_id: user.id,
-            uploaded_at: file.uploadedAt || new Date().toISOString(),
-          };
-
           const { error } = await supabase.from('files' as any).insert({
-            id: fileToInsert.id,
-            name: fileToInsert.name,
-            type: fileToInsert.type,
-            size: (fileToInsert as any).size || 0,
-            url: fileToInsert.url,
-            project_id: fileToInsert.projectId,
+            name: file.name,
+            type: file.type,
+            size: (file as any).size || 0,
+            url: file.url,
+            project_id: file.projectId || null,
             user_id: user.id,
-            uploaded_at: fileToInsert.uploaded_at,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('File migration error:', error);
+            throw new Error(`Fel vid migrering av filer: ${error.message}`);
+          }
         }
       }
       setProgress(90);
@@ -183,31 +186,26 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedNotifications) {
         const notifications: Notification[] = JSON.parse(savedNotifications);
         for (const notification of notifications) {
-          const notificationToInsert = {
-            ...notification,
-            user_id: user.id,
-            created_at: notification.createdAt || new Date().toISOString(),
-          };
-
           const { error } = await supabase.from('notifications' as any).insert({
-            id: notificationToInsert.id,
-            title: notificationToInsert.title,
-            message: notificationToInsert.message,
-            type: notificationToInsert.type,
-            priority: notificationToInsert.priority,
-            is_read: notificationToInsert.isRead,
-            action_required: notificationToInsert.actionRequired,
-            project_id: notificationToInsert.projectId,
-            project_name: notificationToInsert.projectName,
-            field_name: (notificationToInsert as any).fieldName || null,
-            old_value: (notificationToInsert as any).oldValue || null,
-            new_value: (notificationToInsert as any).newValue || null,
-            changed_by_user: (notificationToInsert as any).changedByUser || null,
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            priority: notification.priority || 'medium',
+            is_read: notification.isRead || false,
+            action_required: notification.actionRequired || false,
+            project_id: notification.projectId || null,
+            project_name: notification.projectName || null,
+            field_name: (notification as any).fieldName || null,
+            old_value: (notification as any).oldValue || null,
+            new_value: (notification as any).newValue || null,
+            changed_by_user: (notification as any).changedByUser || null,
             user_id: user.id,
-            created_at: notificationToInsert.created_at,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error('Notification migration error:', error);
+            throw new Error(`Fel vid migrering av notifikationer: ${error.message}`);
+          }
         }
       }
       setProgress(100);
@@ -228,12 +226,13 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
 
     } catch (err) {
       console.error('Migration error:', err);
-      setError(err instanceof Error ? err.message : 'Ett okänt fel uppstod under migreringen');
+      const errorMessage = err instanceof Error ? err.message : 'Ett okänt fel uppstod under migreringen';
+      setError(errorMessage);
       setStep('error');
       toast({
         variant: "destructive",
         title: "Migreringsfel",
-        description: err instanceof Error ? err.message : 'Ett okänt fel uppstod',
+        description: errorMessage,
       });
     }
   };
