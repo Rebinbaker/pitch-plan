@@ -19,17 +19,34 @@ const TimeReportsView = () => {
   const { toast } = useToast();
   const [reports, setReports] = useState<TimeReport[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generateLoading, setGenerateLoading] = useState(false);
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
 
   useEffect(() => {
     if (user?.id) {
       loadReports();
       loadTimeEntries();
+      loadTeams();
     }
   }, [user?.id]);
+
+  const loadTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('user_id', user!.id);
+
+      if (error) throw error;
+      setTeams(data || []);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
 
   const loadReports = async () => {
     try {
@@ -48,16 +65,42 @@ const TimeReportsView = () => {
     }
   };
 
+  const getDateRange = (type: 'daily' | 'weekly' | 'monthly', date: string) => {
+    const baseDate = new Date(date);
+    switch (type) {
+      case 'daily':
+        return { start: format(baseDate, 'yyyy-MM-dd'), end: format(baseDate, 'yyyy-MM-dd') };
+      case 'weekly':
+        const weekStart = startOfWeek(baseDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(baseDate, { weekStartsOn: 1 });
+        return { start: format(weekStart, 'yyyy-MM-dd'), end: format(weekEnd, 'yyyy-MM-dd') };
+      case 'monthly':
+        const monthStart = startOfMonth(baseDate);
+        const monthEnd = endOfMonth(baseDate);
+        return { start: format(monthStart, 'yyyy-MM-dd'), end: format(monthEnd, 'yyyy-MM-dd') };
+    }
+  };
+
   const loadTimeEntries = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('time_entries')
         .select(`
           *,
-          profiles!inner(username, display_name)
+          profiles(username, display_name),
+          teams(name)
         `)
-        .eq('user_id', user!.id)
-        .gte('start_time', subDays(new Date(), 30).toISOString());
+        .eq('user_id', user!.id);
+
+      // Add team filter if selected
+      if (selectedTeam) {
+        query = query.eq('team_id', selectedTeam);
+      }
+
+      const { data, error } = await query
+        .gte('start_time', getDateRange(reportType, selectedDate).start)
+        .lte('start_time', getDateRange(reportType, selectedDate).end)
+        .order('start_time', { ascending: false });
 
       if (error) throw error;
       setTimeEntries(data || []);
@@ -66,91 +109,122 @@ const TimeReportsView = () => {
     }
   };
 
+  useEffect(() => {
+    if (user?.id) {
+      loadTimeEntries();
+    }
+  }, [reportType, selectedDate, selectedTeam]);
+
   const generateReport = async () => {
     setGenerateLoading(true);
     try {
       const baseDate = new Date(selectedDate);
-      let startDate: Date;
-      let endDate: Date;
+      let period: { start: string; end: string };
       let title: string;
 
       switch (reportType) {
         case 'daily':
-          startDate = baseDate;
-          endDate = baseDate;
+          period = { start: baseDate.toISOString(), end: baseDate.toISOString() };
           title = `Daglig rapport - ${format(baseDate, 'PPP', { locale: sv })}`;
           break;
         case 'weekly':
-          startDate = startOfWeek(baseDate, { weekStartsOn: 1 });
-          endDate = endOfWeek(baseDate, { weekStartsOn: 1 });
+          const weekStart = startOfWeek(baseDate, { weekStartsOn: 1 });
+          const weekEnd = endOfWeek(baseDate, { weekStartsOn: 1 });
+          period = { start: weekStart.toISOString(), end: weekEnd.toISOString() };
           title = `Veckorapport - v${format(baseDate, 'I yyyy', { locale: sv })}`;
           break;
         case 'monthly':
-          startDate = startOfMonth(baseDate);
-          endDate = endOfMonth(baseDate);
+          const monthStart = startOfMonth(baseDate);
+          const monthEnd = endOfMonth(baseDate);
+          period = { start: monthStart.toISOString(), end: monthEnd.toISOString() };
           title = `Månadsrapport - ${format(baseDate, 'MMMM yyyy', { locale: sv })}`;
           break;
       }
 
-      // Get time entries for the period
-      const { data: entries, error } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user!.id)
-        .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString());
-
-      if (error) throw error;
-
-      const totalHours = entries?.reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
-      const billableHours = entries?.filter(e => e.is_billable)
-        .reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
-
-      // Group by project
-      const projectData: Record<string, { hours: number; billable: number; entries: number }> = {};
-      entries?.forEach(entry => {
-        const key = entry.project_id || 'Utan projekt';
-        if (!projectData[key]) {
-          projectData[key] = { hours: 0, billable: 0, entries: 0 };
+      // Add team filter to title if selected
+      if (selectedTeam) {
+        const selectedTeamData = teams.find(t => t.id === selectedTeam);
+        if (selectedTeamData) {
+          title += ` - ${selectedTeamData.name}`;
         }
-        projectData[key].hours += entry.duration_hours || 0;
-        if (entry.is_billable) {
-          projectData[key].billable += entry.duration_hours || 0;
+      }
+
+      try {
+        let query = supabase
+          .from('time_entries')
+          .select(`
+            *,
+            profiles(username, display_name),
+            teams(name)
+          `)
+          .eq('user_id', user!.id);
+
+        // Add team filter if selected
+        if (selectedTeam) {
+          query = query.eq('team_id', selectedTeam);
         }
-        projectData[key].entries += 1;
-      });
 
-      const reportData = {
-        period: { start: startDate.toISOString(), end: endDate.toISOString() },
-        summary: { totalHours, billableHours, totalEntries: entries?.length || 0 },
-        projects: projectData,
-        entries: entries || []
-      };
+        const { data: entries, error } = await query
+          .gte('start_time', period.start)
+          .lte('start_time', period.end);
 
-      // Save report
-      const { data: report, error: reportError } = await supabase
-        .from('time_reports')
-        .insert({
-          user_id: user!.id,
-          report_type: reportType,
-          title,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          total_hours: totalHours,
-          billable_hours: billableHours,
-          report_data: reportData
-        })
-        .select()
-        .single();
+        if (error) throw error;
 
-      if (reportError) throw reportError;
+        const totalHours = entries?.reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
+        const billableHours = entries?.filter(e => e.is_billable)
+          .reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
 
-      toast({
-        title: "Rapport genererad",
-        description: `${title} har skapats`,
-      });
+        // Group by project
+        const projectData: Record<string, { hours: number; billable: number; entries: number }> = {};
+        entries?.forEach(entry => {
+          const key = entry.project_id || 'Utan projekt';
+          if (!projectData[key]) {
+            projectData[key] = { hours: 0, billable: 0, entries: 0 };
+          }
+          projectData[key].hours += entry.duration_hours || 0;
+          if (entry.is_billable) {
+            projectData[key].billable += entry.duration_hours || 0;
+          }
+          projectData[key].entries += 1;
+        });
 
-      loadReports();
+        const reportData = {
+          period,
+          summary: { totalHours, billableHours, totalEntries: entries?.length || 0 },
+          projects: projectData,
+          entries: entries || [],
+          team: selectedTeam ? teams.find(t => t.id === selectedTeam) : null
+        };
+
+        // Save report
+        const { data: report, error: reportError } = await supabase
+          .from('time_reports')
+          .insert({
+            user_id: user!.id,
+            report_type: reportType,
+            title,
+            start_date: format(new Date(period.start), 'yyyy-MM-dd'),
+            end_date: format(new Date(period.end), 'yyyy-MM-dd'),
+            total_hours: totalHours,
+            billable_hours: billableHours,
+            team_ids: selectedTeam ? [selectedTeam] : null,
+            report_data: reportData
+          })
+          .select()
+          .single();
+
+        if (reportError) throw reportError;
+
+        toast({
+          title: "Rapport genererad",
+          description: `${title} har skapats`,
+        });
+
+        loadReports();
+      } catch (error) {
+        console.error('Error generating report:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Error generating report:', error);
       toast({
@@ -176,9 +250,10 @@ const TimeReportsView = () => {
 
       // Create CSV content
       const entries = report.report_data?.entries || [];
-      const csvHeaders = ['Användare', 'Datum', 'Starttid', 'Sluttid', 'Timmar', 'Arbetmoment', 'Beskrivning'];
+      const csvHeaders = ['Användare', 'Team', 'Datum', 'Starttid', 'Sluttid', 'Timmar', 'Arbetmoment', 'Beskrivning'];
       const csvRows = entries.map((entry: any) => [
         userName,
+        entry.teams?.name || 'Inget team',
         format(new Date(entry.start_time), 'yyyy-MM-dd'),
         format(new Date(entry.start_time), 'HH:mm'),
         entry.end_time ? format(new Date(entry.end_time), 'HH:mm') : '',
@@ -232,7 +307,7 @@ const TimeReportsView = () => {
           <CardDescription>Skapa detaljerade tidsrapporter för analys</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <Label htmlFor="report-type">Rapporttyp</Label>
               <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
@@ -243,6 +318,23 @@ const TimeReportsView = () => {
                   <SelectItem value="daily">Daglig</SelectItem>
                   <SelectItem value="weekly">Veckovis</SelectItem>
                   <SelectItem value="monthly">Månadsvis</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="team-filter">Team (valfritt)</Label>
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Alla team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Alla team</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -290,6 +382,9 @@ const TimeReportsView = () => {
                    <div className="flex items-center gap-4 mt-2">
                      <Badge variant="outline">{formatHours(report.total_hours)} totalt</Badge>
                      <Badge variant="secondary" className="capitalize">{report.report_type}</Badge>
+                     {report.team_ids && report.team_ids.length > 0 && (
+                       <Badge variant="default">Team-filtrerad</Badge>
+                     )}
                    </div>
                 </div>
                 <div className="flex items-center gap-2">

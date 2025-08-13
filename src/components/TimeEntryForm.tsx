@@ -17,14 +17,16 @@ import { PhotoVerification } from './PhotoVerification';
 
 interface TimeEntryFormProps {
   projects: Project[];
+  teams?: any[];
   onEntryAdded: () => void;
   currentEntry: TimeEntry | null;
-  onStartTimer: (projectId?: string, description?: string) => void;
+  onStartTimer: (projectId?: string, description?: string, teamId?: string) => void;
   onStopTimer: () => void;
 }
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   projects,
+  teams = [],
   onEntryAdded,
   currentEntry,
   onStartTimer,
@@ -34,6 +36,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     project_id: '',
+    team_id: '',
     work_phase_name: '',
     description: '',
     start_time: '',
@@ -128,6 +131,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         .insert({
           user_id: user!.id,
           project_id: formData.project_id || null,
+          team_id: formData.team_id || null,
           work_phase_name: formData.work_phase_name || null,
           description: formData.description || 'Manuell registrering',
           start_time: startDateTime.toISOString(),
@@ -154,6 +158,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       // Reset form and verification data
       setFormData({
         project_id: '',
+        team_id: '',
         work_phase_name: '',
         description: '',
         start_time: '',
@@ -307,23 +312,42 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               </div>
               
               <div>
-                <Label htmlFor="work-phase">Arbetsfas</Label>
+                <Label htmlFor="team">Team</Label>
                 <Select 
-                  value={formData.work_phase_name} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, work_phase_name: value }))}
+                  value={formData.team_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, team_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Välj arbetsfas" />
+                    <SelectValue placeholder="Välj team" />
                   </SelectTrigger>
                   <SelectContent>
-                    {workPhases.map((phase) => (
-                      <SelectItem key={phase.id} value={phase.label}>
-                        {phase.label}
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="work-phase">Arbetsfas</Label>
+              <Select 
+                value={formData.work_phase_name} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, work_phase_name: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj arbetsfas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workPhases.map((phase) => (
+                    <SelectItem key={phase.id} value={phase.label}>
+                      {phase.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

@@ -18,6 +18,7 @@ const TimeTrackingView = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { projects } = useSupabaseStorage();
+  const [teams, setTeams] = useState<any[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [stats, setStats] = useState<TimeTrackingStats>({
     totalHoursToday: 0,
@@ -34,8 +35,23 @@ const TimeTrackingView = () => {
     if (user?.id) {
       loadTimeEntries();
       loadStats();
+      loadTeams();
     }
   }, [user?.id]);
+
+  const loadTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('user_id', user!.id);
+
+      if (error) throw error;
+      setTeams(data || []);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
 
   const loadTimeEntries = async () => {
     try {
@@ -109,13 +125,14 @@ const TimeTrackingView = () => {
     }
   };
 
-  const startTimer = async (projectId?: string, description?: string) => {
+  const startTimer = async (projectId?: string, description?: string, teamId?: string) => {
     try {
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
           user_id: user!.id,
           project_id: projectId,
+          team_id: teamId,
           start_time: new Date().toISOString(),
           description: description || 'Arbetspass',
           entry_type: 'timer',
@@ -276,6 +293,7 @@ const TimeTrackingView = () => {
         <TabsContent value="timer" className="space-y-4">
           <TimeEntryForm 
             projects={projects}
+            teams={teams}
             onEntryAdded={loadTimeEntries}
             currentEntry={currentEntry}
             onStartTimer={startTimer}
