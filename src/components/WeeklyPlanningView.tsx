@@ -1000,7 +1000,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
   };
 
   return (
-    <div style={{ contain: 'layout style paint', transform: 'translateZ(0)' }}>
+    <div style={{ contain: 'layout style paint', transform: 'translateZ(0)', transition: 'opacity 0.3s ease' }}>
       <DndContext
         onDragStart={(event) => {
           setActiveId(event.active.id as string);
@@ -1112,9 +1112,10 @@ const MonthlyProjectCard = memo(function MonthlyProjectCard({ project, onViewDet
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    opacity: isDragging ? 0.8 : 1,
-    zIndex: isDragging ? 1000 : 'auto',
+    opacity: isDragging ? 0.1 : 1, // Make original nearly invisible during drag
+    zIndex: isDragging ? 1000 : ('auto' as const),
     willChange: isDragging ? 'transform' : 'auto',
+    pointerEvents: isDragging ? ('none' as const) : ('auto' as const), // Disable interactions during drag
   } : { 
     opacity: 1,
     willChange: 'auto'
