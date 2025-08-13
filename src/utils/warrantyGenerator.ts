@@ -9,23 +9,40 @@ export const generateWarrantyPDF = async (
   customData?: Partial<WarrantyFormData>
 ): Promise<{ pdfBytes: Uint8Array; fileName: string }> => {
   try {
-    // Download the template PDF
+    // Download the template image
     const { data: templateData } = await supabase.storage
       .from('warranty-templates')
       .download(template.pdf_url);
 
     if (!templateData) {
-      throw new Error('Could not download template PDF');
+      throw new Error('Could not download template image');
     }
 
-    // Convert blob to array buffer
-    const templateBytes = await templateData.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(templateBytes);
+    // Create a new PDF document
+    const pdfDoc = await PDFDocument.create();
     
-    // Get the first page (assuming single page warranty)
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const { height } = firstPage.getSize();
+    // Convert blob to array buffer and embed image
+    const templateBytes = await templateData.arrayBuffer();
+    
+    // Determine image type and embed accordingly
+    let image;
+    if (template.pdf_url.toLowerCase().includes('.png')) {
+      image = await pdfDoc.embedPng(templateBytes);
+    } else {
+      image = await pdfDoc.embedJpg(templateBytes);
+    }
+    
+    // Add a page with the image as background
+    const page = pdfDoc.addPage([image.width, image.height]);
+    page.drawImage(image, {
+      x: 0,
+      y: 0,
+      width: image.width,
+      height: image.height,
+    });
+    
+    // Use the page we just created
+    const { height } = page.getSize();
 
     // Load font
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -50,7 +67,7 @@ export const generateWarrantyPDF = async (
         // Convert from PDF coordinate system (origin at bottom-left) to our system
         const yPos = height - coordinates.y;
         
-        firstPage.drawText(String(value), {
+        page.drawText(String(value), {
           x: coordinates.x,
           y: yPos,
           size: coordinates.fontSize || 12,
