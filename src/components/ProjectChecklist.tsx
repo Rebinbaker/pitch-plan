@@ -498,6 +498,41 @@ Tack!`);
     }
   };
 
+  const confirmContainerOrder = (itemId: string) => {
+    // Clear timer
+    setTimers(prev => {
+      const newTimers = { ...prev };
+      delete newTimers[itemId];
+      return newTimers;
+    });
+    
+    setContainerStates(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        status: 'confirmed'
+      }
+    }));
+    
+    // Mark the checklist item as completed with persistent flag for container order
+    if (project && onUpdateProject) {
+      const updatedProject = {
+        ...project,
+        checklist: project.checklist.map(item => 
+          item.id === itemId 
+            ? { 
+                ...item, 
+                completed: true, 
+                completedAt: new Date().toISOString().split('T')[0],
+                containerOrderConfirmed: true  // Add persistent flag for container order
+              }
+            : item
+        )
+      };
+      onUpdateProject(updatedProject);
+    }
+  };
+
   const resetContainerStatus = (itemId: string) => {
     // Clear timer
     setTimers(prev => {
@@ -1185,8 +1220,8 @@ Tack!`);
                         </div>
                       )}
 
-                     {/* Enhanced Container Order Integration */}
-                     {isContainerOrder && project && (
+                      {/* Enhanced Container Order Integration */}
+                      {isContainerOrder && project && !item.containerOrderConfirmed && (
                        <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
                          <div className="flex items-center gap-2">
                            <Package className="w-4 h-4 text-primary" />
@@ -1257,7 +1292,7 @@ Tack!`);
                                    <div className="flex gap-2">
                                      <Button
                                        size="sm"
-                                       onClick={() => confirmContainerBooking(item.id)}
+                                        onClick={() => confirmContainerOrder(item.id)}
                                        className="flex-1 h-8 text-xs"
                                      >
                                        <Check className="w-3 h-3 mr-1" />
