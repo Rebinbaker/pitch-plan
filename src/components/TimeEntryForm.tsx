@@ -12,6 +12,8 @@ import { TimeEntry } from '@/types/timeTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { LocationVerification } from './LocationVerification';
+import { PhotoVerification } from './PhotoVerification';
 
 interface TimeEntryFormProps {
   projects: Project[];
@@ -41,8 +43,38 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     hourly_rate: ''
   });
 
+  // Verification states
+  const [locationData, setLocationData] = useState<{
+    latitude: number;
+    longitude: number;
+    address: string;
+    verified: boolean;
+  } | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [timerProjectId, setTimerProjectId] = useState<string>('');
+  const [timerDescription, setTimerDescription] = useState<string>('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check verification requirements
+    if (!locationData) {
+      toast({
+        title: "Platsverifiering krävs",
+        description: "Du måste verifiera din plats innan registrering",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!photoUrl) {
+      toast({
+        title: "Fotoverifiering krävs", 
+        description: "Du måste ta ett verifieringsfoto innan registrering",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       let durationHours = parseFloat(formData.duration_hours);
@@ -72,6 +104,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         ? new Date(`${now.toDateString()} ${formData.end_time}`)
         : now;
 
+      const selectedProject = projects.find(p => p.id === formData.project_id);
+
       const { error } = await supabase
         .from('time_entries')
         .insert({
@@ -84,7 +118,13 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           duration_hours: durationHours,
           entry_type: 'manual',
           is_billable: formData.is_billable,
-          hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null
+          hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
+          gps_latitude: locationData.latitude,
+          gps_longitude: locationData.longitude,
+          location_address: locationData.address,
+          verification_photo_url: photoUrl,
+          location_verified: locationData.verified,
+          photo_verified: true
         });
 
       if (error) throw error;
@@ -94,7 +134,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         description: `${durationHours} timmar har registrerats`,
       });
 
-      // Reset form
+      // Reset form and verification data
       setFormData({
         project_id: '',
         work_phase_name: '',
@@ -105,6 +145,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         is_billable: true,
         hourly_rate: ''
       });
+      setLocationData(null);
+      setPhotoUrl('');
 
       onEntryAdded();
     } catch (error) {
@@ -132,7 +174,10 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="timer-project">Projekt (valfritt)</Label>
-              <Select>
+              <Select 
+                value={timerProjectId} 
+                onValueChange={setTimerProjectId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Välj projekt" />
                 </SelectTrigger>
@@ -149,10 +194,25 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               <Label htmlFor="timer-description">Beskrivning</Label>
               <Input 
                 id="timer-description"
+                value={timerDescription}
+                onChange={(e) => setTimerDescription(e.target.value)}
                 placeholder="Vad arbetar du med?"
               />
             </div>
           </div>
+
+          {/* Timer Verification - Only show when not currently running */}
+          {!currentEntry && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              <LocationVerification
+                projectAddress={projects.find(p => p.id === timerProjectId)?.address}
+                onLocationVerified={setLocationData}
+              />
+              <PhotoVerification
+                onPhotoUploaded={setPhotoUrl}
+              />
+            </div>
+          )}
           
           {currentEntry ? (
             <div className="space-y-4">
@@ -171,7 +231,21 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               </Button>
             </div>
           ) : (
-            <Button onClick={() => onStartTimer()} className="w-full">
+            <Button 
+              onClick={() => {
+                if (!locationData || !photoUrl) {
+                  toast({
+                    title: "Verifiering krävs",
+                    description: "Du måste verifiera plats och ta foto innan du startar timer",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                onStartTimer(timerProjectId, timerDescription);
+              }} 
+              className="w-full"
+              disabled={!locationData || !photoUrl}
+            >
               <Play className="h-4 w-4 mr-2" />
               Starta timer
             </Button>
@@ -293,7 +367,22 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
+            {/* Verification Components */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              <LocationVerification
+                projectAddress={selectedProject?.address}
+                onLocationVerified={setLocationData}
+              />
+              <PhotoVerification
+                onPhotoUploaded={setPhotoUrl}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={!locationData || !photoUrl}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Registrera tid
             </Button>

@@ -11,6 +11,12 @@ export interface TimeEntry {
   entry_type: string;
   is_billable: boolean;
   hourly_rate?: number;
+  gps_latitude?: number;
+  gps_longitude?: number;
+  location_address?: string;
+  verification_photo_url?: string;
+  location_verified?: boolean;
+  photo_verified?: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -300,14 +300,20 @@ export type Database = {
           duration_hours: number | null
           end_time: string | null
           entry_type: string
+          gps_latitude: number | null
+          gps_longitude: number | null
           hourly_rate: number | null
           id: string
           is_billable: boolean
+          location_address: string | null
+          location_verified: boolean | null
+          photo_verified: boolean | null
           project_id: string | null
           start_time: string
           team_id: string | null
           updated_at: string
           user_id: string
+          verification_photo_url: string | null
           work_phase_name: string | null
         }
         Insert: {
@@ -316,14 +322,20 @@ export type Database = {
           duration_hours?: number | null
           end_time?: string | null
           entry_type?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           hourly_rate?: number | null
           id?: string
           is_billable?: boolean
+          location_address?: string | null
+          location_verified?: boolean | null
+          photo_verified?: boolean | null
           project_id?: string | null
           start_time: string
           team_id?: string | null
           updated_at?: string
           user_id: string
+          verification_photo_url?: string | null
           work_phase_name?: string | null
         }
         Update: {
@@ -332,14 +344,20 @@ export type Database = {
           duration_hours?: number | null
           end_time?: string | null
           entry_type?: string
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           hourly_rate?: number | null
           id?: string
           is_billable?: boolean
+          location_address?: string | null
+          location_verified?: boolean | null
+          photo_verified?: boolean | null
           project_id?: string | null
           start_time?: string
           team_id?: string | null
           updated_at?: string
           user_id?: string
+          verification_photo_url?: string | null
           work_phase_name?: string | null
         }
         Relationships: [
