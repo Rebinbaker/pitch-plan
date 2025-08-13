@@ -62,8 +62,23 @@ export const generateWarrantyPDF = async (
     Object.entries(template.field_coordinates).forEach(([fieldName, coordinates]) => {
       if (!coordinates) return;
 
-      const value = warrantyData[fieldName as keyof WarrantyFormData];
+      // Map coordinate field names to warranty data field names
+      const fieldMapping: Record<string, keyof WarrantyFormData> = {
+        customerName: 'customerName',
+        customerAddress: 'customerAddress', 
+        projectAddress: 'projectAddress',
+        workDescription: 'workDescription',
+        date: 'date',
+        warranty_years: 'warrantyYears',
+        company_name: 'companyName'
+      };
+
+      const mappedFieldName = fieldMapping[fieldName];
+      if (!mappedFieldName) return;
+
+      const value = warrantyData[mappedFieldName];
       if (value) {
+        console.log(`Adding text "${value}" at coordinates:`, coordinates);
         // Convert from PDF coordinate system (origin at bottom-left) to our system
         const yPos = height - coordinates.y;
         
