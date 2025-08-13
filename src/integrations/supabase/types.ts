@@ -728,6 +728,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_trailer_status: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
