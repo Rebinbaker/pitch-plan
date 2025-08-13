@@ -45,8 +45,10 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
         // Wait for video to load and play
         videoRef.current.onloadedmetadata = () => {
           console.log('Video metadata loaded');
+          console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
           videoRef.current?.play().then(() => {
             console.log('Video playing successfully');
+            console.log('Setting isCameraActive to true');
             setIsCameraActive(true);
             setError(null);
           }).catch(err => {
@@ -54,6 +56,8 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
             setError('Kunde inte starta video-uppspelning');
           });
         };
+      } else {
+        console.error('Video ref is null');
       }
     } catch (error: any) {
       console.error('Camera error:', error);
@@ -214,11 +218,16 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
     setError(null);
   };
 
+  console.log('PhotoVerification render - isCameraActive:', isCameraActive, 'capturedPhoto:', !!capturedPhoto);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Camera className="h-5 w-5 text-primary" />
         <span className="font-medium">Fotoverifiering</span>
+        <span className="text-xs text-muted-foreground">
+          (Camera: {isCameraActive ? 'ON' : 'OFF'})
+        </span>
       </div>
 
       {error && (
