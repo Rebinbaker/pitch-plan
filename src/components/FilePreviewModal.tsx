@@ -247,9 +247,6 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
                 <Download className="w-4 h-4 mr-1" />
                 Ladda ner
               </Button>
-              <Button onClick={onClose} variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </div>
           <DialogDescription className="sr-only">
