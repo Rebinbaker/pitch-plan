@@ -845,6 +845,7 @@ interface MonthlyViewProps {
 }
 
 function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -1000,7 +1001,12 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
 
   return (
     <DndContext
-      onDragEnd={handleMonthlyDragEnd}
+      onDragStart={(event) => setActiveId(event.active.id as string)}
+      onDragEnd={(event) => {
+        handleMonthlyDragEnd(event);
+        // Small delay to allow smooth visual transition
+        setTimeout(() => setActiveId(null), 150);
+      }}
       modifiers={[restrictToWindowEdges]}
     >
       <div className="space-y-6">
