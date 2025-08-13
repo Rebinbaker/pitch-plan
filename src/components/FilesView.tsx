@@ -167,12 +167,12 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
           return (
             <Card key={file.id} className="shadow-card">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileIcon className="w-5 h-5" />
-                    <span className="truncate">{file.name}</span>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg flex items-start gap-2 flex-1 min-w-0">
+                    <FileIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <span className="break-words leading-tight">{file.name}</span>
                   </CardTitle>
-                  <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white`}>
+                  <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white flex-shrink-0`}>
                     {file.type}
                   </Badge>
                 </div>
@@ -180,13 +180,13 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
               <CardContent className="space-y-3">
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-foreground">Projekt</div>
-                  <div className="text-sm text-muted-foreground">{getProjectName(file.projectId)}</div>
+                  <div className="text-sm text-muted-foreground break-words">{getProjectName(file.projectId)}</div>
                 </div>
                 
                 {file.description && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-foreground">Beskrivning</div>
-                    <div className="text-sm text-muted-foreground">{file.description}</div>
+                    <div className="text-sm text-muted-foreground break-words">{file.description}</div>
                   </div>
                 )}
                 
@@ -201,17 +201,17 @@ export function FilesView({ files, projects, onUploadFile }: FilesViewProps) {
                   </div>
                 </div>
                 
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground break-words">
                   Uppladdad: {new Date(file.uploadedAt).toLocaleDateString()} av {file.uploadedBy}
                 </div>
                 
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4 mr-1" />
                     Visa
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 mr-1" />
                     Ladda ner
                   </Button>
                 </div>
