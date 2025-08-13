@@ -194,9 +194,20 @@ export function ProjectChecklist({
     // Clear timer when confirmed
     setTimers(prev => ({ ...prev, [itemId]: 0 }));
     
-    // Don't call handleItemToggle to avoid triggering redirect
-    // User can manually check off the item if needed
-    console.log('WhatsApp: group confirmed without triggering project update');
+    // Mark the checklist item as completed locally without triggering full project update
+    if (project && onUpdateProject) {
+      const updatedProject = {
+        ...project,
+        checklist: project.checklist.map(item => 
+          item.id === itemId 
+            ? { ...item, completed: true, completedAt: new Date().toISOString().split('T')[0] }
+            : item
+        )
+      };
+      // Update with the full project object
+      onUpdateProject(updatedProject);
+    }
+    console.log('WhatsApp: group confirmed and item marked as completed');
   };
 
   const resetWhatsAppStatus = (itemId: string) => {
