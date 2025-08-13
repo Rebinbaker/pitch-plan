@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,9 @@ import { sv } from 'date-fns/locale';
 import TimeEntryForm from './TimeEntryForm';
 import TimeReportsView from './TimeReportsView';
 
-const TimeTrackingView = () => {
+const TimeTrackingView = memo(() => {
+  console.log('TimeTrackingView re-rendered');
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const { projects } = useSupabaseStorage();
@@ -31,15 +33,7 @@ const TimeTrackingView = () => {
   const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadTimeEntries();
-      loadStats();
-      loadTeams();
-    }
-  }, [user?.id]);
-
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('teams')
@@ -51,39 +45,9 @@ const TimeTrackingView = () => {
     } catch (error) {
       console.error('Error loading teams:', error);
     }
-  };
+  }, [user?.id]);
 
-  const loadTimeEntries = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('time_entries')
-        .select(`
-          *,
-          profiles(username, display_name)
-        `)
-        .eq('user_id', user!.id)
-        .order('start_time', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setTimeEntries(data || []);
-
-      // Check for running timer
-      const runningEntry = data?.find(entry => !entry.end_time);
-      setCurrentEntry(runningEntry || null);
-    } catch (error) {
-      console.error('Error loading time entries:', error);
-      toast({
-        title: "Fel",
-        description: "Kunde inte ladda tidsregistreringar",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const today = new Date();
       const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
@@ -123,9 +87,47 @@ const TimeTrackingView = () => {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, [user?.id, currentEntry]);
 
-  const startTimer = async (projectId?: string, description?: string, teamId?: string) => {
+  const loadTimeEntries = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select(`
+          *,
+          profiles(username, display_name)
+        `)
+        .eq('user_id', user!.id)
+        .order('start_time', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setTimeEntries(data || []);
+
+      // Check for running timer
+      const runningEntry = data?.find(entry => !entry.end_time);
+      setCurrentEntry(runningEntry || null);
+    } catch (error) {
+      console.error('Error loading time entries:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte ladda tidsregistreringar",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, toast]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadTimeEntries();
+      loadStats();
+      loadTeams();
+    }
+  }, [user?.id, loadTeams, loadTimeEntries, loadStats]);
+
+  const startTimer = useCallback(async (projectId?: string, description?: string, teamId?: string) => {
     try {
       const { data, error } = await supabase
         .from('time_entries')
@@ -158,9 +160,9 @@ const TimeTrackingView = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user?.id, toast]);
 
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     if (!currentEntry) return;
 
     try {
@@ -195,7 +197,7 @@ const TimeTrackingView = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [currentEntry, loadTimeEntries, loadStats, toast]);
 
   const formatDuration = (hours: number) => {
     const h = Math.floor(hours);
@@ -208,7 +210,7 @@ const TimeTrackingView = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ contain: 'layout style paint', transform: 'translateZ(0)' }}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tidsregistrering</h1>
@@ -354,6 +356,6 @@ const TimeTrackingView = () => {
       </Tabs>
     </div>
   );
-};
+});
 
 export default TimeTrackingView;
