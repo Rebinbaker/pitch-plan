@@ -168,15 +168,6 @@ const Index = () => {
             
             {/* Profile on the right */}
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDataExportModal(true)}
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exportera data
-              </Button>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -300,7 +291,9 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="security" className="space-y-6">
-              <SecurityStatus />
+              <SecurityStatus 
+                onShowDataExport={() => setShowDataExportModal(true)}
+              />
             </TabsContent>
 
             <TabsContent value="notifications" className="space-y-6">

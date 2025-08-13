@@ -18,7 +18,11 @@ import { useSupabaseStorage } from '@/hooks/useSupabaseStorage';
 import { DataMigrationModal } from './DataMigrationModal';
 import { useAuth } from '@/hooks/useAuth';
 
-export const SecurityStatus: React.FC = () => {
+interface SecurityStatusProps {
+  onShowDataExport?: () => void;
+}
+
+export const SecurityStatus: React.FC<SecurityStatusProps> = ({ onShowDataExport }) => {
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const { migrationStatus, checkMigrationNeeded, markMigrationCompleted } = useSupabaseStorage();
   const { user } = useAuth();
@@ -209,16 +213,14 @@ export const SecurityStatus: React.FC = () => {
               </Button>
             )}
             
-            {isUsingLocalStorage && (
-              <Button 
-                variant="outline" 
-                onClick={exportData}
-                className="flex-1"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportera backup
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              onClick={onShowDataExport || exportData}
+              className="flex-1"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isUsingLocalStorage ? 'Exportera backup' : 'Exportera data'}
+            </Button>
           </div>
 
           {!user && (
