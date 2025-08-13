@@ -18,7 +18,7 @@ interface WarrantyGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerated: () => void;
-  onFileUploaded?: (file: { name: string; url: string; type: 'warranty' }) => void;
+  onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
 }
 
 export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
@@ -125,7 +125,11 @@ export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
         onFileUploaded({
           name: fileName,
           url: publicUrl,
-          type: 'warranty'
+          type: 'warranty',
+          projectId: project.id,
+          uploadedBy: 'System',
+          description: 'Garantibevis 10 år',
+          tags: ['guaranty', 'certificate']
         });
       }
 

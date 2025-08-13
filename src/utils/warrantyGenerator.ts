@@ -94,7 +94,7 @@ export const generateWarrantyPDF = async (
     });
 
     const pdfBytes = await pdfDoc.save();
-    const fileName = `Garantibevis_${project.name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = "Garantibevis 10 år.pdf";
 
     return { pdfBytes, fileName };
   } catch (error) {
