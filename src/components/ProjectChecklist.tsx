@@ -38,18 +38,29 @@ export function ProjectChecklist({
 }: ProjectChecklistProps) {
   const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(() => {
-    // Always use the saved value from project data if it exists
+    // Debug: Check current project data structure
     console.log('AVVARAT MATERIAL INIT:', {
       projectId: project?.id,
+      projectName: project?.name,
       hasLeftoverMaterial: project?.avvaratMaterial?.hasLeftoverMaterial,
-      avvaratMaterialObject: project?.avvaratMaterial
+      avvaratMaterialObject: project?.avvaratMaterial,
+      fullProject: project
     });
     
+    // Check if the "Avvarat material?" checklist item is completed
+    const avvaratMaterialItem = project?.checklist?.find(item => item.label === 'Avvarat material?');
+    console.log('AVVARAT MATERIAL CHECKLIST ITEM:', avvaratMaterialItem);
+    
+    // Use the avvaratMaterial property if it exists
     if (project?.avvaratMaterial?.hasLeftoverMaterial === true) {
+      console.log('RETURNING YES from avvaratMaterial property');
       return 'yes';
     } else if (project?.avvaratMaterial?.hasLeftoverMaterial === false) {
+      console.log('RETURNING NO from avvaratMaterial property');
       return 'no';
     }
+    
+    console.log('RETURNING NULL - no saved material answer found');
     return null;
   });
 
