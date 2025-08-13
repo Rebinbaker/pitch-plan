@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -992,19 +992,16 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
   };
 
   return (
-    <DndContext
-      onDragStart={(event) => setActiveId(event.active.id as string)}
-      onDragEnd={(event) => {
-        // Use requestAnimationFrame to delay the update until after the current render cycle
-        requestAnimationFrame(() => {
-          handleMonthlyDragEnd(event);
-          requestAnimationFrame(() => {
-            setActiveId(null);
-          });
-        });
-      }}
-      modifiers={[restrictToWindowEdges]}
-    >
+    <div style={{ contain: 'layout style paint', transform: 'translateZ(0)' }}>
+      <DndContext
+        onDragStart={(event) => setActiveId(event.active.id as string)}
+        onDragEnd={(event) => {
+          setActiveId(null);
+          // Batch the update to prevent flickering
+          setTimeout(() => handleMonthlyDragEnd(event), 0);
+        }}
+        modifiers={[restrictToWindowEdges]}
+      >
       <div className="space-y-6 will-change-auto">
         <div className="text-center">
           <h3 className="text-xl font-bold">
@@ -1024,6 +1021,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
         </div>
       </div>
     </DndContext>
+    </div>
   );
 }
 
