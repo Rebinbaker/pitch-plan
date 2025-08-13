@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X } from 'lucide-react';
+import { Download, X, FileText } from 'lucide-react';
 import { ProjectFile } from '@/types/files';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -160,17 +160,50 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
 
     if (file.type === 'pdf' || file.type === 'warranty' || file.type === 'inspection') {
       return (
-        <div className="w-full h-[600px] border rounded-md">
-          <iframe
-            src={fileUrl}
-            className="w-full h-full rounded-md"
-            title={`Preview of ${file.name}`}
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            onError={() => {
-              // If iframe fails, provide download option
-              console.log('Iframe failed to load, showing download option');
-            }}
-          />
+        <div className="w-full h-[600px] border rounded-md flex flex-col">
+          <div className="p-4 bg-blue-50 border-b border-blue-200 rounded-t-md">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-blue-800 font-medium">PDF-förhandsvisning</p>
+              <Button onClick={handleDownload} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-1" />
+                Öppna i ny flik
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center space-y-4 p-8">
+              <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <FileText className="w-8 h-8 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">PDF-dokument</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {file.name}
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Webbläsare blockerar ofta PDF-förhandsvisning av säkerhetsskäl
+                </p>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => window.open(fileUrl, '_blank')} 
+                    className="w-full"
+                    disabled={!fileUrl}
+                  >
+                    Öppna i ny flik
+                  </Button>
+                  <Button 
+                    onClick={handleDownload} 
+                    variant="outline" 
+                    className="w-full"
+                    disabled={!fileUrl}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Ladda ner fil
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
