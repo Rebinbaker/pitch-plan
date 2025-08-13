@@ -42,6 +42,7 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    console.log('Initializing Fabric Canvas...');
     const canvas = new FabricCanvas(canvasRef.current, {
       width: 800,
       height: 600,
@@ -49,13 +50,33 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
     });
 
     setFabricCanvas(canvas);
+    
+    console.log('Fabric Canvas created:', canvas);
+    
     loadPDFIntoCanvas(canvas);
 
-    // Handle canvas clicks to place markers
-    canvas.on('mouse:down', (e) => {
+    return () => {
+      console.log('Disposing Fabric Canvas');
+      canvas.dispose();
+    };
+  }, []);
+
+  // Separate useEffect for handling canvas clicks with current selectedField
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    console.log('Setting up canvas click handler for field:', selectedField);
+
+    const handleCanvasClick = (e: any) => {
+      console.log('Canvas clicked!', e);
+      console.log('Selected field:', selectedField);
+      console.log('Pointer:', e.pointer);
+      
       if (e.pointer && selectedField) {
         const x = e.pointer.x;
         const y = e.pointer.y;
+        
+        console.log('Placing marker at:', x, y, 'for field:', selectedField);
         
         // Remove existing marker for this field
         removeMarkerForField(selectedField);
@@ -74,13 +95,21 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
             maxWidth: 200
           }
         }));
+        
+        console.log('Marker placed successfully');
+      } else {
+        console.log('Missing pointer or selectedField:', { pointer: e.pointer, selectedField });
       }
-    });
+    };
+
+    // Remove existing listeners and add new one
+    fabricCanvas.off('mouse:down');
+    fabricCanvas.on('mouse:down', handleCanvasClick);
 
     return () => {
-      canvas.dispose();
+      fabricCanvas.off('mouse:down', handleCanvasClick);
     };
-  }, []);
+  }, [fabricCanvas, selectedField]);
 
   const loadPDFIntoCanvas = async (canvas: FabricCanvas) => {
     try {
@@ -167,7 +196,12 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   };
 
   const addMarker = (x: number, y: number, fieldName: string) => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      console.log('No fabric canvas available');
+      return;
+    }
+
+    console.log('Adding marker for field:', fieldName, 'at position:', x, y);
 
     const color = getFieldColor(fieldName);
     const marker = new Circle({
@@ -196,6 +230,8 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
     fabricCanvas.add(marker);
     fabricCanvas.add(label);
     fabricCanvas.renderAll();
+    
+    console.log('Marker added successfully');
   };
 
   const removeMarkerForField = (fieldName: string) => {
