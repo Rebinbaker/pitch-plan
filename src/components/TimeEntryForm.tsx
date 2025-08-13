@@ -39,7 +39,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     start_time: '',
     end_time: '',
     duration_hours: '',
-    is_billable: true,
     hourly_rate: ''
   });
 
@@ -135,7 +134,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           end_time: endDateTime.toISOString(),
           duration_hours: durationHours,
           entry_type: 'manual',
-          is_billable: formData.is_billable,
+          is_billable: true, // Default to billable since removed from UI
           hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
           gps_latitude: locationData.latitude,
           gps_longitude: locationData.longitude,
@@ -160,7 +159,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         start_time: '',
         end_time: '',
         duration_hours: '',
-        is_billable: true,
         hourly_rate: ''
       });
       setLocationData(null);
@@ -381,26 +379,15 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="billable"
-                  checked={formData.is_billable}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_billable: checked }))}
-                />
-                <Label htmlFor="billable">Fakturerbart</Label>
-              </div>
-              
-              <div className="w-32">
-                <Label htmlFor="hourly-rate">Timpris (kr)</Label>
-                <Input
-                  id="hourly-rate"
-                  type="number"
-                  value={formData.hourly_rate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hourly_rate: e.target.value }))}
-                  placeholder="0"
-                />
-              </div>
+            <div className="w-32">
+              <Label htmlFor="hourly-rate">Timpris (kr)</Label>
+              <Input
+                id="hourly-rate"
+                type="number"
+                value={formData.hourly_rate}
+                onChange={(e) => setFormData(prev => ({ ...prev, hourly_rate: e.target.value }))}
+                placeholder="0"
+              />
             </div>
 
             {/* Verification Components */}

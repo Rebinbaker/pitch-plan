@@ -52,7 +52,10 @@ const TimeReportsView = () => {
     try {
       const { data, error } = await supabase
         .from('time_entries')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(username, display_name)
+        `)
         .eq('user_id', user!.id)
         .gte('start_time', subDays(new Date(), 30).toISOString());
 
@@ -162,25 +165,35 @@ const TimeReportsView = () => {
 
   const exportReport = async (report: TimeReport) => {
     try {
+      // Get user profile for this report
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, display_name')
+        .eq('user_id', report.user_id)
+        .single();
+
+      const userName = profile?.display_name || profile?.username || 'Okänd användare';
+
       // Create CSV content
       const entries = report.report_data?.entries || [];
-      const csvHeaders = ['Datum', 'Starttid', 'Sluttid', 'Timmar', 'Projekt', 'Beskrivning', 'Fakturerbart'];
+      const csvHeaders = ['Användare', 'Datum', 'Starttid', 'Sluttid', 'Timmar', 'Arbetmoment', 'Beskrivning'];
       const csvRows = entries.map((entry: any) => [
+        userName,
         format(new Date(entry.start_time), 'yyyy-MM-dd'),
         format(new Date(entry.start_time), 'HH:mm'),
         entry.end_time ? format(new Date(entry.end_time), 'HH:mm') : '',
         entry.duration_hours || '',
-        entry.project_id || 'Utan projekt',
-        entry.description || '',
-        entry.is_billable ? 'Ja' : 'Nej'
+        entry.work_phase_name || 'Ingen arbetsfas',
+        entry.description || ''
       ]);
 
       const csvContent = [csvHeaders, ...csvRows]
         .map(row => row.map(field => `"${field}"`).join(','))
         .join('\n');
 
-      // Download CSV
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Add BOM for UTF-8 support in Excel
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `${report.title.replace(/\s+/g, '_')}.csv`;
@@ -274,11 +287,10 @@ const TimeReportsView = () => {
                   <div className="text-sm text-muted-foreground">
                     {format(new Date(report.start_date), 'PPP', { locale: sv })} - {format(new Date(report.end_date), 'PPP', { locale: sv })}
                   </div>
-                  <div className="flex items-center gap-4 mt-2">
-                    <Badge variant="outline">{formatHours(report.total_hours)} totalt</Badge>
-                    <Badge variant="default">{formatHours(report.billable_hours)} fakturerbart</Badge>
-                    <Badge variant="secondary" className="capitalize">{report.report_type}</Badge>
-                  </div>
+                   <div className="flex items-center gap-4 mt-2">
+                     <Badge variant="outline">{formatHours(report.total_hours)} totalt</Badge>
+                     <Badge variant="secondary" className="capitalize">{report.report_type}</Badge>
+                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => exportReport(report)}>

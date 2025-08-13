@@ -41,7 +41,10 @@ const TimeTrackingView = () => {
     try {
       const { data, error } = await supabase
         .from('time_entries')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(username, display_name)
+        `)
         .eq('user_id', user!.id)
         .order('start_time', { ascending: false })
         .limit(20);
@@ -288,28 +291,35 @@ const TimeTrackingView = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {timeEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{entry.description || 'Arbetstid'}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(entry.start_time), 'PPp', { locale: sv })}
-                        {entry.end_time && ` - ${format(new Date(entry.end_time), 'p', { locale: sv })}`}
-                      </div>
-                      {entry.work_phase_name && (
-                        <Badge variant="outline" className="mt-1">{entry.work_phase_name}</Badge>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold">
-                        {entry.duration_hours ? formatDuration(entry.duration_hours) : 'Pågår...'}
-                      </div>
-                      {entry.is_billable && (
-                        <Badge variant="default" className="text-xs">Fakturerbart</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                 {timeEntries.map((entry: any) => (
+                   <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
+                     <div>
+                       <div className="font-medium">{entry.description || 'Arbetstid'}</div>
+                       <div className="text-sm text-muted-foreground">
+                         {format(new Date(entry.start_time), 'PPp', { locale: sv })}
+                         {entry.end_time && ` - ${format(new Date(entry.end_time), 'p', { locale: sv })}`}
+                       </div>
+                       <div className="flex items-center gap-2 mt-1">
+                         {entry.work_phase_name && (
+                           <Badge variant="outline">{entry.work_phase_name}</Badge>
+                         )}
+                         {entry.profiles && (
+                           <Badge variant="secondary" className="text-xs">
+                             {entry.profiles.display_name || entry.profiles.username}
+                           </Badge>
+                         )}
+                       </div>
+                     </div>
+                     <div className="text-right">
+                       <div className="font-bold">
+                         {entry.duration_hours ? formatDuration(entry.duration_hours) : 'Pågår...'}
+                       </div>
+                       {entry.location_verified && (
+                         <Badge variant="default" className="text-xs">📍 Platsverifierad</Badge>
+                       )}
+                     </div>
+                   </div>
+                 ))}
                 {timeEntries.length === 0 && (
                   <p className="text-center text-muted-foreground py-8">
                     Inga tidsregistreringar ännu
