@@ -7,22 +7,25 @@ import {
   User, Crown, Clock, AlertTriangle, TrendingUp, 
   Phone, Mail, Edit, CheckCircle, XCircle 
 } from 'lucide-react';
-import { TeamMember } from '@/types/team';
+import { TeamMember, ConstructionTeam } from '@/types/team';
 import { WorkloadMetrics } from '@/types/workload';
 import { getWorkloadColor } from '@/utils/workloadCalculations';
+import { AddTeamMemberModal } from './AddTeamMemberModal';
 
 interface TeamMemberCardProps {
   member: TeamMember;
   workloadMetrics?: WorkloadMetrics;
   isLeader?: boolean;
-  onUpdateMember: (member: TeamMember) => void;
+  team: ConstructionTeam;
+  onUpdateTeam: (team: ConstructionTeam) => void;
 }
 
 export function TeamMemberCard({ 
   member, 
   workloadMetrics, 
   isLeader, 
-  onUpdateMember 
+  team,
+  onUpdateTeam 
 }: TeamMemberCardProps) {
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -68,13 +71,16 @@ export function TeamMemberCard({
               </div>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onUpdateMember(member)}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
+          <AddTeamMemberModal
+            team={team}
+            onUpdateTeam={onUpdateTeam}
+            editingMember={member}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Edit className="w-4 h-4" />
+              </Button>
+            }
+          />
         </div>
       </CardHeader>
 

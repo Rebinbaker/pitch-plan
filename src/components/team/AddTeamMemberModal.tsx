@@ -18,20 +18,23 @@ interface AddTeamMemberModalProps {
   team: ConstructionTeam;
   onUpdateTeam: (team: ConstructionTeam) => void;
   trigger?: React.ReactNode;
+  editingMember?: TeamMember;
 }
 
-export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMemberModalProps) {
+export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember }: AddTeamMemberModalProps) {
   const [open, setOpen] = useState(false);
   const [newMembers, setNewMembers] = useState<Partial<TeamMember>[]>([]);
   const [currentMember, setCurrentMember] = useState({
-    firstName: '',
-    lastName: '',
-    position: '',
-    email: '',
-    phone: '',
-    skills: '',
-    isLeader: false
+    firstName: editingMember?.firstName || '',
+    lastName: editingMember?.lastName || '',
+    position: editingMember?.position || '',
+    email: editingMember?.email || '',
+    phone: editingMember?.phone || '',
+    skills: editingMember?.skills?.join(', ') || '',
+    isLeader: editingMember ? team.leader === `${editingMember.firstName} ${editingMember.lastName}` : false
   });
+
+  const isEditing = !!editingMember;
 
   const addMemberToList = () => {
     if (!currentMember.firstName || !currentMember.lastName) return;
@@ -66,28 +69,69 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
   };
 
   const handleSaveMembers = () => {
-    if (newMembers.length === 0) return;
+    if (isEditing) {
+      // Handle editing existing member
+      if (!currentMember.firstName || !currentMember.lastName) return;
 
-    const updatedMembers = [...(team.members || []), ...newMembers as TeamMember[]];
-    
-    // Find the new leader among the added members
-    const newLeader = newMembers.find((member: any) => member.isLeader);
-    
-    let updatedTeam = { ...team, members: updatedMembers };
-    
-    if (newLeader) {
-      updatedTeam.leader = `${newLeader.firstName} ${newLeader.lastName}`;
+      const updatedMember: TeamMember = {
+        ...editingMember!,
+        firstName: currentMember.firstName,
+        lastName: currentMember.lastName,
+        position: currentMember.position || undefined,
+        email: currentMember.email || undefined,
+        phone: currentMember.phone || undefined,
+        skills: currentMember.skills 
+          ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
+          : []
+      };
+
+      const updatedMembers = team.members?.map(m => 
+        m.id === editingMember!.id ? updatedMember : m
+      ) || [];
+
+      let updatedTeam = { ...team, members: updatedMembers };
+
+      // Update leader if this member was set as leader
+      if (currentMember.isLeader) {
+        updatedTeam.leader = `${updatedMember.firstName} ${updatedMember.lastName}`;
+      } else if (team.leader === `${editingMember!.firstName} ${editingMember!.lastName}`) {
+        // Remove leader if this member was leader and is no longer set as leader
+        updatedTeam.leader = undefined;
+      }
+
+      // Update team skills
+      const allSkills = [...new Set([
+        ...updatedMembers.flatMap(m => m.skills || [])
+      ])];
+      updatedTeam.skills = allSkills;
+
+      onUpdateTeam(updatedTeam);
+    } else {
+      // Handle adding new members
+      if (newMembers.length === 0) return;
+
+      const updatedMembers = [...(team.members || []), ...newMembers as TeamMember[]];
+      
+      // Find the new leader among the added members
+      const newLeader = newMembers.find((member: any) => member.isLeader);
+      
+      let updatedTeam = { ...team, members: updatedMembers };
+      
+      if (newLeader) {
+        updatedTeam.leader = `${newLeader.firstName} ${newLeader.lastName}`;
+      }
+
+      // Update team skills with new member skills
+      const allSkills = [...new Set([
+        ...(team.skills || []),
+        ...newMembers.flatMap(m => m.skills || [])
+      ])];
+      updatedTeam.skills = allSkills;
+
+      onUpdateTeam(updatedTeam);
+      setNewMembers([]);
     }
-
-    // Update team skills with new member skills
-    const allSkills = [...new Set([
-      ...(team.skills || []),
-      ...newMembers.flatMap(m => m.skills || [])
-    ])];
-    updatedTeam.skills = allSkills;
-
-    onUpdateTeam(updatedTeam);
-    setNewMembers([]);
+    
     setCurrentMember({
       firstName: '',
       lastName: '',
@@ -116,7 +160,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Lägg till medlemmar i {team.name}
+            {isEditing ? `Redigera medlem i ${team.name}` : `Lägg till medlemmar i ${team.name}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -217,19 +261,21 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
                 </Label>
               </div>
 
-              <Button 
-                onClick={addMemberToList}
-                disabled={!currentMember.firstName || !currentMember.lastName}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Lägg till i listan
-              </Button>
+              {!isEditing && (
+                <Button 
+                  onClick={addMemberToList}
+                  disabled={!currentMember.firstName || !currentMember.lastName}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Lägg till i listan
+                </Button>
+              )}
             </CardContent>
           </Card>
 
           {/* Members to Add List */}
-          {newMembers.length > 0 && (
+          {!isEditing && newMembers.length > 0 && (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -309,6 +355,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
           )}
 
           {/* Current Team Members Summary */}
+          {!isEditing && (
           <Card>
             <CardContent className="p-4">
               <h3 className="font-medium mb-3">
@@ -344,16 +391,17 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger }: AddTeamMembe
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button 
               onClick={handleSaveMembers}
-              disabled={newMembers.length === 0}
+              disabled={isEditing ? (!currentMember.firstName || !currentMember.lastName) : newMembers.length === 0}
               className="flex-1"
             >
               <UserPlus className="w-4 h-4 mr-2" />
-              Lägg till {newMembers.length} medlem{newMembers.length !== 1 ? 'mar' : ''}
+              {isEditing ? 'Spara ändringar' : `Lägg till ${newMembers.length} medlem${newMembers.length !== 1 ? 'mar' : ''}`}
             </Button>
             <Button 
               onClick={() => setOpen(false)}

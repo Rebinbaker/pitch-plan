@@ -317,12 +317,8 @@ export function TeamDetailModal({
                         member={member}
                         workloadMetrics={workloadMetrics.get(member.id)}
                         isLeader={team.leader === `${member.firstName} ${member.lastName}`}
-                        onUpdateMember={(updatedMember) => {
-                          const updatedMembers = team.members?.map(m => 
-                            m.id === updatedMember.id ? updatedMember : m
-                          );
-                          onUpdateTeam({ ...team, members: updatedMembers });
-                        }}
+                        team={team}
+                        onUpdateTeam={onUpdateTeam}
                       />
                     ))}
                   </div>
