@@ -844,7 +844,7 @@ interface MonthlyViewProps {
   onViewDetails?: (project: Project) => void;
 }
 
-function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
+const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
   
@@ -1034,7 +1034,7 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     </DndContext>
     </div>
   );
-}
+});
 
 interface MonthlyWeekCardProps {
   week: {weekNumber: number, year: number, startDate: Date, endDate: Date, projects: Project[]};
@@ -1042,7 +1042,7 @@ interface MonthlyWeekCardProps {
   trailers?: any[];
 }
 
-function MonthlyWeekCard({ week, onViewDetails, trailers = [] }: MonthlyWeekCardProps) {
+const MonthlyWeekCard = memo(function MonthlyWeekCard({ week, onViewDetails, trailers = [] }: MonthlyWeekCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `week-${week.weekNumber}`,
   });
@@ -1077,7 +1077,7 @@ function MonthlyWeekCard({ week, onViewDetails, trailers = [] }: MonthlyWeekCard
       </CardContent>
     </Card>
   );
-}
+});
 
 interface MonthlyProjectCardProps {
   project: Project;
@@ -1085,7 +1085,7 @@ interface MonthlyProjectCardProps {
   trailers?: any[];
 }
 
-function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyProjectCardProps) {
+const MonthlyProjectCard = memo(function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyProjectCardProps) {
   console.log('MonthlyProjectCard re-rendered for project:', project.name);
   
   // Helper function to get trailer name
@@ -1189,4 +1189,4 @@ function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyPr
       </div>
     </ProjectHoverCard>
   );
-}
+});
