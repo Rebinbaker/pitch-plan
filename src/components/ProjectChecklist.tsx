@@ -1339,11 +1339,10 @@ Tack!`);
                               ...project,
                               constructionTeam: teamName === 'none' ? '' : teamName,
                             };
-                            onUpdateProject(updatedProject);
                             
-                            // Also mark the team item as complete if team is assigned and not already completed
+                            // If team is assigned, also mark the checklist item as complete
                             if (teamName !== 'none' && !item.completed) {
-                              const updatedChecklist = checklist.map(checkItem => {
+                              updatedProject.checklist = project.checklist.map(checkItem => {
                                 if (checkItem.id === item.id) {
                                   return {
                                     ...checkItem,
@@ -1353,8 +1352,9 @@ Tack!`);
                                 }
                                 return checkItem;
                               });
-                              onChecklistUpdate(updatedChecklist);
                             }
+                            
+                            onUpdateProject(updatedProject);
                           }}
                         >
                           <SelectTrigger className="h-8 text-xs">
