@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Circle, Text as FabricText } from 'fabric';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,12 @@ import { Save, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WarrantyTemplate, FieldCoordinates, CoordinatePoint } from '@/types/warranty';
+
+// Set up PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 interface PDFCoordinateEditorProps {
   template: WarrantyTemplate;
@@ -32,50 +39,18 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   onSave,
   onCancel,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [coordinates, setCoordinates] = useState<FieldCoordinates>(template.field_coordinates);
   const [selectedField, setSelectedField] = useState<string>('customerName');
   const [pdfLoaded, setPdfLoaded] = useState(false);
-  const [selectedMarker, setSelectedMarker] = useState<Circle | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState<number>(1);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    console.log('Initializing Fabric Canvas...');
-    const canvas = new FabricCanvas(canvasRef.current, {
-      width: 800,
-      height: 600,
-      backgroundColor: '#ffffff',
-    });
-
-    setFabricCanvas(canvas);
-    
-    console.log('Fabric Canvas created:', canvas);
-    
-    loadPDFIntoCanvas(canvas);
-
-    return () => {
-      console.log('Disposing Fabric Canvas');
-      canvas.dispose();
-    };
+    loadPDF();
   }, []);
 
-  // Separate useEffect for handling canvas clicks with current selectedField
-  useEffect(() => {
-    if (!fabricCanvas) return;
-
-    console.log('Canvas ready for coordinate placement');
-
-    // Just ensure canvas is interactive - clicks are now handled by onClick
-    fabricCanvas.selection = false; // Disable selection
-    fabricCanvas.hoverCursor = 'crosshair';
-    fabricCanvas.defaultCursor = 'crosshair';
-
-  }, [fabricCanvas, selectedField]);
-
-  const loadPDFIntoCanvas = async (canvas: FabricCanvas) => {
+  const loadPDF = async () => {
     try {
       console.log('Loading PDF from URL:', template.pdf_url);
       
@@ -116,55 +91,6 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
     }
   };
 
-  const addMarker = (x: number, y: number, fieldName: string) => {
-    if (!fabricCanvas) {
-      console.log('No fabric canvas available');
-      return;
-    }
-
-    console.log('Adding marker for field:', fieldName, 'at position:', x, y);
-
-    const color = getFieldColor(fieldName);
-    const marker = new Circle({
-      left: x - 8,
-      top: y - 8,
-      radius: 8,
-      fill: color,
-      stroke: '#ffffff',
-      strokeWidth: 2,
-      selectable: true,
-      evented: true,
-    });
-    (marker as any).data = { fieldName };
-
-    const label = new FabricText(FIELD_LABELS[fieldName as keyof typeof FIELD_LABELS] || fieldName, {
-      left: x + 12,
-      top: y - 6,
-      fontSize: 12,
-      fill: color,
-      fontWeight: 'bold',
-      selectable: false,
-      evented: false,
-    });
-    (label as any).data = { fieldName, isLabel: true };
-
-    fabricCanvas.add(marker);
-    fabricCanvas.add(label);
-    fabricCanvas.renderAll();
-    
-    console.log('Marker added successfully');
-  };
-
-  const removeMarkerForField = (fieldName: string) => {
-    if (!fabricCanvas) return;
-
-    const objects = fabricCanvas.getObjects();
-    const toRemove = objects.filter(obj => (obj as any).data?.fieldName === fieldName);
-    
-    toRemove.forEach(obj => fabricCanvas.remove(obj));
-    fabricCanvas.renderAll();
-  };
-
   const getFieldColor = (fieldName: string): string => {
     const colors = {
       customerName: '#ef4444',
@@ -176,6 +102,92 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
       company_name: '#06b6d4',
     };
     return colors[fieldName as keyof typeof colors] || '#6b7280';
+  };
+
+  const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    console.log('PDF loaded with', numPages, 'pages');
+  };
+
+  const handlePDFClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('PDF overlay clicked!', e);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    console.log('Click coordinates:', x, y);
+    console.log('Selected field:', selectedField);
+    
+    if (selectedField) {
+      // Remove existing visual markers for this field
+      const existingMarker = document.querySelector(`[data-field="${selectedField}"]`);
+      if (existingMarker) {
+        existingMarker.remove();
+      }
+      
+      const existingLabel = document.querySelector(`[data-field="${selectedField}-label"]`);
+      if (existingLabel) {
+        existingLabel.remove();
+      }
+      
+      // Add visual marker directly to the overlay
+      const marker = document.createElement('div');
+      marker.setAttribute('data-field', selectedField);
+      marker.style.position = 'absolute';
+      marker.style.left = `${x - 8}px`;
+      marker.style.top = `${y - 8}px`;
+      marker.style.width = '16px';
+      marker.style.height = '16px';
+      marker.style.borderRadius = '50%';
+      marker.style.backgroundColor = getFieldColor(selectedField);
+      marker.style.border = '2px solid white';
+      marker.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+      marker.style.zIndex = '20';
+      marker.style.pointerEvents = 'none';
+      
+      const label = document.createElement('div');
+      label.setAttribute('data-field', `${selectedField}-label`);
+      label.style.position = 'absolute';
+      label.style.left = `${x + 12}px`;
+      label.style.top = `${y - 6}px`;
+      label.style.fontSize = '11px';
+      label.style.fontWeight = 'bold';
+      label.style.color = 'white';
+      label.style.backgroundColor = getFieldColor(selectedField);
+      label.style.padding = '2px 6px';
+      label.style.borderRadius = '3px';
+      label.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+      label.style.zIndex = '20';
+      label.style.pointerEvents = 'none';
+      label.style.whiteSpace = 'nowrap';
+      label.textContent = FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField;
+      
+      e.currentTarget.appendChild(marker);
+      e.currentTarget.appendChild(label);
+      
+      // Update coordinates state
+      setCoordinates(prev => ({
+        ...prev,
+        [selectedField]: {
+          x,
+          y,
+          fontSize: 12,
+          fontColor: '#000000',
+          maxWidth: 200
+        }
+      }));
+      
+      toast({
+        title: "Koordinat placerad!",
+        description: `${FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS]} har placerats på position (${Math.round(x)}, ${Math.round(y)})`,
+      });
+    } else {
+      toast({
+        title: "Välj ett fält först",
+        description: "Välj vilket fält du vill placera från dropdown-menyn",
+        variant: "destructive",
+      });
+    }
   };
 
   const saveCoordinates = async () => {
@@ -209,7 +221,17 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
       delete newCoords[fieldName];
       return newCoords;
     });
-    removeMarkerForField(fieldName);
+    
+    // Remove visual markers
+    const existingMarker = document.querySelector(`[data-field="${fieldName}"]`);
+    if (existingMarker) {
+      existingMarker.remove();
+    }
+    
+    const existingLabel = document.querySelector(`[data-field="${fieldName}-label"]`);
+    if (existingLabel) {
+      existingLabel.remove();
+    }
   };
 
   return (
@@ -221,122 +243,62 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
           </CardHeader>
           <CardContent>
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
-              {/* PDF Viewer iframe as background */}
+              {/* PDF Viewer using react-pdf */}
               {pdfUrl && pdfLoaded && (
-                <iframe
-                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ minHeight: '600px', zIndex: 1 }}
-                  title="PDF Template"
-                />
+                <div className="relative">
+                  <Document
+                    file={pdfUrl}
+                    onLoadSuccess={handleDocumentLoadSuccess}
+                    className="flex justify-center"
+                    loading={
+                      <div className="flex items-center justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    }
+                  >
+                    <div className="relative">
+                      <Page
+                        pageNumber={pageNumber}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        className="max-w-full"
+                        loading={
+                          <div className="flex items-center justify-center p-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                          </div>
+                        }
+                      />
+                      
+                      {/* Transparent clickable overlay for coordinate placement */}
+                      <div
+                        className="absolute inset-0 cursor-crosshair"
+                        style={{ zIndex: 10 }}
+                        onClick={handlePDFClick}
+                      >
+                        {/* Instructions overlay */}
+                        <div className="absolute top-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg pointer-events-none z-30">
+                          <div className="text-sm">
+                            <p className="font-semibold mb-1">Klicka på PDF:en för att placera:</p>
+                            <p className="text-xs" style={{ color: getFieldColor(selectedField) }}>
+                              📍 {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Document>
+                </div>
               )}
               
-              {/* Transparent clickable overlay for coordinate placement */}
-              <div
-                className="absolute inset-0 cursor-crosshair"
-                style={{ 
-                  minHeight: pdfLoaded ? '600px' : '400px',
-                  zIndex: 10,
-                  backgroundColor: pdfLoaded ? 'transparent' : 'rgba(248, 249, 250, 0.95)'
-                }}
-                onClick={(e) => {
-                  console.log('Overlay clicked!', e);
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
-                  
-                  console.log('Click coordinates:', x, y);
-                  console.log('Selected field:', selectedField);
-                  
-                  if (selectedField) {
-                    // Remove existing visual marker for this field
-                    const existingMarker = document.querySelector(`[data-field="${selectedField}"]`);
-                    if (existingMarker) {
-                      existingMarker.remove();
-                    }
-                    
-                    // Add visual marker directly to the DOM
-                    const marker = document.createElement('div');
-                    marker.setAttribute('data-field', selectedField);
-                    marker.style.position = 'absolute';
-                    marker.style.left = `${x - 8}px`;
-                    marker.style.top = `${y - 8}px`;
-                    marker.style.width = '16px';
-                    marker.style.height = '16px';
-                    marker.style.borderRadius = '50%';
-                    marker.style.backgroundColor = getFieldColor(selectedField);
-                    marker.style.border = '2px solid white';
-                    marker.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                    marker.style.zIndex = '20';
-                    marker.style.pointerEvents = 'none';
-                    
-                    const label = document.createElement('div');
-                    label.setAttribute('data-field', `${selectedField}-label`);
-                    label.style.position = 'absolute';
-                    label.style.left = `${x + 12}px`;
-                    label.style.top = `${y - 6}px`;
-                    label.style.fontSize = '11px';
-                    label.style.fontWeight = 'bold';
-                    label.style.color = 'white';
-                    label.style.backgroundColor = getFieldColor(selectedField);
-                    label.style.padding = '2px 6px';
-                    label.style.borderRadius = '3px';
-                    label.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                    label.style.zIndex = '20';
-                    label.style.pointerEvents = 'none';
-                    label.style.whiteSpace = 'nowrap';
-                    label.textContent = FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField;
-                    
-                    e.currentTarget.appendChild(marker);
-                    e.currentTarget.appendChild(label);
-                    
-                    // Update coordinates state
-                    setCoordinates(prev => ({
-                      ...prev,
-                      [selectedField]: {
-                        x,
-                        y,
-                        fontSize: 12,
-                        fontColor: '#000000',
-                        maxWidth: 200
-                      }
-                    }));
-                    
-                    toast({
-                      title: "Koordinat placerad!",
-                      description: `${FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS]} har placerats på position (${Math.round(x)}, ${Math.round(y)})`,
-                    });
-                  } else {
-                    toast({
-                      title: "Välj ett fält först",
-                      description: "Välj vilket fält du vill placera från dropdown-menyn",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                {/* Instructions when PDF is not loaded */}
-                {!pdfLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-center text-gray-600">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                      <div className="text-muted-foreground">Laddar PDF-mall...</div>
-                    </div>
+              {/* Loading state */}
+              {!pdfLoaded && (
+                <div className="flex items-center justify-center bg-gray-50 min-h-[400px]">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <div className="text-muted-foreground">Laddar PDF-mall...</div>
                   </div>
-                )}
-                
-                {/* Instructions when PDF is loaded */}
-                {pdfLoaded && (
-                  <div className="absolute top-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg pointer-events-none z-30">
-                    <div className="text-sm">
-                      <p className="font-semibold mb-1">Klicka på PDF:en för att placera:</p>
-                      <p className="text-xs" style={{ color: getFieldColor(selectedField) }}>
-                        📍 {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
