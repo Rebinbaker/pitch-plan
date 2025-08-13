@@ -38,6 +38,7 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
   const [selectedField, setSelectedField] = useState<string>('customerName');
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<Circle | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -94,59 +95,16 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
 
       console.log('PDF downloaded successfully, size:', pdfData.size);
 
-      // Create a URL for the PDF blob to display it
+      // Create a URL for the PDF blob
       const pdfUrl = URL.createObjectURL(pdfData);
       
-      // Show the PDF URL in an iframe as a simple viewer
-      const pdfContainer = document.createElement('div');
-      pdfContainer.style.position = 'absolute';
-      pdfContainer.style.top = '0';
-      pdfContainer.style.left = '0';
-      pdfContainer.style.width = '100%';
-      pdfContainer.style.height = '100%';
-      pdfContainer.style.backgroundColor = '#f0f0f0';
-      pdfContainer.style.border = '1px solid #ccc';
-      pdfContainer.style.borderRadius = '8px';
-      pdfContainer.style.overflow = 'hidden';
-
-      // Add text overlay for instructions since PDF rendering is complex
-      const instructionText = document.createElement('div');
-      instructionText.innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #666;">
-          <h3>PDF-mall laddad: ${template.name}</h3>
-          <p>Klicka på canvasen för att placera textfält</p>
-          <p>PDF-fil: ${template.pdf_url}</p>
-          <div style="margin-top: 20px;">
-            <a href="${pdfUrl}" target="_blank" style="color: #0066cc; text-decoration: underline;">
-              Öppna PDF i ny flik för referens
-            </a>
-          </div>
-        </div>
-      `;
-      pdfContainer.appendChild(instructionText);
-
-      // Add the container to the canvas container
-      const canvasContainer = canvas.getElement().parentElement;
-      if (canvasContainer) {
-        canvasContainer.style.position = 'relative';
-        canvasContainer.appendChild(pdfContainer);
-      }
-      
-      // Set a light gray background for the canvas
-      canvas.backgroundColor = '#f8f9fa';
-      canvas.renderAll();
-      
-      // Add existing markers
-      Object.entries(coordinates).forEach(([fieldName, coord]) => {
-        if (coord) {
-          addMarker(coord.x, coord.y, fieldName);
-        }
-      });
+      // Store the PDF URL for use in the UI
+      setPdfUrl(pdfUrl);
       
       setPdfLoaded(true);
       toast({
         title: "PDF laddat",
-        description: "PDF-mallen har laddats. Klicka för att placera koordinater. Öppna PDF i ny flik för referens.",
+        description: "PDF-mallen har laddats. Du kan nu se den och placera koordinater.",
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
@@ -263,10 +221,24 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
           </CardHeader>
           <CardContent>
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
-              {/* Simple clickable div overlay for coordinate placement */}
+              {/* PDF Viewer iframe as background */}
+              {pdfUrl && pdfLoaded && (
+                <iframe
+                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ minHeight: '600px', zIndex: 1 }}
+                  title="PDF Template"
+                />
+              )}
+              
+              {/* Transparent clickable overlay for coordinate placement */}
               <div
-                className="absolute inset-0 bg-gray-100 cursor-crosshair z-10"
-                style={{ minHeight: '400px' }}
+                className="absolute inset-0 cursor-crosshair"
+                style={{ 
+                  minHeight: pdfLoaded ? '600px' : '400px',
+                  zIndex: 10,
+                  backgroundColor: pdfLoaded ? 'transparent' : 'rgba(248, 249, 250, 0.95)'
+                }}
                 onClick={(e) => {
                   console.log('Overlay clicked!', e);
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -277,12 +249,13 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                   console.log('Selected field:', selectedField);
                   
                   if (selectedField) {
-                    // Add visual marker directly to the DOM
+                    // Remove existing visual marker for this field
                     const existingMarker = document.querySelector(`[data-field="${selectedField}"]`);
                     if (existingMarker) {
                       existingMarker.remove();
                     }
                     
+                    // Add visual marker directly to the DOM
                     const marker = document.createElement('div');
                     marker.setAttribute('data-field', selectedField);
                     marker.style.position = 'absolute';
@@ -293,27 +266,31 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                     marker.style.borderRadius = '50%';
                     marker.style.backgroundColor = getFieldColor(selectedField);
                     marker.style.border = '2px solid white';
+                    marker.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                     marker.style.zIndex = '20';
                     marker.style.pointerEvents = 'none';
                     
                     const label = document.createElement('div');
+                    label.setAttribute('data-field', `${selectedField}-label`);
                     label.style.position = 'absolute';
                     label.style.left = `${x + 12}px`;
                     label.style.top = `${y - 6}px`;
-                    label.style.fontSize = '12px';
+                    label.style.fontSize = '11px';
                     label.style.fontWeight = 'bold';
-                    label.style.color = getFieldColor(selectedField);
-                    label.style.backgroundColor = 'white';
-                    label.style.padding = '2px 4px';
+                    label.style.color = 'white';
+                    label.style.backgroundColor = getFieldColor(selectedField);
+                    label.style.padding = '2px 6px';
                     label.style.borderRadius = '3px';
+                    label.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                     label.style.zIndex = '20';
                     label.style.pointerEvents = 'none';
+                    label.style.whiteSpace = 'nowrap';
                     label.textContent = FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField;
                     
                     e.currentTarget.appendChild(marker);
                     e.currentTarget.appendChild(label);
                     
-                    // Update coordinates
+                    // Update coordinates state
                     setCoordinates(prev => ({
                       ...prev,
                       [selectedField]: {
@@ -338,32 +315,28 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                   }
                 }}
               >
-                {/* Instruction text */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-center text-gray-600">
-                    <h3 className="font-semibold mb-2">PDF-mall laddad: {template.name}</h3>
-                    <p className="text-sm mb-2">Klicka här för att placera koordinater</p>
-                    <p className="text-xs">Valt fält: <span className="font-semibold" style={{ color: getFieldColor(selectedField) }}>
-                      {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
-                    </span></p>
+                {/* Instructions when PDF is not loaded */}
+                {!pdfLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center text-gray-600">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <div className="text-muted-foreground">Laddar PDF-mall...</div>
+                    </div>
                   </div>
-                </div>
+                )}
+                
+                {/* Instructions when PDF is loaded */}
+                {pdfLoaded && (
+                  <div className="absolute top-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg pointer-events-none z-30">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-1">Klicka på PDF:en för att placera:</p>
+                      <p className="text-xs" style={{ color: getFieldColor(selectedField) }}>
+                        📍 {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <canvas 
-                ref={canvasRef} 
-                className="max-w-full h-auto"
-                style={{ display: 'block', minHeight: '400px', position: 'relative', zIndex: '1' }}
-              />
-              
-              {!pdfLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-30">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <div className="text-muted-foreground">Laddar PDF-mall...</div>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
