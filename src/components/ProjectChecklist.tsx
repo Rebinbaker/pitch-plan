@@ -37,10 +37,19 @@ export function ProjectChecklist({
   onFileUploaded
 }: ProjectChecklistProps) {
   const { toast } = useToast();
-  const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(
-    project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
-    project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null
-  );
+  const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(() => {
+    // Check if the checklist item "Avvarat material?" is completed
+    const avvaratMaterialItem = checklist.find(item => item.label === 'Avvarat material?');
+    
+    if (avvaratMaterialItem?.completed) {
+      // If item is completed, use the saved value from project data
+      return project?.avvaratMaterial?.hasLeftoverMaterial === true ? 'yes' : 
+             project?.avvaratMaterial?.hasLeftoverMaterial === false ? 'no' : null;
+    }
+    
+    // If not completed, return null (no selection)
+    return null;
+  });
 
   // Check if all work phases are confirmed (completed + inspection confirmed)
   const allWorkPhasesConfirmed = project ? areAllWorkPhasesConfirmed(project.workPhases || []) : false;
