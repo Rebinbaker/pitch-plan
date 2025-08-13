@@ -26,11 +26,17 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
       try {
         console.log('Original file URL:', file.url);
         
+        // Check if it's a placeholder/mock URL
+        if (file.url === '#' || file.url === '' || file.url.startsWith('mock://')) {
+          console.log('Mock file detected, cannot preview');
+          setFileUrl('');
+          setLoading(false);
+          return;
+        }
+        
         // Check if it's a Supabase storage URL
         if (file.url.includes('supabase') && file.url.includes('/storage/v1/object/')) {
           // Extract bucket and path from the URL
-          // Expected format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
-          // or: https://[project].supabase.co/storage/v1/object/[bucket]/[path]
           const urlParts = file.url.split('/storage/v1/object/');
           if (urlParts.length > 1) {
             let pathWithPossiblePublic = urlParts[1];
@@ -86,18 +92,20 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
               }
             } else {
               console.log('No valid path parts found');
-              setFileUrl(file.url);
+              setFileUrl('');
             }
           } else {
             console.log('URL does not match expected format');
-            setFileUrl(file.url);
+            setFileUrl('');
           }
         } else {
+          // For other URLs (direct links, etc.), use as-is
+          console.log('Using URL as-is');
           setFileUrl(file.url);
         }
       } catch (error) {
         console.error('Error processing file URL:', error);
-        setFileUrl(file.url);
+        setFileUrl('');
       } finally {
         setLoading(false);
       }
@@ -134,11 +142,17 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
       return (
         <div className="w-full h-[400px] border rounded-md flex items-center justify-center bg-muted">
           <div className="text-center space-y-2">
-            <p className="text-muted-foreground">Kunde inte ladda filen</p>
-            <Button onClick={handleDownload} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Ladda ner för att visa
-            </Button>
+            <p className="text-muted-foreground">
+              {file.url === '#' || file.url === '' 
+                ? 'Detta är en demo-fil. Förhandsvisning inte tillgänglig.' 
+                : 'Kunde inte ladda filen'}
+            </p>
+            {file.url !== '#' && file.url !== '' && (
+              <Button onClick={handleDownload} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Ladda ner för att visa
+              </Button>
+            )}
           </div>
         </div>
       );
