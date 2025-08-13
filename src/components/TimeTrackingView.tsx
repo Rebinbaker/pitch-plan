@@ -43,7 +43,7 @@ const TimeTrackingView = () => {
         .from('time_entries')
         .select(`
           *,
-          profiles!inner(username, display_name)
+          profiles(username, display_name)
         `)
         .eq('user_id', user!.id)
         .order('start_time', { ascending: false })
