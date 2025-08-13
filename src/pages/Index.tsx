@@ -15,7 +15,8 @@ import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { SecurityStatus } from '@/components/SecurityStatus';
+import { useSupabaseStorage } from '@/hooks/useSupabaseStorage';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Project } from '@/types/project';
 import logo from '../assets/logo.png';
@@ -44,7 +45,7 @@ const Index = () => {
     markNotificationAsRead,
     dismissNotification,
     addNotifications
-  } = useLocalStorage();
+  } = useSupabaseStorage();
 
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('projects');
@@ -193,13 +194,14 @@ const Index = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+          <TabsList className="grid w-full grid-cols-8 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
             <TabsTrigger value="projects">Projekt</TabsTrigger>
             <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
             <TabsTrigger value="teams">Team</TabsTrigger>
             <TabsTrigger value="files">Filer</TabsTrigger>
             <TabsTrigger value="planning">Planering</TabsTrigger>
             <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
+            <TabsTrigger value="security">🔒 Säkerhet</TabsTrigger>
             <TabsTrigger value="notifications">
               Meddelanden
               {notifications.filter(n => !n.isRead).length > 0 && (
@@ -265,6 +267,10 @@ const Index = () => {
             <AvvaratMaterialOverview 
               projects={projects}
             />
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <SecurityStatus />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
