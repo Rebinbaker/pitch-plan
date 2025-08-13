@@ -75,7 +75,8 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
       if (savedProjects) {
         const projects: Project[] = JSON.parse(savedProjects);
         for (const project of projects) {
-          const { error } = await supabase.from('projects' as any).insert({
+          console.log('Migrating project:', project.name);
+          const { data, error } = await supabase.from('projects' as any).insert({
             name: project.name,
             address: project.address || '',
             customer_name: project.customerName || '',
@@ -98,12 +99,13 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             activity_log: project.activityLog || [],
             region: project.region || 'Stockholm',
             user_id: user.id,
-          });
+          }).select();
           
           if (error) {
-            console.error('Project migration error:', error);
-            throw new Error(`Fel vid migrering av projekt: ${error.message}`);
+            console.error('Project insert error:', error);
+            throw new Error(`Fel vid migrering av projekt "${project.name}": ${error.message}`);
           }
+          console.log('Successfully migrated project:', project.name, data);
         }
       }
       setProgress(25);
