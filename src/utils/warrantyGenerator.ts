@@ -94,7 +94,7 @@ export const generateWarrantyPDF = async (
     });
 
     const pdfBytes = await pdfDoc.save();
-    const fileName = "Garantibevis 10 år.pdf";
+    const fileName = "Garantibevis_10_ar.pdf";
 
     return { pdfBytes, fileName };
   } catch (error) {

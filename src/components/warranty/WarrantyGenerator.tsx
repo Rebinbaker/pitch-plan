@@ -123,7 +123,7 @@ export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
           .getPublicUrl(filePath);
         
         onFileUploaded({
-          name: fileName,
+          name: "Garantibevis 10 år.pdf", // Visa det fina namnet för användaren
           url: publicUrl,
           type: 'warranty',
           projectId: project.id,
