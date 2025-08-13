@@ -166,6 +166,7 @@ export function ProjectChecklist({
   };
 
   const confirmWhatsAppGroup = (itemId: string) => {
+    console.log('WhatsApp: confirmWhatsAppGroup called for item:', itemId);
     setWhatsappStates(prev => ({
       ...prev,
       [itemId]: {
@@ -178,7 +179,9 @@ export function ProjectChecklist({
     setTimers(prev => ({ ...prev, [itemId]: 0 }));
     
     // Mark checklist item as completed
+    console.log('WhatsApp: calling handleItemToggle');
     handleItemToggle(itemId);
+    console.log('WhatsApp: handleItemToggle completed');
   };
 
   const resetWhatsAppStatus = (itemId: string) => {
@@ -515,6 +518,7 @@ Tack!`);
   };
 
   const handleItemToggle = (itemId: string) => {
+    console.log('handleItemToggle called for item:', itemId);
     if (!isEditable) return;
     
     // Check if item is locked
@@ -561,6 +565,7 @@ Tack!`);
     
     // Auto-complete project if all items (checklist + work phases) are done
     if (allItemsCompleted && project && onUpdateProject && project.status !== 'completed') {
+      console.log('handleItemToggle: calling onUpdateProject for project completion');
       const updatedProject = {
         ...project,
         status: 'completed' as const,
