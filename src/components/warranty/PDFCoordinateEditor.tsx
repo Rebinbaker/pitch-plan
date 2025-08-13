@@ -42,30 +42,28 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
     try {
       console.log('Loading PDF from URL:', template.pdf_url);
       
-      const { data: pdfData, error } = await supabase.storage
+      const { data: signedUrlData, error: urlError } = await supabase.storage
         .from('warranty-templates')
-        .download(template.pdf_url);
+        .createSignedUrl(template.pdf_url, 3600); // 1 hour expiry
 
-      if (error) {
-        console.error('Error downloading PDF:', error);
-        throw error;
+      if (urlError) {
+        console.error('Error creating signed URL:', urlError);
+        throw urlError;
       }
 
-      if (!pdfData) {
-        console.error('No PDF data received');
-        throw new Error('No PDF data received');
+      if (!signedUrlData?.signedUrl) {
+        throw new Error('No signed URL received');
       }
 
-      console.log('PDF downloaded successfully, size:', pdfData.size);
-
-      // Create a URL for the PDF blob and display as image
-      const pdfUrl = URL.createObjectURL(pdfData);
-      setPdfImageUrl(pdfUrl);
+      console.log('PDF signed URL created successfully');
+      
+      // Set the signed URL as image source
+      setPdfImageUrl(signedUrlData.signedUrl);
       setPdfLoaded(true);
       
       toast({
         title: "PDF laddat",
-        description: "PDF-mallen har laddats. Välj ett fält och klicka på PDF:en för att placera koordinater.",
+        description: "PDF-mallen är redo. Välj ett fält och klicka för att placera koordinater.",
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
@@ -242,31 +240,25 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
                     )}
                   </div>
                   
-                  {/* PDF as background with clickable overlay */}
+                  {/* PDF as embed with clickable overlay */}
                   <div className="relative">
-                    <object
-                      data={pdfImageUrl}
-                      type="application/pdf"
-                      className="w-full min-h-[700px] border-none"
-                      title={`PDF Mall: ${template.name}`}
-                    >
-                      <embed
-                        src={pdfImageUrl}
-                        type="application/pdf"
-                        className="w-full min-h-[700px]"
-                      />
-                      <p className="p-4 text-center text-muted-foreground">
-                        Kan inte visa PDF direkt. 
-                        <a 
-                          href={pdfImageUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline ml-1"
+                    <div className="bg-white min-h-[700px] flex items-center justify-center border-2 border-dashed border-border rounded">
+                      <div className="text-center p-8">
+                        <h3 className="text-lg font-semibold mb-4">PDF Koordinat-editor</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Klicka nedan för att öppna PDF:en i ny flik och sedan använd detta område för att placera koordinater
+                        </p>
+                        <Button 
+                          onClick={() => window.open(pdfImageUrl!, '_blank')}
+                          className="mb-4"
                         >
                           Öppna PDF i ny flik
-                        </a>
-                      </p>
-                    </object>
+                        </Button>
+                        <div className="text-sm text-muted-foreground">
+                          Välj ett fält och klicka här för att placera koordinater baserat på PDF:en
+                        </div>
+                      </div>
+                    </div>
                     
                     {/* Clickable overlay for coordinate placement */}
                     <div
