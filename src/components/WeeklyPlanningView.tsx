@@ -846,6 +846,8 @@ interface MonthlyViewProps {
 
 function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  
+  console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId);
   if (!dateRange?.from || !dateRange?.to) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -993,12 +995,13 @@ function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onVie
     <DndContext
       onDragStart={(event) => setActiveId(event.active.id as string)}
       onDragEnd={(event) => {
-        // Prevent multiple rapid updates by debouncing
-        const timeoutId = setTimeout(() => {
+        // Use requestAnimationFrame to delay the update until after the current render cycle
+        requestAnimationFrame(() => {
           handleMonthlyDragEnd(event);
-          setActiveId(null);
-        }, 100);
-        return () => clearTimeout(timeoutId);
+          requestAnimationFrame(() => {
+            setActiveId(null);
+          });
+        });
       }}
       modifiers={[restrictToWindowEdges]}
     >
@@ -1074,6 +1077,8 @@ interface MonthlyProjectCardProps {
 }
 
 function MonthlyProjectCard({ project, onViewDetails, trailers = [] }: MonthlyProjectCardProps) {
+  console.log('MonthlyProjectCard re-rendered for project:', project.name);
+  
   // Helper function to get trailer name
   const getTrailerName = (trailerId: string) => {
     const trailer = trailers.find(t => t.id === trailerId);
