@@ -703,14 +703,17 @@ Tack!`);
             completionPercentage: newCompletionPercentage,
           };
           onUpdateProject(updatedProjectWithoutTrailer);
+          
+          // Show success message
+          toast({
+            title: "Ställningsvagn friggjord",
+            description: `${assignedTrailer.name} är nu tillgänglig för nya projekt`,
+            duration: 3000,
+          });
+          
+          // Exit early since we've already updated the project
+          return;
         }
-        
-        // Show success message
-        toast({
-          title: "Ställningsvagn friggjord",
-          description: `${assignedTrailer.name} är nu tillgänglig för nya projekt`,
-          duration: 3000,
-        });
       }
     }
     
