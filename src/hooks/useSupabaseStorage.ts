@@ -47,7 +47,7 @@ export const useSupabaseStorage = () => {
     try {
       if (user && migrationStatus === 'completed') {
         const { error } = await supabase
-          .from('projects')
+          .from('projects' as any)
           .update({
             name: updatedProject.name,
             address: updatedProject.address,
@@ -98,9 +98,8 @@ export const useSupabaseStorage = () => {
     try {
       if (user && migrationStatus === 'completed') {
         const { error } = await supabase
-          .from('projects')
+          .from('projects' as any)
           .insert({
-            id: newProject.id,
             name: newProject.name,
             address: newProject.address,
             customer_name: newProject.customerName,
@@ -258,13 +257,13 @@ export const useSupabaseStorage = () => {
   const getProjects = async (): Promise<Project[]> => {
     if (user && migrationStatus === 'completed') {
       const { data, error } = await supabase
-        .from('projects')
+        .from('projects' as any)
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      return data.map(project => ({
+      return data.map((project: any) => ({
         id: project.id,
         name: project.name,
         address: project.address || '',
@@ -273,8 +272,8 @@ export const useSupabaseStorage = () => {
         responsibleSeller: project.responsible_seller || '',
         constructionTeam: project.construction_team || '',
         constructionStartWeek: project.construction_start_week || '',
-        rotStatus: project.rot_status || '',
-        status: project.status,
+        rotStatus: project.rot_status as any || 'Ej aktiverat',
+        status: project.status as any,
         notes: project.notes || '',
         assignedTrailer: project.assigned_trailer || '',
         scaffoldingResponsible: project.scaffolding_responsible || '',

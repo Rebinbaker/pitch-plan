@@ -59,7 +59,7 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('projects').insert({
+          const { error } = await supabase.from('projects' as any).insert({
             id: projectToInsert.id,
             name: projectToInsert.name,
             address: projectToInsert.address,
@@ -103,10 +103,10 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('scaffolding').insert({
+          const { error } = await supabase.from('scaffolding' as any).insert({
             id: trailerToInsert.id,
             name: trailerToInsert.name,
-            description: trailerToInsert.description,
+            description: (trailerToInsert as any).description || '',
             status: trailerToInsert.status,
             user_id: user.id,
           });
@@ -129,11 +129,11 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             updated_at: new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('teams').insert({
+          const { error } = await supabase.from('teams' as any).insert({
             id: teamToInsert.id,
             name: teamToInsert.name,
             type: teamToInsert.type,
-            leader: teamToInsert.leader,
+            leader: (teamToInsert as any).leader || '',
             members: teamToInsert.members || [],
             sellers: teamToInsert.sellers || [],
             skills: teamToInsert.skills || [],
@@ -161,11 +161,11 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             uploaded_at: file.uploadedAt || new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('files').insert({
+          const { error } = await supabase.from('files' as any).insert({
             id: fileToInsert.id,
             name: fileToInsert.name,
             type: fileToInsert.type,
-            size: fileToInsert.size,
+            size: (fileToInsert as any).size || 0,
             url: fileToInsert.url,
             project_id: fileToInsert.projectId,
             user_id: user.id,
@@ -189,7 +189,7 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             created_at: notification.createdAt || new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('notifications').insert({
+          const { error } = await supabase.from('notifications' as any).insert({
             id: notificationToInsert.id,
             title: notificationToInsert.title,
             message: notificationToInsert.message,
@@ -199,10 +199,10 @@ export const DataMigrationModal: React.FC<DataMigrationModalProps> = ({
             action_required: notificationToInsert.actionRequired,
             project_id: notificationToInsert.projectId,
             project_name: notificationToInsert.projectName,
-            field_name: notificationToInsert.fieldName,
-            old_value: notificationToInsert.oldValue,
-            new_value: notificationToInsert.newValue,
-            changed_by_user: notificationToInsert.changedByUser,
+            field_name: (notificationToInsert as any).fieldName || null,
+            old_value: (notificationToInsert as any).oldValue || null,
+            new_value: (notificationToInsert as any).newValue || null,
+            changed_by_user: (notificationToInsert as any).changedByUser || null,
             user_id: user.id,
             created_at: notificationToInsert.created_at,
           });
