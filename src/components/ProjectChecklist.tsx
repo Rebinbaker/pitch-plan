@@ -39,6 +39,12 @@ export function ProjectChecklist({
   const { toast } = useToast();
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(() => {
     // Always use the saved value from project data if it exists
+    console.log('AVVARAT MATERIAL INIT:', {
+      projectId: project?.id,
+      hasLeftoverMaterial: project?.avvaratMaterial?.hasLeftoverMaterial,
+      avvaratMaterialObject: project?.avvaratMaterial
+    });
+    
     if (project?.avvaratMaterial?.hasLeftoverMaterial === true) {
       return 'yes';
     } else if (project?.avvaratMaterial?.hasLeftoverMaterial === false) {
@@ -1344,6 +1350,7 @@ Tack!`);
                             size="sm"
                             variant={materialAnswer === 'yes' ? 'default' : 'outline'}
                             onClick={() => {
+                              console.log('AVVARAT MATERIAL: Clicking YES button');
                               setMaterialAnswer('yes');
                               const updatedProject = {
                                 ...project,
@@ -1352,6 +1359,7 @@ Tack!`);
                                   hasLeftoverMaterial: true
                                 }
                               };
+                              console.log('AVVARAT MATERIAL: Updating project with:', updatedProject.avvaratMaterial);
                               onUpdateProject(updatedProject);
                               
                               // Mark checklist item as completed
@@ -1376,6 +1384,7 @@ Tack!`);
                             size="sm"
                             variant={materialAnswer === 'no' ? 'default' : 'outline'}
                             onClick={() => {
+                              console.log('AVVARAT MATERIAL: Clicking NO button');
                               setMaterialAnswer('no');
                               const updatedProject = {
                                 ...project,
@@ -1384,6 +1393,7 @@ Tack!`);
                                   hasLeftoverMaterial: false
                                 }
                               };
+                              console.log('AVVARAT MATERIAL: Updating project with:', updatedProject.avvaratMaterial);
                               onUpdateProject(updatedProject);
                               
                               // Mark checklist item as completed
