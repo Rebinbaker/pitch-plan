@@ -71,8 +71,16 @@ export const WarrantyTemplateManager = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('User not authenticated');
 
-      // Upload image to storage
-      const fileName = `${Date.now()}_${uploadingFile.name}`;
+      // Upload image to storage with sanitized filename
+      const sanitizedFileName = uploadingFile.name
+        .replace(/[åäöÅÄÖ]/g, (match) => ({
+          'å': 'a', 'ä': 'a', 'ö': 'o',
+          'Å': 'A', 'Ä': 'A', 'Ö': 'O'
+        }[match] || match))
+        .replace(/[^a-zA-Z0-9.-]/g, '_')
+        .replace(/_{2,}/g, '_');
+      
+      const fileName = `${Date.now()}_${sanitizedFileName}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('warranty-templates')
         .upload(fileName, uploadingFile);
