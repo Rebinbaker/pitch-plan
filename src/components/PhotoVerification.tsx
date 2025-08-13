@@ -241,19 +241,28 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
         <>
           {isCameraActive && (
             <div className="space-y-4">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-48 object-cover rounded-lg border bg-black"
-              />
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-64 object-cover rounded-lg border bg-black"
+                  style={{ transform: 'scaleX(-1)' }} // Mirror the video like a selfie
+                />
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                  <Button 
+                    onClick={capturePhoto} 
+                    size="lg"
+                    className="rounded-full w-16 h-16 bg-white text-black hover:bg-gray-200"
+                  >
+                    <Camera className="h-6 w-6" />
+                  </Button>
+                </div>
+              </div>
               <div className="flex gap-2">
-                <Button onClick={capturePhoto} className="flex-1">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Ta foto
-                </Button>
-                <Button variant="outline" onClick={stopCamera}>
-                  Avbryt
+                <Button variant="outline" onClick={stopCamera} className="flex-1">
+                  Avbryt kamera
                 </Button>
               </div>
             </div>
