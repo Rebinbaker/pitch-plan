@@ -664,7 +664,8 @@ Tack!`);
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
             if (isBookScaffolding) {
-              isItemComplete = item.completed && hasTrailerAssigned;
+              // Scaffolding is complete when a trailer is assigned (auto-complete)
+              isItemComplete = hasTrailerAssigned;
             } else if (isScheduleTeam) {
               isItemComplete = item.completed && hasTeamAssigned;
             } else if (isAvvaratMaterial) {
