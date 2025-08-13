@@ -1,19 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle, Text as FabricText } from 'fabric';
-import { Document, Page, pdfjs } from 'react-pdf';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { WarrantyTemplate, FieldCoordinates, CoordinatePoint } from '@/types/warranty';
-
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import { WarrantyTemplate, FieldCoordinates } from '@/types/warranty';
 
 interface PDFCoordinateEditorProps {
   template: WarrantyTemplate;
@@ -38,10 +31,8 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
 }) => {
   const [coordinates, setCoordinates] = useState<FieldCoordinates>(template.field_coordinates);
   const [selectedField, setSelectedField] = useState<string>('customerName');
-  const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pdfLoaded, setPdfLoaded] = useState(false);
 
   useEffect(() => {
     loadPDF();
@@ -72,11 +63,11 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
       
       // Store the PDF URL for use in the UI
       setPdfUrl(pdfUrl);
-      
       setPdfLoaded(true);
+      
       toast({
         title: "PDF laddat",
-        description: "PDF-mallen har laddats. Du kan nu se den och placera koordinater.",
+        description: "PDF-mallen har laddats. Öppna PDF:en i ny flik och använd koordinat-området för att placera markörer.",
       });
     } catch (error) {
       console.error('Error loading PDF:', error);
@@ -101,17 +92,10 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
     return colors[fieldName as keyof typeof colors] || '#6b7280';
   };
 
-  const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    console.log('PDF loaded with', numPages, 'pages');
-  };
-
-  const handlePDFClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    console.log('PDF overlay clicked!', e);
+  const handleCoordinateClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
     console.log('Click coordinates:', x, y);
     console.log('Selected field:', selectedField);
     
@@ -240,52 +224,74 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
           </CardHeader>
           <CardContent>
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 relative">
-              {/* PDF Viewer using react-pdf */}
+              {/* PDF Download Link and Instructions */}
               {pdfUrl && pdfLoaded && (
-                <div className="relative">
-                  <Document
-                    file={pdfUrl}
-                    onLoadSuccess={handleDocumentLoadSuccess}
-                    className="flex justify-center"
-                    loading={
-                      <div className="flex items-center justify-center p-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      </div>
-                    }
-                  >
-                    <div className="relative">
-                      <Page
-                        pageNumber={pageNumber}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        className="max-w-full"
-                        loading={
-                          <div className="flex items-center justify-center p-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                          </div>
-                        }
-                      />
-                      
-                      {/* Transparent clickable overlay for coordinate placement */}
-                      <div
-                        className="absolute inset-0 cursor-crosshair"
-                        style={{ zIndex: 10 }}
-                        onClick={handlePDFClick}
-                      >
-                        {/* Instructions overlay */}
-                        <div className="absolute top-4 left-4 bg-white/90 rounded-lg p-3 shadow-lg pointer-events-none z-30">
-                          <div className="text-sm">
-                            <p className="font-semibold mb-1">Klicka på PDF:en för att placera:</p>
-                            <p className="text-xs" style={{ color: getFieldColor(selectedField) }}>
-                              📍 {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                <div className="p-4 bg-blue-50 border-b border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-blue-900">PDF-mall: {template.name}</h4>
+                      <p className="text-sm text-blue-700">Öppna PDF:en i ny flik för att se mallen medan du placerar koordinater</p>
                     </div>
-                  </Document>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(pdfUrl, '_blank')}
+                      className="bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Öppna PDF
+                    </Button>
+                  </div>
                 </div>
               )}
+              
+              {/* Coordinate Placement Area */}
+              <div
+                className="bg-white border-2 border-dashed border-gray-300 cursor-crosshair relative"
+                style={{ minHeight: '500px', aspectRatio: '210/297' }} // A4 proportions
+                onClick={handleCoordinateClick}
+              >
+                {/* Instructions */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center p-8 bg-white/90 rounded-lg shadow-sm">
+                    <div className="text-lg font-semibold text-gray-700 mb-2">
+                      Koordinat-placeringsområde
+                    </div>
+                    <div className="text-sm text-gray-600 mb-4">
+                      1. Öppna PDF:en i ny flik ovan<br/>
+                      2. Välj fält från dropdown till höger<br/>
+                      3. Klicka här för att placera koordinater
+                    </div>
+                    <div className="text-xs px-3 py-1 rounded" style={{ 
+                      backgroundColor: getFieldColor(selectedField) + '20',
+                      color: getFieldColor(selectedField),
+                      border: `1px solid ${getFieldColor(selectedField)}40`
+                    }}>
+                      Valt fält: {FIELD_LABELS[selectedField as keyof typeof FIELD_LABELS] || selectedField}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Grid lines for reference */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Vertical lines */}
+                  {[...Array(10)].map((_, i) => (
+                    <div
+                      key={`v-${i}`}
+                      className="absolute top-0 bottom-0 border-l border-gray-200"
+                      style={{ left: `${(i + 1) * 10}%` }}
+                    />
+                  ))}
+                  {/* Horizontal lines */}
+                  {[...Array(14)].map((_, i) => (
+                    <div
+                      key={`h-${i}`}
+                      className="absolute left-0 right-0 border-t border-gray-200"
+                      style={{ top: `${(i + 1) * 7}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
               
               {/* Loading state */}
               {!pdfLoaded && (
