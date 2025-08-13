@@ -267,12 +267,19 @@ export const PDFCoordinateEditor: React.FC<PDFCoordinateEditorProps> = ({
               <canvas 
                 ref={canvasRef} 
                 className="max-w-full h-auto"
-                style={{ display: 'block' }}
+                style={{ display: 'block', minHeight: '400px' }}
               />
             </div>
-            {!pdfLoaded && (
-              <div className="text-center py-8 text-muted-foreground">
-                Laddar PDF-mall...
+            {!pdfLoaded ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <div className="text-muted-foreground">
+                  Laddar PDF-mall...
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-sm text-success">
+                ✓ PDF-mall laddad! Klicka för att placera koordinater.
               </div>
             )}
           </CardContent>
