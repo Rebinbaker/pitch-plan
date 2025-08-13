@@ -222,7 +222,12 @@ export function ProjectChecklist({
         ...project,
         checklist: project.checklist.map(item => 
           item.id === itemId 
-            ? { ...item, completed: true, completedAt: new Date().toISOString().split('T')[0] }
+            ? { 
+                ...item, 
+                completed: true, 
+                completedAt: new Date().toISOString().split('T')[0],
+                whatsappConfirmed: true  // Add persistent flag
+              }
             : item
         )
       };
@@ -474,8 +479,23 @@ Tack!`);
       }
     }));
     
-    // Mark checklist item as completed
-    handleItemToggle(itemId);
+    // Mark the checklist item as completed with persistent flag
+    if (project && onUpdateProject) {
+      const updatedProject = {
+        ...project,
+        checklist: project.checklist.map(item => 
+          item.id === itemId 
+            ? { 
+                ...item, 
+                completed: true, 
+                completedAt: new Date().toISOString().split('T')[0],
+                containerConfirmed: true  // Add persistent flag
+              }
+            : item
+        )
+      };
+      onUpdateProject(updatedProject);
+    }
   };
 
   const resetContainerStatus = (itemId: string) => {
@@ -941,7 +961,7 @@ Tack!`);
                       )}
                       
                     {/* Enhanced WhatsApp Integration */}
-                     {isWhatsApp && project && whatsappStates[item.id]?.status !== 'confirmed' && (
+                     {isWhatsApp && project && !item.whatsappConfirmed && (
                        <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
                          <div className="flex items-center gap-2">
                            <MessageCircle className="w-4 h-4 text-primary" />
@@ -1068,7 +1088,7 @@ Tack!`);
                      )}
 
                     {/* Container Booking Integration */}
-                     {isContainerBooking && project && containerStates[item.id]?.status !== 'confirmed' && (
+                     {isContainerBooking && project && !item.containerConfirmed && (
                        <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
                          <div className="flex items-center gap-2">
                            <Mail className="w-4 h-4 text-primary" />

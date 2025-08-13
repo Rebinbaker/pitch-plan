@@ -90,6 +90,8 @@ export interface ChecklistItem {
   completed: boolean;
   completedAt?: string;
   weight: number; // Percentage weight for progress calculation
+  whatsappConfirmed?: boolean; // Flag to track WhatsApp group confirmation
+  containerConfirmed?: boolean; // Flag to track container booking confirmation
 }
 
 export interface WorkPhaseItem {
