@@ -167,11 +167,15 @@ export const useSupabaseStorage = () => {
             region: updatedProject.region,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', updatedProject.id);
+          .eq('id', updatedProject.id)
+          .eq('user_id', user.id);
         
         if (error) throw error;
-        // Reload projects after update
-        await loadSupabaseProjects();
+        
+        // Update local state instead of reloading to prevent redirect
+        setSupabaseProjects(prev => 
+          prev.map(p => p.id === updatedProject.id ? updatedProject : p)
+        );
       } else {
         await localStorageHook.updateProject(updatedProject);
       }
