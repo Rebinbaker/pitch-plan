@@ -26,6 +26,8 @@ interface WeeklyPlanningViewProps {
 }
 
 export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer, onAddNotifications }: WeeklyPlanningViewProps) {
+  console.log('WeeklyPlanningView re-rendered with projects:', projects.length);
+  
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>(() => {
     // Persist view mode in localStorage to prevent reset during re-renders

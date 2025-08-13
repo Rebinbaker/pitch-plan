@@ -125,8 +125,10 @@ const Index = () => {
   };
 
   const handleUpdateProject = (projectId: string, updates: Partial<Project>) => {
+    console.log('Index.tsx handleUpdateProject called for:', projectId);
     const project = projects.find(p => p.id === projectId);
     if (project) {
+      console.log('Index.tsx calling updateProject with:', updates);
       updateProject({ ...project, ...updates });
     }
   };
