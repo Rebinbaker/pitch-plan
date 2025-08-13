@@ -63,6 +63,7 @@ export const useSupabaseStorage = () => {
         workPhases: project.work_phases || [],
         activityLog: project.activity_log || [],
         region: project.region || 'Stockholm',
+        avvaratMaterial: project.avvarat_material || undefined,
       }));
       
       setSupabaseProjects(mappedProjects);
@@ -167,6 +168,7 @@ export const useSupabaseStorage = () => {
             work_phases: updatedProject.workPhases || [],
             activity_log: updatedProject.activityLog || [],
             region: updatedProject.region,
+            avvarat_material: updatedProject.avvaratMaterial || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProject.id)

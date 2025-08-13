@@ -234,6 +234,7 @@ export type Database = {
           actual_construction_start: string | null
           address: string | null
           assigned_trailer: string | null
+          avvarat_material: Json | null
           checklist: Json | null
           completion_percentage: number | null
           construction_start_week: string | null
@@ -261,6 +262,7 @@ export type Database = {
           actual_construction_start?: string | null
           address?: string | null
           assigned_trailer?: string | null
+          avvarat_material?: Json | null
           checklist?: Json | null
           completion_percentage?: number | null
           construction_start_week?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           actual_construction_start?: string | null
           address?: string | null
           assigned_trailer?: string | null
+          avvarat_material?: Json | null
           checklist?: Json | null
           completion_percentage?: number | null
           construction_start_week?: string | null
