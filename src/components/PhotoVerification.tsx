@@ -42,22 +42,23 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
         videoRef.current.srcObject = stream;
         console.log('Video element set with stream');
         
-        // Wait for video to load and play
+        // Set camera active immediately and let video load in background
+        setIsCameraActive(true);
+        setError(null);
+        console.log('Set isCameraActive to true immediately');
+        
+        // Optional: Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
-          console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-          videoRef.current?.play().then(() => {
-            console.log('Video playing successfully');
-            console.log('Setting isCameraActive to true');
-            setIsCameraActive(true);
-            setError(null);
-          }).catch(err => {
-            console.error('Error playing video:', err);
-            setError('Kunde inte starta video-uppspelning');
-          });
+          console.log('Video metadata loaded - dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
         };
+        
+        videoRef.current.oncanplay = () => {
+          console.log('Video can start playing');
+        };
+        
       } else {
         console.error('Video ref is null');
+        setError('Video element inte tillgängligt');
       }
     } catch (error: any) {
       console.error('Camera error:', error);
