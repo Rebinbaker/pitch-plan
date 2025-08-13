@@ -1,0 +1,303 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Download, FileText, TrendingUp } from 'lucide-react';
+import { TimeReport, TimeEntry } from '@/types/timeTracking';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { sv } from 'date-fns/locale';
+import TeamTimeChart from './TeamTimeChart';
+
+const TimeReportsView = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [reports, setReports] = useState<TimeReport[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generateLoading, setGenerateLoading] = useState(false);
+  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+  useEffect(() => {
+    if (user?.id) {
+      loadReports();
+      loadTimeEntries();
+    }
+  }, [user?.id]);
+
+  const loadReports = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('time_reports')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('generated_at', { ascending: false });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (error) {
+      console.error('Error loading reports:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTimeEntries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', user!.id)
+        .gte('start_time', subDays(new Date(), 30).toISOString());
+
+      if (error) throw error;
+      setTimeEntries(data || []);
+    } catch (error) {
+      console.error('Error loading time entries:', error);
+    }
+  };
+
+  const generateReport = async () => {
+    setGenerateLoading(true);
+    try {
+      const baseDate = new Date(selectedDate);
+      let startDate: Date;
+      let endDate: Date;
+      let title: string;
+
+      switch (reportType) {
+        case 'daily':
+          startDate = baseDate;
+          endDate = baseDate;
+          title = `Daglig rapport - ${format(baseDate, 'PPP', { locale: sv })}`;
+          break;
+        case 'weekly':
+          startDate = startOfWeek(baseDate, { weekStartsOn: 1 });
+          endDate = endOfWeek(baseDate, { weekStartsOn: 1 });
+          title = `Veckorapport - v${format(baseDate, 'I yyyy', { locale: sv })}`;
+          break;
+        case 'monthly':
+          startDate = startOfMonth(baseDate);
+          endDate = endOfMonth(baseDate);
+          title = `Månadsrapport - ${format(baseDate, 'MMMM yyyy', { locale: sv })}`;
+          break;
+      }
+
+      // Get time entries for the period
+      const { data: entries, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', user!.id)
+        .gte('start_time', startDate.toISOString())
+        .lte('start_time', endDate.toISOString());
+
+      if (error) throw error;
+
+      const totalHours = entries?.reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
+      const billableHours = entries?.filter(e => e.is_billable)
+        .reduce((sum, entry) => sum + (entry.duration_hours || 0), 0) || 0;
+
+      // Group by project
+      const projectData: Record<string, { hours: number; billable: number; entries: number }> = {};
+      entries?.forEach(entry => {
+        const key = entry.project_id || 'Utan projekt';
+        if (!projectData[key]) {
+          projectData[key] = { hours: 0, billable: 0, entries: 0 };
+        }
+        projectData[key].hours += entry.duration_hours || 0;
+        if (entry.is_billable) {
+          projectData[key].billable += entry.duration_hours || 0;
+        }
+        projectData[key].entries += 1;
+      });
+
+      const reportData = {
+        period: { start: startDate.toISOString(), end: endDate.toISOString() },
+        summary: { totalHours, billableHours, totalEntries: entries?.length || 0 },
+        projects: projectData,
+        entries: entries || []
+      };
+
+      // Save report
+      const { data: report, error: reportError } = await supabase
+        .from('time_reports')
+        .insert({
+          user_id: user!.id,
+          report_type: reportType,
+          title,
+          start_date: format(startDate, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd'),
+          total_hours: totalHours,
+          billable_hours: billableHours,
+          report_data: reportData
+        })
+        .select()
+        .single();
+
+      if (reportError) throw reportError;
+
+      toast({
+        title: "Rapport genererad",
+        description: `${title} har skapats`,
+      });
+
+      loadReports();
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte generera rapport",
+        variant: "destructive",
+      });
+    } finally {
+      setGenerateLoading(false);
+    }
+  };
+
+  const exportReport = async (report: TimeReport) => {
+    try {
+      // Create CSV content
+      const entries = report.report_data?.entries || [];
+      const csvHeaders = ['Datum', 'Starttid', 'Sluttid', 'Timmar', 'Projekt', 'Beskrivning', 'Fakturerbart'];
+      const csvRows = entries.map((entry: any) => [
+        format(new Date(entry.start_time), 'yyyy-MM-dd'),
+        format(new Date(entry.start_time), 'HH:mm'),
+        entry.end_time ? format(new Date(entry.end_time), 'HH:mm') : '',
+        entry.duration_hours || '',
+        entry.project_id || 'Utan projekt',
+        entry.description || '',
+        entry.is_billable ? 'Ja' : 'Nej'
+      ]);
+
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${report.title.replace(/\s+/g, '_')}.csv`;
+      link.click();
+
+      toast({
+        title: "Rapport exporterad",
+        description: "CSV-fil har laddats ner",
+      });
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte exportera rapport",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}t ${m}m`;
+  };
+
+  if (loading) {
+    return <div className="p-6">Laddar rapporter...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Generate New Report */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Generera ny rapport</CardTitle>
+          <CardDescription>Skapa detaljerade tidsrapporter för analys</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <Label htmlFor="report-type">Rapporttyp</Label>
+              <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daglig</SelectItem>
+                  <SelectItem value="weekly">Veckovis</SelectItem>
+                  <SelectItem value="monthly">Månadsvis</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="report-date">
+                {reportType === 'daily' ? 'Datum' : reportType === 'weekly' ? 'Vecka (valfritt datum)' : 'Månad (valfritt datum)'}
+              </Label>
+              <Input
+                id="report-date"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <Button onClick={generateReport} disabled={generateLoading} className="w-full">
+                <FileText className="h-4 w-4 mr-2" />
+                {generateLoading ? 'Genererar...' : 'Generera rapport'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Time Chart */}
+      <TeamTimeChart timeEntries={timeEntries} />
+
+      {/* Existing Reports */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tidigare rapporter</CardTitle>
+          <CardDescription>Dina sparade tidsrapporter</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {reports.map((report) => (
+              <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <div className="font-medium">{report.title}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {format(new Date(report.start_date), 'PPP', { locale: sv })} - {format(new Date(report.end_date), 'PPP', { locale: sv })}
+                  </div>
+                  <div className="flex items-center gap-4 mt-2">
+                    <Badge variant="outline">{formatHours(report.total_hours)} totalt</Badge>
+                    <Badge variant="default">{formatHours(report.billable_hours)} fakturerbart</Badge>
+                    <Badge variant="secondary" className="capitalize">{report.report_type}</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => exportReport(report)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportera
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {reports.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">
+                Inga rapporter skapade ännu. Generera din första rapport ovan.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default TimeReportsView;

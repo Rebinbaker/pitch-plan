@@ -293,6 +293,126 @@ export type Database = {
         }
         Relationships: []
       }
+      time_entries: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_hours: number | null
+          end_time: string | null
+          entry_type: string
+          hourly_rate: number | null
+          id: string
+          is_billable: boolean
+          project_id: string | null
+          start_time: string
+          team_id: string | null
+          updated_at: string
+          user_id: string
+          work_phase_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          end_time?: string | null
+          entry_type?: string
+          hourly_rate?: number | null
+          id?: string
+          is_billable?: boolean
+          project_id?: string | null
+          start_time: string
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+          work_phase_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_hours?: number | null
+          end_time?: string | null
+          entry_type?: string
+          hourly_rate?: number | null
+          id?: string
+          is_billable?: boolean
+          project_id?: string | null
+          start_time?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+          work_phase_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_reports: {
+        Row: {
+          billable_hours: number
+          created_at: string
+          description: string | null
+          end_date: string
+          generated_at: string
+          id: string
+          project_ids: string[] | null
+          report_data: Json | null
+          report_type: string
+          start_date: string
+          team_ids: string[] | null
+          title: string
+          total_cost: number | null
+          total_hours: number
+          user_id: string
+        }
+        Insert: {
+          billable_hours?: number
+          created_at?: string
+          description?: string | null
+          end_date: string
+          generated_at?: string
+          id?: string
+          project_ids?: string[] | null
+          report_data?: Json | null
+          report_type: string
+          start_date: string
+          team_ids?: string[] | null
+          title: string
+          total_cost?: number | null
+          total_hours?: number
+          user_id: string
+        }
+        Update: {
+          billable_hours?: number
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          generated_at?: string
+          id?: string
+          project_ids?: string[] | null
+          report_data?: Json | null
+          report_type?: string
+          start_date?: string
+          team_ids?: string[] | null
+          title?: string
+          total_cost?: number | null
+          total_hours?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -313,6 +433,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      work_sessions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_hours: number
+          created_at: string
+          id: string
+          notes: string | null
+          overtime_hours: number
+          project_id: string | null
+          session_date: string
+          status: string
+          submitted_at: string | null
+          team_id: string | null
+          total_hours: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_hours?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number
+          project_id?: string | null
+          session_date: string
+          status?: string
+          submitted_at?: string | null
+          team_id?: string | null
+          total_hours?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_hours?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number
+          project_id?: string | null
+          session_date?: string
+          status?: string
+          submitted_at?: string | null
+          team_id?: string | null
+          total_hours?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

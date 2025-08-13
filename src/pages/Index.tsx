@@ -19,6 +19,7 @@ import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { SecurityStatus } from '@/components/SecurityStatus';
 import { DataMigrationModal } from '@/components/DataMigrationModal';
 import { DataExportModal } from '@/components/DataExportModal';
+import TimeTrackingView from '@/components/TimeTrackingView';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Project } from '@/types/project';
 import { supabase } from '@/integrations/supabase/client';
@@ -218,12 +219,13 @@ const Index = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <TabsList className="grid w-full grid-cols-9 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
               <TabsTrigger value="projects">Projekt</TabsTrigger>
               <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
               <TabsTrigger value="teams">Team</TabsTrigger>
               <TabsTrigger value="files">Filer</TabsTrigger>
               <TabsTrigger value="planning">Planering</TabsTrigger>
+              <TabsTrigger value="timetracking">⏱️ Tidsrapporter</TabsTrigger>
               <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
               <TabsTrigger value="security">🔒 Säkerhet</TabsTrigger>
               <TabsTrigger value="notifications">
@@ -285,6 +287,10 @@ const Index = () => {
                 onUpdateTrailer={updateScaffolding}
                 onAddNotifications={addNotifications}
               />
+            </TabsContent>
+
+            <TabsContent value="timetracking" className="space-y-6">
+              <TimeTrackingView />
             </TabsContent>
 
             <TabsContent value="material" className="space-y-6">
