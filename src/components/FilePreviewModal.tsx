@@ -27,22 +27,34 @@ export function FilePreviewModal({ file, isOpen, onClose }: FilePreviewModalProp
         // Check if it's a Supabase storage URL
         if (file.url.includes('supabase') && file.url.includes('/storage/v1/object/')) {
           // Extract bucket and path from the URL
+          // Expected format: https://[project].supabase.co/storage/v1/object/public/[bucket]/[path]
           const urlParts = file.url.split('/storage/v1/object/');
           if (urlParts.length > 1) {
-            const pathParts = urlParts[1].split('/');
-            const bucket = pathParts[0];
-            const filePath = pathParts.slice(1).join('/');
+            const pathWithPublic = urlParts[1];
+            // Remove 'public/' prefix if it exists
+            const pathParts = pathWithPublic.startsWith('public/') 
+              ? pathWithPublic.substring(7).split('/') 
+              : pathWithPublic.split('/');
             
-            // Generate signed URL for private buckets
-            const { data, error } = await supabase.storage
-              .from(bucket)
-              .createSignedUrl(filePath, 3600); // 1 hour expiry
-            
-            if (error) {
-              console.error('Error creating signed URL:', error);
-              setFileUrl(file.url); // Fallback to original URL
+            if (pathParts.length > 0) {
+              const bucket = pathParts[0];
+              const filePath = pathParts.slice(1).join('/');
+              
+              console.log('Trying to create signed URL for bucket:', bucket, 'path:', filePath);
+              
+              // Generate signed URL for private buckets
+              const { data, error } = await supabase.storage
+                .from(bucket)
+                .createSignedUrl(filePath, 3600); // 1 hour expiry
+              
+              if (error) {
+                console.error('Error creating signed URL:', error);
+                setFileUrl(file.url); // Fallback to original URL
+              } else {
+                setFileUrl(data.signedUrl);
+              }
             } else {
-              setFileUrl(data.signedUrl);
+              setFileUrl(file.url);
             }
           } else {
             setFileUrl(file.url);
