@@ -267,17 +267,19 @@ export const PhotoVerification: React.FC<PhotoVerificationProps> = ({
 
       {!capturedPhoto && (
         <>
+          {/* Always render video element, but show/hide the UI */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`w-full h-64 object-cover rounded-lg border bg-black ${isCameraActive ? '' : 'hidden'}`}
+            style={{ transform: 'scaleX(-1)' }} // Mirror the video like a selfie
+          />
+
           {isCameraActive && (
             <div className="space-y-4">
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-64 object-cover rounded-lg border bg-black"
-                  style={{ transform: 'scaleX(-1)' }} // Mirror the video like a selfie
-                />
+              <div className="relative -mt-64 h-64">
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <Button 
                     onClick={capturePhoto} 
