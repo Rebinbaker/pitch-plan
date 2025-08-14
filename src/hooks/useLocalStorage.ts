@@ -35,8 +35,8 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
-    // Force migration flag - set to true to force re-migration
-    const FORCE_MIGRATION = true;
+    // Force migration flag - set to false after initial migration
+    const FORCE_MIGRATION = false;
     
     if (FORCE_MIGRATION) {
       console.log('FORCE MIGRATION: Clearing localStorage to force re-migration');
@@ -134,6 +134,15 @@ export const useLocalStorage = () => {
             })
           };
           console.log('MIGRATION: Final migrated workPhases:', migratedProject.workPhases);
+        }
+        
+        // After migration, check if project should be completed based on completion percentage
+        if (migratedProject.completionPercentage === 100 && migratedProject.status !== 'completed') {
+          console.log('MIGRATION: Auto-completing project due to 100% completion:', migratedProject.name);
+          migratedProject = {
+            ...migratedProject,
+            status: 'completed' as const,
+          };
         }
         
         console.log('MIGRATION: Updated project:', migratedProject.name, 'with', migratedProject.workPhases.length, 'work phases');
