@@ -66,7 +66,9 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
         align="start" 
         sideOffset={15}
         avoidCollisions={true}
-        hideWhenDetached={true}
+        hideWhenDetached={false}
+        collisionBoundary={typeof window !== 'undefined' ? window.document.documentElement : undefined}
+        sticky="always"
       >
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
