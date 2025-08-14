@@ -133,13 +133,62 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
-            <span className="font-medium">{project.completionPercentage}%</span>
+            {(() => {
+              // Calculate real-time completion percentage
+              const checklistWeight = (project.checklist || [])
+                .filter(item => item.completed)
+                .reduce((sum, item) => sum + (item.weight || 0), 0);
+              const workPhasesWeight = (project.workPhases || [])
+                .filter(phase => phase.completed)
+                .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+              const totalCompletedWeight = checklistWeight + workPhasesWeight;
+              
+              const checklistTotalWeight = (project.checklist || []).reduce((sum, item) => sum + (item.weight || 0), 0);
+              const workPhasesTotalWeight = (project.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+              const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+              
+              const realTimeCompletion = totalWeight > 0 ? 
+                (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
+              
+              console.log(`REAL-TIME COMPLETION DEBUG: ${project.name}`, {
+                storedCompletion: project.completionPercentage,
+                realTimeCompletion,
+                checklistWeight,
+                workPhasesWeight,
+                totalCompletedWeight,
+                totalWeight,
+                checklistCompleted: (project.checklist || []).filter(item => item.completed).length,
+                workPhasesCompleted: (project.workPhases || []).filter(phase => phase.completed).length
+              });
+              
+              return <span className="font-medium">{realTimeCompletion}%</span>;
+            })()}
           </div>
           <div className="w-full bg-secondary rounded-full h-2">
-            <div 
-              className="bg-gradient-primary h-2 rounded-full transition-smooth" 
-              style={{ width: `${project.completionPercentage}%` }}
-            />
+            {(() => {
+              // Use real-time calculation for progress bar too
+              const checklistWeight = (project.checklist || [])
+                .filter(item => item.completed)
+                .reduce((sum, item) => sum + (item.weight || 0), 0);
+              const workPhasesWeight = (project.workPhases || [])
+                .filter(phase => phase.completed)
+                .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+              const totalCompletedWeight = checklistWeight + workPhasesWeight;
+              
+              const checklistTotalWeight = (project.checklist || []).reduce((sum, item) => sum + (item.weight || 0), 0);
+              const workPhasesTotalWeight = (project.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+              const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+              
+              const realTimeCompletion = totalWeight > 0 ? 
+                (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
+              
+              return (
+                <div 
+                  className="bg-gradient-primary h-2 rounded-full transition-smooth" 
+                  style={{ width: `${realTimeCompletion}%` }}
+                />
+              );
+            })()}
           </div>
           <div className="text-xs text-muted-foreground">
             {formatDaysRemaining(calculateRemainingTime(project).workersRemainingDays)}
