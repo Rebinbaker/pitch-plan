@@ -95,9 +95,11 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
     }, 100);
   };
 
-  const handleClick = () => {
-    // Force hide when clicking on content
-    setIsVisible(false);
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    // Only hide if clicking on the background, not on interactive elements
+    if (e.target === e.currentTarget) {
+      setIsVisible(false);
+    }
   };
 
   useEffect(() => {
@@ -140,7 +142,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
+      onClick={handleBackgroundClick}
     >
       <Card className="border shadow-lg bg-background">
         <CardHeader className="pb-3">
