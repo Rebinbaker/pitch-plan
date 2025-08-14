@@ -95,6 +95,11 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
     }, 100);
   };
 
+  const handleClick = () => {
+    // Force hide when clicking on content
+    setIsVisible(false);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (isVisible) calculatePosition();
@@ -135,6 +140,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
     >
       <Card className="border shadow-lg bg-background">
         <CardHeader className="pb-3">
