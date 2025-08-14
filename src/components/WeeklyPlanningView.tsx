@@ -581,7 +581,7 @@ function DroppableColumn({ id, title, count, color, icon: Icon, children }: Drop
           {title} ({count})
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 min-h-[200px]">
+      <CardContent className="space-y-3 min-h-[200px] overflow-visible">
         {children}
       </CardContent>
     </Card>
@@ -810,7 +810,7 @@ function CalendarView({ projects, startOfWeek, onViewDetails }: CalendarViewProp
         const isToday = day.toDateString() === new Date().toDateString();
         
         return (
-          <Card key={index} className={`min-h-[300px] ${isToday ? 'ring-2 ring-primary' : ''}`}>
+          <Card key={index} className={`min-h-[300px] overflow-visible ${isToday ? 'ring-2 ring-primary' : ''}`}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-center">
                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
@@ -1032,7 +1032,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 will-change-auto"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 will-change-auto overflow-visible"
              style={{ transform: 'translateZ(0)' }} // Force hardware acceleration
         >
           {weeks.map((week, index) => (

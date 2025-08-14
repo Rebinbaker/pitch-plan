@@ -6,6 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { MapPin, Calendar, Clock, User, Users, Truck, Package, CheckCircle, AlertCircle } from 'lucide-react';
 import { Project, ProjectStatus } from '@/types/project';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { WeatherDisplay } from './WeatherDisplay';
 
 interface ProjectHoverCardProps {
   project: Project;
@@ -59,7 +60,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
       <HoverCardTrigger asChild>
         {children}
       </HoverCardTrigger>
-      <HoverCardContent className="w-96 p-0" side="right" align="start">
+      <HoverCardContent className="w-96 p-0 z-50" side="right" align="start" sideOffset={10}>
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
@@ -161,6 +162,22 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
                 <div className="text-sm text-muted-foreground">
                   {project.workPhases.filter(phase => phase.completed).length} av {project.workPhases.length} klara
                 </div>
+              </div>
+            )}
+
+            {/* Weather Information */}
+            {(project.constructionStartWeek || project.bygg_start_vecka) && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  Väder för vecka {project.constructionStartWeek || project.bygg_start_vecka}
+                </div>
+                <WeatherDisplay 
+                  address={project.address}
+                  startWeek={project.constructionStartWeek || project.bygg_start_vecka}
+                  compact={true}
+                  className="border border-border/50 rounded-lg p-2 bg-muted/10"
+                />
               </div>
             )}
           </CardContent>
