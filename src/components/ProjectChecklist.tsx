@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,17 @@ export function ProjectChecklist({
     console.log('RETURNING NULL - no saved material answer found');
     return null;
   });
+
+  // Update materialAnswer when project.avvaratMaterial changes (e.g., after data load)
+  useEffect(() => {
+    if (project?.avvaratMaterial?.hasLeftoverMaterial === true && materialAnswer !== 'yes') {
+      console.log('SYNC: Updating materialAnswer to YES from project data');
+      setMaterialAnswer('yes');
+    } else if (project?.avvaratMaterial?.hasLeftoverMaterial === false && materialAnswer !== 'no') {
+      console.log('SYNC: Updating materialAnswer to NO from project data');
+      setMaterialAnswer('no');
+    }
+  }, [project?.avvaratMaterial?.hasLeftoverMaterial, materialAnswer]);
 
   // Check if all work phases are confirmed (completed + inspection confirmed)
   const allWorkPhasesConfirmed = project ? areAllWorkPhasesConfirmed(project.workPhases || []) : false;
