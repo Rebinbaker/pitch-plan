@@ -23,30 +23,40 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('WEATHER USEEFFECT DEBUG: useEffect triggered with:', { region, address, startWeek });
+    
     let isMounted = true;
 
     const fetchWeather = async () => {
+      console.log('WEATHER USEEFFECT DEBUG: fetchWeather called');
       try {
         setLoading(true);
         setError(null);
         
         // Use address if provided, otherwise fall back to region
         const locationParam = address || region;
+        console.log('WEATHER USEEFFECT DEBUG: locationParam:', locationParam);
+        
         if (!locationParam) {
+          console.log('WEATHER USEEFFECT DEBUG: No location param, setting error');
           setError('Ingen adress eller region angiven');
           return;
         }
         
+        console.log('WEATHER USEEFFECT DEBUG: Calling fetchWeatherForProject with:', locationParam, startWeek);
         const weatherData = await fetchWeatherForProject(locationParam, startWeek);
         
         if (isMounted) {
           if (weatherData) {
+            console.log('WEATHER USEEFFECT DEBUG: Successfully got weather data');
             setWeather(weatherData);
           } else {
+            console.log('WEATHER USEEFFECT DEBUG: No weather data returned');
             setError('Kunde inte hämta väderdata');
           }
         }
       } catch (err) {
+        console.log('WEATHER USEEFFECT DEBUG: Error in fetchWeather:', err);
         if (isMounted) {
           setError('Fel vid hämtning av väderdata');
           console.error('Weather fetch error:', err);
