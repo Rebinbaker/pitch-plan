@@ -15,8 +15,11 @@ const SMHI_FORECAST_URL = 'https://opendata-download-metfcst.smhi.se/api/categor
 
 // Function to extract city from address
 function extractCityFromAddress(address: string): string {
+  console.log('WEATHER DEBUG: Extracting city from address:', address);
+  
   // Split by common delimiters and look for postal code pattern
   const parts = address.split(/[,\s]+/);
+  console.log('WEATHER DEBUG: Address parts:', parts);
   
   // Look for 5-digit postal code followed by city name
   for (let i = 0; i < parts.length - 1; i++) {
@@ -24,7 +27,9 @@ function extractCityFromAddress(address: string): string {
       // Found postal code, next part should be city
       const city = parts[i + 1];
       if (city && city.length > 1) {
-        return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+        const extractedCity = city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+        console.log('WEATHER DEBUG: Found city after postal code:', extractedCity);
+        return extractedCity;
       }
     }
   }
@@ -32,17 +37,22 @@ function extractCityFromAddress(address: string): string {
   // Alternative: look for city name at the end without postal code
   const lastPart = parts[parts.length - 1];
   if (lastPart && lastPart.length > 2 && !(/^\d+$/.test(lastPart))) {
-    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1).toLowerCase();
+    const extractedCity = lastPart.charAt(0).toUpperCase() + lastPart.slice(1).toLowerCase();
+    console.log('WEATHER DEBUG: Found city as last part:', extractedCity);
+    return extractedCity;
   }
   
   // More aggressive parsing: look for any word that could be a city
   for (let i = parts.length - 1; i >= 0; i--) {
     const part = parts[i];
     if (part && part.length > 2 && !(/^\d+$/.test(part)) && !(/^(gatan|vägen|torget)$/i.test(part))) {
-      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      const extractedCity = part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      console.log('WEATHER DEBUG: Found city via aggressive parsing:', extractedCity);
+      return extractedCity;
     }
   }
   
+  console.log('WEATHER DEBUG: No city found, using Stockholm fallback');
   return 'Stockholm'; // Default fallback
 }
 
@@ -83,34 +93,43 @@ export async function fetchWeatherForProject(
   regionOrAddress: Region | string, 
   startWeek?: string
 ): Promise<WeatherForecast | null> {
+  console.log('WEATHER DEBUG: fetchWeatherForProject called with:', { regionOrAddress, startWeek });
+  
   try {
     // Determine if it's an address or region
     let city: string;
     
     if (typeof regionOrAddress === 'string' && regionOrAddress.includes(' ')) {
       // It's an address, extract city
+      console.log('WEATHER DEBUG: Treating as address');
       city = extractCityFromAddress(regionOrAddress);
     } else {
       // It's a region
+      console.log('WEATHER DEBUG: Treating as region');
       city = regionOrAddress as string;
     }
     
+    console.log('WEATHER DEBUG: Final city determined:', city);
+    
     // Get coordinates for the city with fallback support
     const { lat, lon, actualCity } = findCityCoordinates(city);
+    console.log('WEATHER DEBUG: Coordinates found:', { lat, lon, actualCity });
     
-    const response = await fetch(
-      `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`
-    );
+    const url = `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`;
+    console.log('WEATHER DEBUG: Fetching from URL:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
-      console.error('SMHI API error:', response.status);
+      console.error('WEATHER DEBUG: SMHI API error:', response.status);
       return null;
     }
 
     const data = await response.json();
+    console.log('WEATHER DEBUG: Successfully fetched weather data');
     return processSMHIData(data, actualCity, { lat, lon }, startWeek);
   } catch (error) {
-    console.error('Error fetching weather data:', error);
+    console.error('WEATHER DEBUG: Error fetching weather data:', error);
     return null;
   }
 }
