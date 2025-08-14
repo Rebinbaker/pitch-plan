@@ -29,13 +29,54 @@ function extractCityFromAddress(address: string): string {
     }
   }
   
-  // Fallback: take the last meaningful part
+  // Alternative: look for city name at the end without postal code
   const lastPart = parts[parts.length - 1];
-  if (lastPart && lastPart.length > 2) {
+  if (lastPart && lastPart.length > 2 && !(/^\d+$/.test(lastPart))) {
     return lastPart.charAt(0).toUpperCase() + lastPart.slice(1).toLowerCase();
   }
   
+  // More aggressive parsing: look for any word that could be a city
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+    if (part && part.length > 2 && !(/^\d+$/.test(part)) && !(/^(gatan|vägen|torget)$/i.test(part))) {
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }
+  }
+  
   return 'Stockholm'; // Default fallback
+}
+
+// Function to find closest city coordinates
+function findCityCoordinates(city: string): { lat: number; lon: number; actualCity: string } {
+  // Direct match
+  if (CITY_COORDINATES[city as keyof typeof CITY_COORDINATES]) {
+    return {
+      ...CITY_COORDINATES[city as keyof typeof CITY_COORDINATES],
+      actualCity: city
+    };
+  }
+  
+  // Case insensitive search
+  const cityLower = city.toLowerCase();
+  for (const [knownCity, coords] of Object.entries(CITY_COORDINATES)) {
+    if (knownCity.toLowerCase() === cityLower) {
+      return { ...coords, actualCity: knownCity };
+    }
+  }
+  
+  // Partial match search
+  for (const [knownCity, coords] of Object.entries(CITY_COORDINATES)) {
+    if (knownCity.toLowerCase().includes(cityLower) || cityLower.includes(knownCity.toLowerCase())) {
+      return { ...coords, actualCity: knownCity };
+    }
+  }
+  
+  // Fallback to Stockholm
+  console.warn(`City '${city}' not found, using Stockholm as fallback`);
+  return {
+    ...CITY_COORDINATES['Stockholm'],
+    actualCity: 'Stockholm (fallback)'
+  };
 }
 
 export async function fetchWeatherForProject(
@@ -45,7 +86,6 @@ export async function fetchWeatherForProject(
   try {
     // Determine if it's an address or region
     let city: string;
-    let coordinates: { lat: number; lon: number };
     
     if (typeof regionOrAddress === 'string' && regionOrAddress.includes(' ')) {
       // It's an address, extract city
@@ -55,17 +95,11 @@ export async function fetchWeatherForProject(
       city = regionOrAddress as string;
     }
     
-    // Get coordinates for the city
-    coordinates = CITY_COORDINATES[city as keyof typeof CITY_COORDINATES];
-    if (!coordinates) {
-      // Fallback to Stockholm if city not found
-      console.warn(`City '${city}' not found, using Stockholm as fallback`);
-      coordinates = CITY_COORDINATES['Stockholm'];
-      city = 'Stockholm';
-    }
+    // Get coordinates for the city with fallback support
+    const { lat, lon, actualCity } = findCityCoordinates(city);
     
     const response = await fetch(
-      `${SMHI_FORECAST_URL}/lon/${coordinates.lon}/lat/${coordinates.lat}/data.json`
+      `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`
     );
     
     if (!response.ok) {
@@ -74,7 +108,7 @@ export async function fetchWeatherForProject(
     }
 
     const data = await response.json();
-    return processSMHIData(data, city, coordinates, startWeek);
+    return processSMHIData(data, actualCity, { lat, lon }, startWeek);
   } catch (error) {
     console.error('Error fetching weather data:', error);
     return null;
