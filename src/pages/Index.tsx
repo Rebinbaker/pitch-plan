@@ -228,10 +228,10 @@ const Index = () => {
               <TabsTrigger value="teams">Team</TabsTrigger>
               <TabsTrigger value="files">Filer</TabsTrigger>
               <TabsTrigger value="planning">Planering</TabsTrigger>
-              <TabsTrigger value="timetracking">⏱️ Tidsrapporter</TabsTrigger>
-              <TabsTrigger value="material-orders">📦 Materialbeställningar</TabsTrigger>
-              <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
-              <TabsTrigger value="security">🔒 Säkerhet</TabsTrigger>
+              <TabsTrigger value="timetracking">Tidsrapporter</TabsTrigger>
+              <TabsTrigger value="material-orders">Materialbeställningar</TabsTrigger>
+              <TabsTrigger value="material">Avvarat Material</TabsTrigger>
+              <TabsTrigger value="security">Säkerhet</TabsTrigger>
               <TabsTrigger value="notifications">
                 Meddelanden
                 {notifications.filter(n => !n.isRead).length > 0 && (
