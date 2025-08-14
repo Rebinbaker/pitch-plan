@@ -8,13 +8,14 @@ import { fetchWeatherForProject, getWeatherIcon, getWorkSuitabilityColor, getRis
 import { CloudRain, Wind, Thermometer, Droplets, AlertTriangle, Eye } from 'lucide-react';
 
 interface WeatherDisplayProps {
-  region: Region;
+  region?: Region;
+  address?: string;
   startWeek?: string;
   compact?: boolean;
   className?: string;
 }
 
-export function WeatherDisplay({ region, startWeek, compact = false, className = '' }: WeatherDisplayProps) {
+export function WeatherDisplay({ region, address, startWeek, compact = false, className = '' }: WeatherDisplayProps) {
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,15 @@ export function WeatherDisplay({ region, startWeek, compact = false, className =
       try {
         setLoading(true);
         setError(null);
-        const weatherData = await fetchWeatherForProject(region, startWeek);
+        
+        // Use address if provided, otherwise fall back to region
+        const locationParam = address || region;
+        if (!locationParam) {
+          setError('Ingen adress eller region angiven');
+          return;
+        }
+        
+        const weatherData = await fetchWeatherForProject(locationParam, startWeek);
         
         if (isMounted) {
           if (weatherData) {
@@ -52,7 +61,7 @@ export function WeatherDisplay({ region, startWeek, compact = false, className =
     return () => {
       isMounted = false;
     };
-  }, [region, startWeek]);
+  }, [region, address, startWeek]);
 
   if (loading) {
     return (
@@ -97,10 +106,11 @@ export function WeatherDisplay({ region, startWeek, compact = false, className =
         </DialogTrigger>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Väderprognos för {region} - {startWeek}</DialogTitle>
+            <DialogTitle>Väderprognos för {weather.location} - {startWeek}</DialogTitle>
           </DialogHeader>
           <WeatherDisplay 
-            region={region} 
+            region={region}
+            address={address}
             startWeek={startWeek} 
             compact={false} 
             className=""
@@ -116,7 +126,7 @@ export function WeatherDisplay({ region, startWeek, compact = false, className =
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Väderprognos - {region}</h3>
+            <h3 className="font-semibold">Väderprognos - {weather.location}</h3>
             <Badge className={getRiskLevelColor(weather.current.riskLevel)}>
               {getRiskLevelText(weather.current.riskLevel)}
             </Badge>

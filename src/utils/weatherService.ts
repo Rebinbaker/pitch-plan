@@ -6,16 +6,64 @@ import {
   WeatherRiskLevel, 
   WorkSuitability,
   WeatherWarning,
-  REGION_COORDINATES 
+  CITY_COORDINATES 
 } from '@/types/weather';
 import { addDays, format, parseISO } from 'date-fns';
 
 // SMHI API endpoints
 const SMHI_FORECAST_URL = 'https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point';
 
-export async function fetchWeatherForProject(region: Region, startWeek?: string): Promise<WeatherForecast | null> {
+// Function to extract city from address
+function extractCityFromAddress(address: string): string {
+  // Split by common delimiters and look for postal code pattern
+  const parts = address.split(/[,\s]+/);
+  
+  // Look for 5-digit postal code followed by city name
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (/^\d{3}\s?\d{2}$/.test(parts[i])) {
+      // Found postal code, next part should be city
+      const city = parts[i + 1];
+      if (city && city.length > 1) {
+        return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+      }
+    }
+  }
+  
+  // Fallback: take the last meaningful part
+  const lastPart = parts[parts.length - 1];
+  if (lastPart && lastPart.length > 2) {
+    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1).toLowerCase();
+  }
+  
+  return 'Stockholm'; // Default fallback
+}
+
+export async function fetchWeatherForProject(
+  regionOrAddress: Region | string, 
+  startWeek?: string
+): Promise<WeatherForecast | null> {
   try {
-    const coordinates = REGION_COORDINATES[region];
+    // Determine if it's an address or region
+    let city: string;
+    let coordinates: { lat: number; lon: number };
+    
+    if (typeof regionOrAddress === 'string' && regionOrAddress.includes(' ')) {
+      // It's an address, extract city
+      city = extractCityFromAddress(regionOrAddress);
+    } else {
+      // It's a region
+      city = regionOrAddress as string;
+    }
+    
+    // Get coordinates for the city
+    coordinates = CITY_COORDINATES[city as keyof typeof CITY_COORDINATES];
+    if (!coordinates) {
+      // Fallback to Stockholm if city not found
+      console.warn(`City '${city}' not found, using Stockholm as fallback`);
+      coordinates = CITY_COORDINATES['Stockholm'];
+      city = 'Stockholm';
+    }
+    
     const response = await fetch(
       `${SMHI_FORECAST_URL}/lon/${coordinates.lon}/lat/${coordinates.lat}/data.json`
     );
@@ -26,7 +74,7 @@ export async function fetchWeatherForProject(region: Region, startWeek?: string)
     }
 
     const data = await response.json();
-    return processSMHIData(data, region, coordinates, startWeek);
+    return processSMHIData(data, city, coordinates, startWeek);
   } catch (error) {
     console.error('Error fetching weather data:', error);
     return null;
@@ -35,7 +83,7 @@ export async function fetchWeatherForProject(region: Region, startWeek?: string)
 
 function processSMHIData(
   smhiData: any, 
-  region: Region, 
+  city: string, 
   coordinates: { lat: number; lon: number },
   startWeek?: string
 ): WeatherForecast {
@@ -66,8 +114,8 @@ function processSMHIData(
   const warnings = generateWeatherWarnings(forecast);
   
   return {
-    location: region,
-    region,
+    location: city,
+    region: city as any, // For backward compatibility
     coordinates,
     current,
     forecast: forecast.slice(0, 7), // Max 7 days

@@ -246,7 +246,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
         {/* Weather Display */}
         {(project.bygg_start_vecka || project.constructionStartWeek) && (
           <WeatherDisplay 
-            region={project.region}
+            address={project.address}
             startWeek={project.bygg_start_vecka || project.constructionStartWeek}
             compact={true}
             className="border border-border/50 rounded-lg p-3 bg-muted/30"
