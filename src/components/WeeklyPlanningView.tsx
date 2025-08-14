@@ -804,7 +804,7 @@ function CalendarView({ projects, startOfWeek, onViewDetails }: CalendarViewProp
   };
 
   return (
-    <div className="grid grid-cols-7 gap-4">
+    <div className="grid grid-cols-7 gap-4 overflow-visible" style={{ isolation: 'auto' }}>
       {days.map((day, index) => {
         const dayProjects = getProjectsForDay(day);
         const isToday = day.toDateString() === new Date().toDateString();
@@ -819,7 +819,7 @@ function CalendarView({ projects, startOfWeek, onViewDetails }: CalendarViewProp
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-2 overflow-visible" style={{ position: 'static' }}>
               {dayProjects.map(project => (
                 <div
                   key={project.id}

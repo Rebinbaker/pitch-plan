@@ -56,11 +56,18 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
   };
 
   return (
-    <HoverCard>
+    <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
         {children}
       </HoverCardTrigger>
-      <HoverCardContent className="w-96 p-0 z-50" side="right" align="start" sideOffset={10}>
+      <HoverCardContent 
+        className="w-96 p-0 z-[9999] bg-background border shadow-lg" 
+        side="right" 
+        align="start" 
+        sideOffset={15}
+        avoidCollisions={true}
+        hideWhenDetached={true}
+      >
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
