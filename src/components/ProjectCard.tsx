@@ -75,6 +75,17 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             </div>
           </div>
           <div className="flex flex-col gap-2">
+            {(() => {
+              console.log(`PROJECT CARD DEBUG: ${project.name}`, {
+                status: project.status,
+                completionPercentage: project.completionPercentage,
+                checklistCompleted: project.checklist?.filter(item => item.completed).length || 0,
+                checklistTotal: project.checklist?.length || 0,
+                workPhasesCompleted: project.workPhases?.filter(phase => phase.completed).length || 0,
+                workPhasesTotal: project.workPhases?.length || 0
+              });
+              return null;
+            })()}
             <Badge variant={getStatusVariant(project.status)}>
               {project.status === 'completed' ? 'Avslutad' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
             </Badge>

@@ -137,6 +137,12 @@ export const useLocalStorage = () => {
         }
         
         // After migration, check if project should be completed based on completion percentage
+        console.log('MIGRATION: Checking completion for project:', migratedProject.name, {
+          completionPercentage: migratedProject.completionPercentage,
+          status: migratedProject.status,
+          shouldAutoComplete: migratedProject.completionPercentage === 100 && migratedProject.status !== 'completed'
+        });
+        
         if (migratedProject.completionPercentage === 100 && migratedProject.status !== 'completed') {
           console.log('MIGRATION: Auto-completing project due to 100% completion:', migratedProject.name);
           migratedProject = {
