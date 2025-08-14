@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { MaterialOrder, Project, MaterialOrderStatus } from '@/types/project';
-import { Package, Search, Filter, Copy, Mail, Edit, Calendar, MapPin, User } from 'lucide-react';
+import { Package, Search, Filter, Copy, Mail, Edit, Calendar, MapPin, User, Calculator } from 'lucide-react';
 import { MaterialOrderModal } from './MaterialOrderModal';
+import { RoofMaterialCalculator } from './RoofMaterialCalculator';
 import { useToast } from '@/hooks/use-toast';
 
 interface MaterialOrdersDashboardProps {
@@ -126,7 +127,14 @@ export function MaterialOrdersDashboard({
           </div>
         </CardHeader>
         <CardContent>
-          {/* Statistics */}
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="overview">Beställningsöversikt</TabsTrigger>
+              <TabsTrigger value="calculator">Automatisk Takberäkning</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              {/* Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
@@ -305,6 +313,28 @@ export function MaterialOrdersDashboard({
               <p>Inga materialbeställningar hittades med de valda filtren.</p>
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="calculator" className="space-y-6">
+              <RoofMaterialCalculator 
+                onAddToOrder={(materials) => {
+                  // Show success message and guide user to create order
+                  toast({
+                    title: "Beräkning klar",
+                    description: `${materials.length} materialposter beräknade. Välj ett projekt i översikten för att skapa beställning.`,
+                  });
+                  console.log('Calculated materials:', materials);
+                }}
+                onSaveTemplate={(template) => {
+                  toast({
+                    title: "Mall sparad",
+                    description: "Takberäkningsmallen har sparats.",
+                  });
+                  console.log('Saving roof calculation template:', template);
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
