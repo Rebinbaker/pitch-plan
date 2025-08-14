@@ -16,6 +16,8 @@ interface WeatherDisplayProps {
 }
 
 export function WeatherDisplay({ region, address, startWeek, compact = false, className = '' }: WeatherDisplayProps) {
+  console.log('WEATHER DISPLAY DEBUG: Component rendered with props:', { region, address, startWeek, compact });
+  
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
