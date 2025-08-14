@@ -35,6 +35,14 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
+    // Force migration flag - set to true to force re-migration
+    const FORCE_MIGRATION = true;
+    
+    if (FORCE_MIGRATION) {
+      console.log('FORCE MIGRATION: Clearing localStorage to force re-migration');
+      localStorage.removeItem(STORAGE_KEYS.PROJECTS);
+    }
+    
     // Migration function to ensure work phases, checklist items and new planning fields
     const migrateProjects = (projects: Project[]): Project[] => {
       console.log('MIGRATION: Starting migration of projects:', projects.length);
@@ -68,6 +76,7 @@ export const useLocalStorage = () => {
         }
         
         // Then migrate work phases if needed
+        console.log('MIGRATION CHECK: workPhases for', migratedProject.name, ':', migratedProject.workPhases);
         if (!migratedProject.workPhases || migratedProject.workPhases.length === 0 || !migratedProject.workPhases[0].id || migratedProject.workPhases[0].completed === undefined) {
           console.log('MIGRATION: Creating new workPhases structure for:', migratedProject.name);
           
@@ -86,18 +95,21 @@ export const useLocalStorage = () => {
             ...migratedProject,
             workPhases: newWorkPhases
           };
+          console.log('MIGRATION: Created workPhases:', newWorkPhases);
         } else {
           // Force migration for all existing projects to ensure correct structure
-          console.log('MIGRATION: Force migrating workPhases for:', migratedProject.name);
+          console.log('MIGRATION: Force migrating workPhases for:', migratedProject.name, 'Current workPhases:', migratedProject.workPhases);
           
           migratedProject = {
             ...migratedProject,
             workPhases: migratedProject.workPhases.map((phase, index) => {
+              console.log('MIGRATION: Checking phase', index, ':', phase);
               // Check if phase has proper structure
               if (!phase.id || phase.completed === undefined) {
+                console.log('MIGRATION: Phase needs migration:', phase);
                 // Use default structure with proper completion state
                 const defaultPhase = defaultWorkPhases[index] || defaultWorkPhases[0];
-                return {
+                const migratedPhase = {
                   ...defaultPhase,
                   id: `workphase-${migratedProject.id}-${index}`,
                   completed: false,
@@ -107,8 +119,11 @@ export const useLocalStorage = () => {
                   comment: undefined,
                   lastReminderSent: undefined,
                 };
+                console.log('MIGRATION: Migrated phase to:', migratedPhase);
+                return migratedPhase;
               }
               
+              console.log('MIGRATION: Phase already has proper structure:', phase);
               // Ensure all required fields exist
               return {
                 ...phase,
@@ -118,6 +133,7 @@ export const useLocalStorage = () => {
               };
             })
           };
+          console.log('MIGRATION: Final migrated workPhases:', migratedProject.workPhases);
         }
         
         console.log('MIGRATION: Updated project:', migratedProject.name, 'with', migratedProject.workPhases.length, 'work phases');
