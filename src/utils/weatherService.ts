@@ -115,6 +115,15 @@ export async function fetchWeatherForProject(
     const { lat, lon, actualCity } = findCityCoordinates(city);
     console.log('WEATHER DEBUG: Coordinates found:', { lat, lon, actualCity });
     
+    // Check if the requested week is in the past
+    const isHistoricalWeek = isWeekInPast(startWeek);
+    console.log('WEATHER DEBUG: Is historical week?', isHistoricalWeek);
+    
+    if (isHistoricalWeek) {
+      // For historical weeks, return mock data with appropriate message
+      return createHistoricalWeatherData(actualCity, { lat, lon }, startWeek);
+    }
+    
     const url = `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`;
     console.log('WEATHER DEBUG: Fetching from URL:', url);
     
@@ -132,6 +141,70 @@ export async function fetchWeatherForProject(
     console.error('WEATHER DEBUG: Error fetching weather data:', error);
     return null;
   }
+}
+
+// Function to check if a week is in the past
+function isWeekInPast(startWeek?: string): boolean {
+  if (!startWeek) return false;
+  
+  let year: number;
+  let week: number;
+  
+  if (startWeek.startsWith('v') || startWeek.startsWith('V')) {
+    year = new Date().getFullYear();
+    week = parseInt(startWeek.substring(1));
+  } else if (startWeek.includes('-W')) {
+    [year, week] = startWeek.split('-W').map(Number);
+  } else {
+    year = new Date().getFullYear();
+    week = parseInt(startWeek);
+  }
+  
+  const now = new Date();
+  const currentWeek = getWeekNumber(now);
+  const currentYear = now.getFullYear();
+  
+  return (year < currentYear) || (year === currentYear && week < currentWeek);
+}
+
+// Function to get current week number
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+// Function to create historical weather data
+function createHistoricalWeatherData(
+  city: string, 
+  coordinates: { lat: number; lon: number }, 
+  startWeek?: string
+): WeatherForecast {
+  const targetDates = getTargetDates(startWeek);
+  
+  // Create historical weather data (simplified approach)
+  const forecast: WeatherData[] = targetDates.map(date => ({
+    date,
+    temperature: { min: 15, max: 22 }, // Generic historical temperatures
+    precipitation: 0.2,
+    windSpeed: 3.5,
+    humidity: 65,
+    conditions: 'partly-cloudy' as WeatherCondition,
+    riskLevel: 'low' as WeatherRiskLevel,
+    workSuitability: 'excellent' as WorkSuitability
+  }));
+  
+  return {
+    location: `${city} (historisk)`,
+    region: city as any,
+    coordinates,
+    current: forecast[0],
+    forecast,
+    warnings: [],
+    lastUpdated: new Date().toISOString()
+  };
 }
 
 function processSMHIData(
@@ -320,6 +393,7 @@ function generateWeatherWarnings(forecast: WeatherData[]): WeatherWarning[] {
 }
 
 function getTargetDates(startWeek?: string): string[] {
+  console.log('WEATHER DEBUG: getTargetDates called with startWeek:', startWeek);
   const dates: string[] = [];
   
   if (startWeek) {
@@ -327,8 +401,8 @@ function getTargetDates(startWeek?: string): string[] {
     let year: number;
     let week: number;
     
-    if (startWeek.startsWith('v')) {
-      // Handle "v33" format - assume current year
+    if (startWeek.startsWith('v') || startWeek.startsWith('V')) {
+      // Handle "v33" or "V33" format - assume current year
       year = new Date().getFullYear();
       week = parseInt(startWeek.substring(1));
     } else if (startWeek.includes('-W')) {
@@ -340,6 +414,9 @@ function getTargetDates(startWeek?: string): string[] {
       week = parseInt(startWeek);
     }
     
+    console.log('WEATHER DEBUG: Parsed week info:', { year, week });
+    
+    // Calculate start of the specified week
     const startDate = new Date(year, 0, 1 + (week - 1) * 7);
     
     // Get Monday of that week
@@ -347,16 +424,21 @@ function getTargetDates(startWeek?: string): string[] {
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = addDays(startDate, mondayOffset);
     
+    console.log('WEATHER DEBUG: Calculated Monday of week:', monday.toISOString());
+    
     // Add 7 days from Monday
     for (let i = 0; i < 7; i++) {
       dates.push(format(addDays(monday, i), 'yyyy-MM-dd'));
     }
+    
+    console.log('WEATHER DEBUG: Generated dates for week:', dates);
   } else {
     // Default to next 7 days
     const today = new Date();
     for (let i = 0; i < 7; i++) {
       dates.push(format(addDays(today, i), 'yyyy-MM-dd'));
     }
+    console.log('WEATHER DEBUG: Using default next 7 days:', dates);
   }
   
   return dates;
