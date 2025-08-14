@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Project } from '@/types/project';
 import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock } from 'lucide-react';
+import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
@@ -241,6 +242,16 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             {formatDaysRemaining(calculateRemainingTime(project).workersRemainingDays)}
           </div>
         </div>
+
+        {/* Weather Display */}
+        {(project.bygg_start_vecka || project.constructionStartWeek) && (
+          <WeatherDisplay 
+            region={project.region}
+            startWeek={project.bygg_start_vecka || project.constructionStartWeek}
+            compact={true}
+            className="border border-border/50 rounded-lg p-3 bg-muted/30"
+          />
+        )}
 
         {/* Assignment Status - Show trailer and team assignments */}
         {onUpdateProject && (
