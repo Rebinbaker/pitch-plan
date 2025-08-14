@@ -255,13 +255,12 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 Väder för vecka {project.constructionStartWeek || project.bygg_start_vecka}
               </div>
-              <WeatherDisplay 
-                address={project.address}
-                startWeek={project.constructionStartWeek || project.bygg_start_vecka}
-                compact={true}
-                className="border border-border/50 rounded-lg p-2 bg-muted/10"
-                onDialogOpen={() => setIsVisible(false)}
-              />
+                <WeatherDisplay 
+                  address={project.address}
+                  startWeek={project.constructionStartWeek || project.bygg_start_vecka}
+                  compact={true}
+                  className="border border-border/50 rounded-lg p-2 bg-muted/10"
+                />
             </div>
           )}
         </CardContent>
