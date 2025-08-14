@@ -547,6 +547,7 @@ Tack! 👷‍♂️`;
               onChecklistUpdate={handleChecklistUpdate}
               startDate={project.startDate}
               project={project}
+              allProjects={projects} // Pass all projects for Linköping inventory
               trailers={trailers}
               teams={teams}
               onUpdateProject={onUpdateProject}

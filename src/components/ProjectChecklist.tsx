@@ -19,6 +19,7 @@ interface ProjectChecklistProps {
   startDate: string;
   isEditable?: boolean;
   project?: Project;
+  allProjects?: Project[]; // Add this to access all projects for Linköping inventory
   trailers?: any[];
   teams?: any[];
   onUpdateProject?: (project: Project) => void;
@@ -32,6 +33,7 @@ export function ProjectChecklist({
   startDate,
   isEditable = true,
   project,
+  allProjects = [], // Default to empty array
   trailers = [],
   teams = [],
   onUpdateProject,
@@ -1397,8 +1399,7 @@ Tack!`);
                           </div>
                           
                           {(() => {
-                            const projects = []; // Will be passed from parent component
-                            const reminder = generateMaterialOrderReminder(projects);
+                            const reminder = generateMaterialOrderReminder(allProjects);
                             
                             if (reminder.availableMaterials.length > 0) {
                               return (
