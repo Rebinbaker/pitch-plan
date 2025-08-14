@@ -95,40 +95,66 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
 
   if (compact) {
     return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <div className={`flex items-center space-x-2 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg p-2 ${className}`}>
-            <span className="text-lg">{getWeatherIcon(weather.current.conditions)}</span>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">
-                {weather.current.temperature.min}°-{weather.current.temperature.max}°C
-              </span>
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getWorkSuitabilityColor(weather.current.workSuitability)}`}
-              >
-                {getWorkSuitabilityText(weather.current.workSuitability)}
-              </Badge>
+      <div className="space-y-2">
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className={`flex items-center space-x-2 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg p-2 ${className}`}>
+              <span className="text-lg">{getWeatherIcon(weather.current.conditions)}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">
+                  {weather.current.temperature.min}°-{weather.current.temperature.max}°C
+                </span>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${getWorkSuitabilityColor(weather.current.workSuitability)}`}
+                >
+                  {getWorkSuitabilityText(weather.current.workSuitability)}
+                </Badge>
+              </div>
+              {weather.warnings.length > 0 && (
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              )}
+              <Eye className="h-3 w-3 text-muted-foreground ml-auto" />
             </div>
-            {weather.warnings.length > 0 && (
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            )}
-            <Eye className="h-3 w-3 text-muted-foreground ml-auto" />
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Väderprognos för {weather.location} - {startWeek}</DialogTitle>
+            </DialogHeader>
+            <WeatherDisplay 
+              region={region}
+              address={address}
+              startWeek={startWeek} 
+              compact={false} 
+              className=""
+            />
+          </DialogContent>
+        </Dialog>
+        
+        {/* Critical weather warning - show directly on card */}
+        {weather.warnings.some(w => w.severity === 'severe') && (
+          <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-1 text-red-700">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-xs font-medium">
+                Kritiskt väder - överväg att flytta projektet
+              </span>
+            </div>
           </div>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Väderprognos för {weather.location} - {startWeek}</DialogTitle>
-          </DialogHeader>
-          <WeatherDisplay 
-            region={region}
-            address={address}
-            startWeek={startWeek} 
-            compact={false} 
-            className=""
-          />
-        </DialogContent>
-      </Dialog>
+        )}
+        
+        {/* Moderate weather warning */}
+        {weather.warnings.some(w => w.severity === 'moderate') && !weather.warnings.some(w => w.severity === 'severe') && (
+          <div className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center space-x-1 text-yellow-700">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-xs font-medium">
+                Vädervarning - försiktighet krävs
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
