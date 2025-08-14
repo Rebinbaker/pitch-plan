@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { WeatherForecast } from '@/types/weather';
 import { Region } from '@/types/project';
 import { fetchWeatherForProject, getWeatherIcon, getWorkSuitabilityColor, getRiskLevelColor } from '@/utils/weatherService';
-import { CloudRain, Wind, Thermometer, Droplets, AlertTriangle } from 'lucide-react';
+import { CloudRain, Wind, Thermometer, Droplets, AlertTriangle, Eye } from 'lucide-react';
 
 interface WeatherDisplayProps {
   region: Region;
@@ -73,23 +74,39 @@ export function WeatherDisplay({ region, startWeek, compact = false, className =
 
   if (compact) {
     return (
-      <div className={`flex items-center space-x-2 ${className}`}>
-        <span className="text-lg">{getWeatherIcon(weather.current.conditions)}</span>
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">
-            {weather.current.temperature.min}°-{weather.current.temperature.max}°C
-          </span>
-          <Badge 
-            variant="outline" 
-            className={`text-xs ${getWorkSuitabilityColor(weather.current.workSuitability)}`}
-          >
-            {getWorkSuitabilityText(weather.current.workSuitability)}
-          </Badge>
-        </div>
-        {weather.warnings.length > 0 && (
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-        )}
-      </div>
+      <Dialog>
+        <DialogTrigger asChild>
+          <div className={`flex items-center space-x-2 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg p-2 ${className}`}>
+            <span className="text-lg">{getWeatherIcon(weather.current.conditions)}</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {weather.current.temperature.min}°-{weather.current.temperature.max}°C
+              </span>
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${getWorkSuitabilityColor(weather.current.workSuitability)}`}
+              >
+                {getWorkSuitabilityText(weather.current.workSuitability)}
+              </Badge>
+            </div>
+            {weather.warnings.length > 0 && (
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            )}
+            <Eye className="h-3 w-3 text-muted-foreground ml-auto" />
+          </div>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Väderprognos för {region} - {startWeek}</DialogTitle>
+          </DialogHeader>
+          <WeatherDisplay 
+            region={region} 
+            startWeek={startWeek} 
+            compact={false} 
+            className=""
+          />
+        </DialogContent>
+      </Dialog>
     );
   }
 
