@@ -87,15 +87,36 @@ export const useLocalStorage = () => {
             workPhases: newWorkPhases
           };
         } else {
-          // If workPhases exist with proper structure, just ensure all required fields exist
+          // Force migration for all existing projects to ensure correct structure
+          console.log('MIGRATION: Force migrating workPhases for:', migratedProject.name);
+          
           migratedProject = {
             ...migratedProject,
-            workPhases: migratedProject.workPhases.map(phase => ({
-              ...phase,
-              requiresDailyInspection: phase.requiresDailyInspection ?? true,
-              imagesReceived: phase.imagesReceived ?? false,
-              inspectionConfirmed: phase.inspectionConfirmed ?? false,
-            }))
+            workPhases: migratedProject.workPhases.map((phase, index) => {
+              // Check if phase has proper structure
+              if (!phase.id || phase.completed === undefined) {
+                // Use default structure with proper completion state
+                const defaultPhase = defaultWorkPhases[index] || defaultWorkPhases[0];
+                return {
+                  ...defaultPhase,
+                  id: `workphase-${migratedProject.id}-${index}`,
+                  completed: false,
+                  completedAt: undefined,
+                  imagesReceived: false,
+                  inspectionConfirmed: false,
+                  comment: undefined,
+                  lastReminderSent: undefined,
+                };
+              }
+              
+              // Ensure all required fields exist
+              return {
+                ...phase,
+                requiresDailyInspection: phase.requiresDailyInspection ?? true,
+                imagesReceived: phase.imagesReceived ?? false,
+                inspectionConfirmed: phase.inspectionConfirmed ?? false,
+              };
+            })
           };
         }
         

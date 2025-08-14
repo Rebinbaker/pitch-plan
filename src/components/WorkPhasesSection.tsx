@@ -324,18 +324,28 @@ Tack! 👷‍♂️`;
       return phase;
     });
 
-    // Calculate new completion percentage based on completed work phases
-    const completedWorkPhases = updatedPhases.filter(phase => phase.completed).length;
-    const newCompletionPercentage = Math.round((completedWorkPhases / updatedPhases.length) * 100);
-
-    // Check if all work phases are completed (100%)
-    const allWorkPhasesCompleted = newCompletionPercentage === 100;
+    // Calculate new completion percentage using the same logic as ProjectChecklist
+    const checklistWeight = (project.checklist || [])
+      .filter(item => item.completed)
+      .reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesWeight = updatedPhases
+      .filter(phase => phase.completed)
+      .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalCompletedWeight = checklistWeight + workPhasesWeight;
     
-    // Check if all checklist items are completed
-    const allChecklistCompleted = project.checklist?.every(item => item.completed) || false;
+    const checklistTotalWeight = (project.checklist || []).reduce((sum, item) => sum + (item.weight || 0), 0);
+    const workPhasesTotalWeight = updatedPhases.reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+    
+    const newCompletionPercentage = totalWeight > 0 ? 
+      (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
+
+    // Check if all work phases are completed AND all checklist items
+    const allWorkPhasesCompleted = updatedPhases.every(phase => phase.completed);
+    const allChecklistCompleted = (project.checklist || []).every(item => item.completed);
     
     // Check if this is the first work phase being completed and status is planned
-    const wasFirstPhaseCompleted = completedWorkPhases === 1 && project.status === 'planned';
+    const wasFirstPhaseCompleted = updatedPhases.filter(phase => phase.completed).length === 1 && project.status === 'planned';
     
     // Auto-complete project if both work phases and checklist are done
     let updatedProject = {
