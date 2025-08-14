@@ -222,8 +222,23 @@ function getTargetDates(startWeek?: string): string[] {
   const dates: string[] = [];
   
   if (startWeek) {
-    // Convert ISO week to dates
-    const [year, week] = startWeek.split('-W').map(Number);
+    // Handle both "v33" and "2025-W33" formats
+    let year: number;
+    let week: number;
+    
+    if (startWeek.startsWith('v')) {
+      // Handle "v33" format - assume current year
+      year = new Date().getFullYear();
+      week = parseInt(startWeek.substring(1));
+    } else if (startWeek.includes('-W')) {
+      // Handle "2025-W33" format
+      [year, week] = startWeek.split('-W').map(Number);
+    } else {
+      // Fallback - assume it's just a week number
+      year = new Date().getFullYear();
+      week = parseInt(startWeek);
+    }
+    
     const startDate = new Date(year, 0, 1 + (week - 1) * 7);
     
     // Get Monday of that week
