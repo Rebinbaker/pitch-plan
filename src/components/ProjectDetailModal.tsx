@@ -604,7 +604,8 @@ Tack! 👷‍♂️`;
                             ?.reduce((sum, p) => sum + (p.weight || 0), 0) || 1;
                           const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
                           
-                          const newCompletionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
+                          const newCompletionPercentage = totalWeight > 0 ? 
+                            (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
                           
                           // Check if all work phases are completed (100%)
                           const allWorkPhasesCompleted = newCompletionPercentage === 100;
