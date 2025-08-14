@@ -244,14 +244,24 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
         </div>
 
         {/* Weather Display */}
-        {(project.bygg_start_vecka || project.constructionStartWeek) && (
-          <WeatherDisplay 
-            address={project.address}
-            startWeek={project.bygg_start_vecka || project.constructionStartWeek}
-            compact={true}
-            className="border border-border/50 rounded-lg p-3 bg-muted/30"
-          />
-        )}
+        {(() => {
+          const shouldShowWeather = !!(project.bygg_start_vecka || project.constructionStartWeek);
+          console.log(`WEATHER RENDER DEBUG: Project ${project.name}`, {
+            bygg_start_vecka: project.bygg_start_vecka,
+            constructionStartWeek: project.constructionStartWeek,
+            shouldShowWeather,
+            address: project.address
+          });
+          
+          return shouldShowWeather && (
+            <WeatherDisplay 
+              address={project.address}
+              startWeek={project.bygg_start_vecka || project.constructionStartWeek}
+              compact={true}
+              className="border border-border/50 rounded-lg p-3 bg-muted/30"
+            />
+          );
+        })()}
 
         {/* Assignment Status - Show trailer and team assignments */}
         {onUpdateProject && (
