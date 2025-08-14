@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,52 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
   const { toast } = useToast();
+
+  // Auto-complete project if it's 100% but still showing as ongoing
+  React.useEffect(() => {
+    if (onUpdateProject) {
+      // Calculate real-time completion
+      const checklistWeight = (project.checklist || [])
+        .filter(item => item.completed)
+        .reduce((sum, item) => sum + (item.weight || 0), 0);
+      const workPhasesWeight = (project.workPhases || [])
+        .filter(phase => phase.completed)
+        .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+      const totalCompletedWeight = checklistWeight + workPhasesWeight;
+      
+      const checklistTotalWeight = (project.checklist || []).reduce((sum, item) => sum + (item.weight || 0), 0);
+      const workPhasesTotalWeight = (project.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+      const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
+      
+      const realTimeCompletion = totalWeight > 0 ? 
+        (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
+      
+      // Auto-complete if 100% and not already completed
+      if (realTimeCompletion === 100 && project.status !== 'completed') {
+        console.log('AUTO-COMPLETING PROJECT:', project.name, 'from status:', project.status);
+        
+        const activityEntry = {
+          id: `activity-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          user: 'System',
+          action: 'Projekt slutfört - alla arbetsmoment och checklistepunkter klara',
+          description: 'status',
+          category: 'status' as const,
+          oldValue: project.status.charAt(0).toUpperCase() + project.status.slice(1),
+          newValue: 'Avslutad'
+        };
+        
+        const updatedProject = {
+          ...project,
+          status: 'completed' as const,
+          completionPercentage: 100,
+          activityLog: [...(project.activityLog || []), activityEntry],
+        };
+        
+        onUpdateProject(updatedProject);
+      }
+    }
+  }, [project, onUpdateProject]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
