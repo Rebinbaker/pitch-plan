@@ -16,6 +16,7 @@ import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
+import { MaterialOrdersDashboard } from '@/components/MaterialOrdersDashboard';
 import { SecurityStatus } from '@/components/SecurityStatus';
 import { DataMigrationModal } from '@/components/DataMigrationModal';
 import { DataExportModal } from '@/components/DataExportModal';
@@ -221,13 +222,14 @@ const Index = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <TabsList className="grid w-full grid-cols-10 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
               <TabsTrigger value="projects">Projekt</TabsTrigger>
               <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
               <TabsTrigger value="teams">Team</TabsTrigger>
               <TabsTrigger value="files">Filer</TabsTrigger>
               <TabsTrigger value="planning">Planering</TabsTrigger>
               <TabsTrigger value="timetracking">⏱️ Tidsrapporter</TabsTrigger>
+              <TabsTrigger value="material-orders">📦 Materialbeställningar</TabsTrigger>
               <TabsTrigger value="material">♻️ Avvarat Material</TabsTrigger>
               <TabsTrigger value="security">🔒 Säkerhet</TabsTrigger>
               <TabsTrigger value="notifications">
@@ -296,6 +298,15 @@ const Index = () => {
 
             <TabsContent value="timetracking" className="space-y-6">
               <TimeTrackingView />
+            </TabsContent>
+
+            <TabsContent value="material-orders" className="space-y-6">
+              <MaterialOrdersDashboard 
+                projects={projects}
+                userRegion={username.includes('linköping') ? 'Linköping' : 'Stockholm'}
+                userRole={(role === 'moderator' ? 'project_manager' : role) || 'user'}
+                onUpdateProject={(project) => updateProject(project)}
+              />
             </TabsContent>
 
             <TabsContent value="material" className="space-y-6">

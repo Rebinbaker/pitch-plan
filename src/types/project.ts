@@ -156,6 +156,9 @@ export interface MaterialOrderItem {
   unit: string; // kvm², st, meter
   notes?: string;
   supplier?: string;
+  supplierName?: string;
+  unitPrice?: number;
+  totalPrice?: number;
   estimatedCost?: number;
 }
 
