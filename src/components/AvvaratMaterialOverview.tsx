@@ -90,9 +90,22 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
   };
 
   const getActionBadge = (action: PlannedAction) => {
-    const variant = action === 'Kasseras' ? 'destructive' : 
-                   action === 'Användas i framtida projekt' ? 'completed' : 'outline';
-    return <Badge variant={variant} className="text-xs">{action}</Badge>;
+    switch (action) {
+      case 'Allokeras till nästa bygge':
+        return <Badge variant="secondary" className="bg-success/20 text-success border-success/30 text-xs">Allokerat</Badge>;
+      case 'Körs till Linköpingsparken':
+        return <Badge variant="secondary" className="bg-warning/20 text-warning-foreground border-warning/30 text-xs">Linköping</Badge>;
+      case 'Transporteras till ställningspark':
+        return <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">Ställningspark</Badge>;
+      case 'Returneras till leverantör':
+        return <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">Returner</Badge>;
+      case 'Kasseras':
+        return <Badge variant="destructive" className="text-xs">Kasseras</Badge>;
+      case 'Annat':
+        return <Badge variant="outline" className="text-xs">Annat</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs">{action}</Badge>;
+    }
   };
 
   return (
@@ -194,13 +207,14 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
               <TableHeader>
                 <TableRow>
                   <TableHead>Datum noterat</TableHead>
-                  <TableHead>Projekt & Adress</TableHead>
-                  <TableHead>Materialtyp</TableHead>
-                  <TableHead>Förvaringsplats</TableHead>
-                  <TableHead>Ansvarig</TableHead>
-                  <TableHead>Planerad åtgärd</TableHead>
-                  <TableHead>Kommentar</TableHead>
-                  <TableHead>Ålder</TableHead>
+                   <TableHead>Projekt & Adress</TableHead>
+                   <TableHead>Materialtyp</TableHead>
+                   <TableHead>Förvaringsplats</TableHead>
+                   <TableHead>Ansvarig</TableHead>
+                   <TableHead>Planerad åtgärd</TableHead>
+                   <TableHead>Allokerat till</TableHead>
+                   <TableHead>Kommentar</TableHead>
+                   <TableHead>Ålder</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -258,13 +272,25 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
                           {material.responsiblePerson || 'N/A'}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {material.plannedAction ? getActionBadge(material.plannedAction) : '-'}
-                      </TableCell>
-                      <TableCell className="text-sm max-w-xs">
-                        <div className="truncate">
-                          {material.comments || '-'}
-                        </div>
+                       <TableCell>
+                         {material.plannedAction ? getActionBadge(material.plannedAction) : '-'}
+                       </TableCell>
+                       <TableCell>
+                         {material.allocatedToProjectName ? (
+                           <div className="flex flex-col gap-1">
+                             <span className="text-sm font-medium">{material.allocatedToProjectName}</span>
+                             <Badge variant="secondary" className="bg-success/20 text-success border-success/30 text-xs w-fit">
+                               Allokerat
+                             </Badge>
+                           </div>
+                         ) : (
+                           <span className="text-sm text-muted-foreground">-</span>
+                         )}
+                       </TableCell>
+                       <TableCell className="text-sm max-w-xs">
+                         <div className="truncate">
+                           {material.comments || '-'}
+                         </div>
                       </TableCell>
                       <TableCell>
                         {material.dateNoted ? getUrgencyBadge(daysOld) : '-'}

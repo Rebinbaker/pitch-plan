@@ -2,7 +2,13 @@ export type ProjectStatus = 'planned' | 'ongoing' | 'completed' | 'invoiced';
 export type Region = 'Stockholm' | 'Västra Götaland';
 export type ROTStatus = 'Yes' | 'No';
 export type StorageLocation = 'Hos kund' | 'Ställningspark' | 'I bil' | 'Montörens garage' | 'Annat';
-export type PlannedAction = 'Användas i framtida projekt' | 'Transporteras till ställningspark' | 'Returneras till leverantör' | 'Kasseras' | 'Annat';
+export type PlannedAction = 
+  | 'Allokeras till nästa bygge' 
+  | 'Körs till Linköpingsparken' 
+  | 'Transporteras till ställningspark' 
+  | 'Returneras till leverantör' 
+  | 'Kasseras' 
+  | 'Annat';
 
 export type MaterialType = 'Takpannor' | 'Underlagsduk' | 'Läkt' | 'Plåtdetaljer' | 'Isolering' | 'Annat';
 
@@ -34,6 +40,8 @@ export interface AvvaratMaterial {
   plannedAction?: PlannedAction;
   customPlannedAction?: string; // For "Annat" option
   comments?: string;
+  allocatedToProjectId?: string; // ID of project this material is allocated to
+  allocatedToProjectName?: string; // Name of project for display
 }
 
 export interface ActivityLogEntry {
@@ -82,6 +90,7 @@ export interface Project {
   scaffoldingResponsible?: string; // Person responsible for scaffolding
   workPhases?: WorkPhaseItem[];
   activityLog?: ActivityLogEntry[];
+  allocatedMaterials?: AllocatedMaterial[]; // Materials allocated from other projects
 }
 
 export interface ChecklistItem {
@@ -137,6 +146,16 @@ export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
   { label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
   { label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
 ];
+
+export interface AllocatedMaterial {
+  id: string;
+  sourceProjectId: string;
+  sourceProjectName: string;
+  materials: MaterialItem[];
+  allocatedAt: string;
+  allocatedBy: string;
+  notes?: string;
+}
 
 // Helper function to check if all work phases are confirmed (completed + inspections confirmed)
 export const areAllWorkPhasesConfirmed = (workPhases: WorkPhaseItem[]): boolean => {

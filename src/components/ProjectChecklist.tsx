@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
+import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectChecklistProps {
@@ -1616,13 +1617,102 @@ Tack!`);
                                   <Plus className="h-3 w-3 mr-1" />
                                   Lägg till material
                                 </Button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                               )}
+                             </div>
+                             
+                             {/* Additional fields section */}
+                             <div className="space-y-3 pt-3 border-t">
+                               <div className="grid grid-cols-2 gap-3">
+                                 <div className="space-y-1">
+                                   <Label className="text-xs">Förvaringsplats</Label>
+                                   <Select
+                                     value={project.avvaratMaterial?.storageLocation || ''}
+                                     onValueChange={(value) => handleMaterialFieldChange('storageLocation', value)}
+                                   >
+                                     <SelectTrigger className="h-7 text-xs">
+                                       <SelectValue placeholder="Välj plats" />
+                                     </SelectTrigger>
+                                     <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                       <SelectItem value="Hos kund">Hos kund</SelectItem>
+                                       <SelectItem value="Ställningspark">Ställningspark</SelectItem>
+                                       <SelectItem value="I bil">I bil</SelectItem>
+                                       <SelectItem value="Montörens garage">Montörens garage</SelectItem>
+                                       <SelectItem value="Annat">Annat</SelectItem>
+                                     </SelectContent>
+                                   </Select>
+                                 </div>
+                                 
+                                 <div className="space-y-1">
+                                   <Label className="text-xs">Datum noterat</Label>
+                                   <Input
+                                     className="h-7 text-xs"
+                                     type="date"
+                                     value={project.avvaratMaterial?.dateNoted || ''}
+                                     onChange={(e) => handleMaterialFieldChange('dateNoted', e.target.value)}
+                                   />
+                                 </div>
+                               </div>
+                               
+                               <div className="space-y-1">
+                                 <Label className="text-xs">Ansvarig person</Label>
+                                 <Input
+                                   className="h-7 text-xs"
+                                   placeholder="Namn på ansvarig person"
+                                   value={project.avvaratMaterial?.responsiblePerson || ''}
+                                   onChange={(e) => handleMaterialFieldChange('responsiblePerson', e.target.value)}
+                                 />
+                               </div>
+                               
+                               <div className="space-y-1">
+                                 <Label className="text-xs">Planerad åtgärd</Label>
+                                 <Select
+                                   value={project.avvaratMaterial?.plannedAction || ''}
+                                   onValueChange={(value) => handleMaterialFieldChange('plannedAction', value)}
+                                 >
+                                   <SelectTrigger className="h-7 text-xs">
+                                     <SelectValue placeholder="Välj åtgärd" />
+                                   </SelectTrigger>
+                                   <SelectContent className="bg-background border border-border shadow-lg z-50">
+                                     <SelectItem value="Allokeras till nästa bygge">Allokeras till nästa bygge</SelectItem>
+                                     <SelectItem value="Körs till Linköpingsparken">Körs till Linköpingsparken</SelectItem>
+                                     <SelectItem value="Transporteras till ställningspark">Transporteras till ställningspark</SelectItem>
+                                     <SelectItem value="Returneras till leverantör">Returneras till leverantör</SelectItem>
+                                     <SelectItem value="Kasseras">Kasseras</SelectItem>
+                                     <SelectItem value="Annat">Annat</SelectItem>
+                                   </SelectContent>
+                                 </Select>
+                               </div>
+                               
+                               {/* Project selection for allocation */}
+                               {project.avvaratMaterial?.plannedAction === 'Allokeras till nästa bygge' && (
+                                 <div className="space-y-1">
+                                   <Label className="text-xs">Välj projekt att allokera till</Label>
+                                   <ProjectAllocationSelect
+                                     currentProjectId={project.id}
+                                     selectedProjectId={project.avvaratMaterial?.allocatedToProjectId}
+                                     onProjectSelect={(projectId, projectName) => {
+                                       handleMaterialFieldChange('allocatedToProjectId', projectId);
+                                       handleMaterialFieldChange('allocatedToProjectName', projectName);
+                                     }}
+                                   />
+                                 </div>
+                               )}
+                               
+                               <div className="space-y-1">
+                                 <Label className="text-xs">Kommentarer</Label>
+                                 <Input
+                                   className="h-7 text-xs"
+                                   placeholder="Ytterligare kommentarer"
+                                   value={project.avvaratMaterial?.comments || ''}
+                                   onChange={(e) => handleMaterialFieldChange('comments', e.target.value)}
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     )}
+                   </div>
                   
                   {isItemComplete ? (
                     <CheckCircle2 className="w-5 h-5 text-success" />
