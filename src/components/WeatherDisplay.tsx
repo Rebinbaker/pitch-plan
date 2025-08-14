@@ -133,6 +133,7 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
               startWeek={startWeek} 
               compact={false} 
               className=""
+              onDialogOpen={onDialogOpen}
             />
           </DialogContent>
         </Dialog>
