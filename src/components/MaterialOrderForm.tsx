@@ -9,9 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MaterialOrder, MaterialOrderItem, MaterialType, Project, getMaterialUnit, MaterialItem } from '@/types/project';
 import { Plus, Trash2, Package, Copy, Mail, Save, Send, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MaterialOrderTemplates } from './MaterialOrderTemplates';
+import { MaterialCostCalculator } from './MaterialCostCalculator';
+import { MaterialOrderAnalytics } from './MaterialOrderAnalytics';
 
 interface MaterialOrderFormProps {
   project: Project;
@@ -64,7 +68,25 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
     setItems(items.filter(item => item.id !== id));
   };
 
-  const updateItem = (id: string, field: keyof MaterialOrderItem, value: any) => {
+  const updateItem = (id: string, updates: Partial<MaterialOrderItem>) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        const updated = { ...item, ...updates };
+        // Update unit when material type changes
+        if (updates.materialType) {
+          updated.unit = getMaterialUnit(updates.materialType as MaterialType);
+        }
+        // Calculate total price if unitPrice and quantity are available
+        if (updated.unitPrice && updated.quantity) {
+          updated.totalPrice = updated.unitPrice * updated.quantity;
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const updateItemField = (id: string, field: keyof MaterialOrderItem, value: any) => {
     setItems(items.map(item => {
       if (item.id === id) {
         const updated = { ...item, [field]: value };
@@ -76,6 +98,15 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
       }
       return item;
     }));
+  };
+
+  const applyTemplate = (templateItems: MaterialOrderItem[]) => {
+    setItems(templateItems);
+  };
+
+  const saveTemplate = (template: Omit<any, 'id'>) => {
+    // This would save to localStorage or database in a real implementation
+    console.log('Saving template:', template);
   };
 
   const handleSalvagedMaterialToggle = (material: MaterialItem & { sourceProject: string; sourceProjectId: string }, checked: boolean) => {
@@ -223,7 +254,16 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
             Adress: {project.address}
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
+          <Tabs defaultValue="order" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="order">Beställning</TabsTrigger>
+              <TabsTrigger value="templates">Mallar</TabsTrigger>
+              <TabsTrigger value="calculator">Kalkyl</TabsTrigger>
+              <TabsTrigger value="analytics">Statistik</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="order" className="space-y-6">
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             <Label>Status:</Label>
@@ -296,7 +336,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
                     <Label htmlFor={`material-${item.id}`}>Materialtyp</Label>
                     <Select
                       value={item.materialType}
-                      onValueChange={(value) => updateItem(item.id, 'materialType', value)}
+                      onValueChange={(value) => updateItemField(item.id, 'materialType', value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -314,7 +354,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
                       <Input
                         placeholder="Ange materialtyp"
                         value={item.customMaterialType || ''}
-                        onChange={(e) => updateItem(item.id, 'customMaterialType', e.target.value)}
+                        onChange={(e) => updateItemField(item.id, 'customMaterialType', e.target.value)}
                         className="mt-2"
                       />
                     )}
@@ -327,7 +367,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
                         id={`quantity-${item.id}`}
                         type="number"
                         value={item.quantity}
-                        onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                        onChange={(e) => updateItemField(item.id, 'quantity', Number(e.target.value))}
                         min="0"
                         step="0.1"
                       />
@@ -343,7 +383,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
                       id={`cost-${item.id}`}
                       type="number"
                       value={item.estimatedCost || ''}
-                      onChange={(e) => updateItem(item.id, 'estimatedCost', Number(e.target.value))}
+                      onChange={(e) => updateItemField(item.id, 'estimatedCost', Number(e.target.value))}
                       min="0"
                       placeholder="0"
                     />
@@ -366,7 +406,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
                   <Input
                     id={`notes-${item.id}`}
                     value={item.notes || ''}
-                    onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
+                    onChange={(e) => updateItemField(item.id, 'notes', e.target.value)}
                     placeholder="T.ex. färg, modell, leverantör..."
                   />
                 </div>
@@ -416,6 +456,28 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
               Öppna i Outlook
             </Button>
           </div>
+            </TabsContent>
+
+            <TabsContent value="templates">
+              <MaterialOrderTemplates 
+                onApplyTemplate={applyTemplate}
+                onSaveTemplate={saveTemplate}
+              />
+            </TabsContent>
+
+            <TabsContent value="calculator">
+              <MaterialCostCalculator 
+                items={items}
+                onUpdateItem={updateItem}
+              />
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <MaterialOrderAnalytics 
+                projects={allProjects}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
