@@ -1407,22 +1407,22 @@ Tack!`);
                                   <div className="p-2 bg-warning/10 border border-warning/30 rounded">
                                     <div className="flex items-start gap-2">
                                       <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                                      <div className="text-xs text-warning-foreground">
-                                        <span className="font-medium block">⚠️ VIKTIGT!</span>
-                                        <span className="block mt-1">
+                                      <div className="text-xs text-foreground">
+                                        <span className="font-bold block text-warning">⚠️ VIKTIGT!</span>
+                                        <span className="block mt-1 text-foreground font-medium">
                                           Tillgängligt material från Linköpingsparken: {' '}
                                           {reminder.availableMaterials.map(item => 
                                             `${item.totalSquareMeters} m² ${item.materialType}`
                                           ).join(', ')}
                                         </span>
-                                        <span className="block mt-1 font-medium">
+                                        <span className="block mt-1 font-bold text-foreground">
                                           Kontrollera detta innan beställning för att undvika onödiga kostnader!
                                         </span>
                                       </div>
                                     </div>
                                   </div>
                                   
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground font-medium">
                                     Totalt värde uppskattat: ~{(reminder.totalValue * 50).toLocaleString('sv-SE')} SEK
                                   </div>
                                 </div>
