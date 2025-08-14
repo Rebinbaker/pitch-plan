@@ -11,6 +11,7 @@ import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCirc
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
 import { useToast } from '@/hooks/use-toast';
+import { generateMaterialOrderReminder, createMaterialOrderNotification } from '@/utils/linkopingInventory';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -825,6 +826,7 @@ Tack!`);
             const isWhatsApp = isWhatsAppItem(item.label);
             const isContainerBooking = isContainerBookingItem(item.label);
             const isContainerOrder = isContainerOrderItem(item.label);
+            const isMaterialOrder = item.label === 'Materialbeställning';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
@@ -1383,10 +1385,59 @@ Tack!`);
                                return null;
                            }
                          })()}
-                       </div>
-                     )}
-                       
-                       {/* Show team dropdown for Schedule construction team */}
+                        </div>
+                      )}
+
+                      {/* Material Order Integration with Linköping Inventory */}
+                      {isMaterialOrder && project && (
+                        <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 text-info" />
+                            <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
+                          </div>
+                          
+                          {(() => {
+                            const projects = []; // Will be passed from parent component
+                            const reminder = generateMaterialOrderReminder(projects);
+                            
+                            if (reminder.availableMaterials.length > 0) {
+                              return (
+                                <div className="space-y-2">
+                                  <div className="p-2 bg-warning/10 border border-warning/30 rounded">
+                                    <div className="flex items-start gap-2">
+                                      <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                                      <div className="text-xs text-warning-foreground">
+                                        <span className="font-medium block">⚠️ VIKTIGT!</span>
+                                        <span className="block mt-1">
+                                          Tillgängligt material från Linköpingsparken: {' '}
+                                          {reminder.availableMaterials.map(item => 
+                                            `${item.totalSquareMeters} m² ${item.materialType}`
+                                          ).join(', ')}
+                                        </span>
+                                        <span className="block mt-1 font-medium">
+                                          Kontrollera detta innan beställning för att undvika onödiga kostnader!
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-xs text-muted-foreground">
+                                    Totalt värde uppskattat: ~{(reminder.totalValue * 50).toLocaleString('sv-SE')} SEK
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div className="text-xs text-muted-foreground">
+                                  Inget material tillgängligt i Linköpingsparken för detta projekt.
+                                </div>
+                              );
+                            }
+                          })()}
+                        </div>
+                      )}
+                        
+                        {/* Show team dropdown for Schedule construction team */}
                     {isScheduleTeam && teams.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center gap-2">

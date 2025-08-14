@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, MapPin, Package, User, AlertTriangle } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { LinkopingInventoryOverview } from '@/components/LinkopingInventoryOverview';
 
 interface AvvaratMaterialOverviewProps {
   projects: Project[];
@@ -94,7 +95,7 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
       case 'Allokeras till nästa bygge':
         return <Badge variant="secondary" className="bg-success/20 text-success border-success/30 text-xs">Allokerat</Badge>;
       case 'Körs till Linköpingsparken':
-        return <Badge variant="secondary" className="bg-warning/20 text-warning-foreground border-warning/30 text-xs">Linköping</Badge>;
+        return <Badge variant="secondary" className="bg-info/20 text-info-foreground border-info/30 text-xs font-medium">📍 Linköpingsparken</Badge>;
       case 'Transporteras till ställningspark':
         return <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">Ställningspark</Badge>;
       case 'Returneras till leverantör':
@@ -110,6 +111,9 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
 
   return (
     <div className="space-y-6">
+      {/* Linköping Inventory Section */}
+      <LinkopingInventoryOverview projects={projects} />
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
