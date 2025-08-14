@@ -125,7 +125,7 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
               <Eye className="h-3 w-3 text-muted-foreground ml-auto" />
             </div>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-4xl z-[10000]">
             <DialogHeader>
               <DialogTitle>Väderprognos för {weather.location} - {startWeek}</DialogTitle>
             </DialogHeader>
