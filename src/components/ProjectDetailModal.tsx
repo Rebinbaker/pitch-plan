@@ -112,7 +112,8 @@ export function ProjectDetailModal({
     const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
     const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
     
-    const completionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
+    const completionPercentage = totalWeight > 0 ? 
+      (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
 
     // Find differences for activity log
     const activityEntries: ActivityLogEntry[] = [];

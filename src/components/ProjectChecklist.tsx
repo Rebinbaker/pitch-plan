@@ -116,7 +116,8 @@ export function ProjectChecklist({
   const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
   const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
   
-  const completionPercentage = totalWeight > 0 ? Math.round((totalCompletedWeight / totalWeight) * 100) : 0;
+  const completionPercentage = totalWeight > 0 ? 
+    (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
 
   // Check if project starts within 48 hours and has missing tasks
   const projectStartDate = new Date(startDate);
