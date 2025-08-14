@@ -13,9 +13,10 @@ interface WeatherDisplayProps {
   startWeek?: string;
   compact?: boolean;
   className?: string;
+  onDialogOpen?: () => void;
 }
 
-export function WeatherDisplay({ region, address, startWeek, compact = false, className = '' }: WeatherDisplayProps) {
+export function WeatherDisplay({ region, address, startWeek, compact = false, className = '', onDialogOpen }: WeatherDisplayProps) {
   console.log('WEATHER DISPLAY DEBUG: Component rendered with props:', { region, address, startWeek, compact });
   console.log('WEATHER DISPLAY DEBUG: Unique key for re-render:', `${address}-${startWeek}`);
   
@@ -97,7 +98,11 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
   if (compact) {
     return (
       <div className="space-y-2">
-        <Dialog>
+        <Dialog onOpenChange={(open) => {
+          if (open && onDialogOpen) {
+            onDialogOpen();
+          }
+        }}>
           <DialogTrigger asChild>
             <div className={`flex items-center space-x-2 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg p-2 ${className}`}>
               <span className="text-lg">{getWeatherIcon(weather.current.conditions)}</span>

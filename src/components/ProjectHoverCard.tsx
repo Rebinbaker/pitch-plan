@@ -260,6 +260,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
                 startWeek={project.constructionStartWeek || project.bygg_start_vecka}
                 compact={true}
                 className="border border-border/50 rounded-lg p-2 bg-muted/10"
+                onDialogOpen={() => setIsVisible(false)}
               />
             </div>
           )}
