@@ -91,6 +91,7 @@ export interface Project {
   workPhases?: WorkPhaseItem[];
   activityLog?: ActivityLogEntry[];
   allocatedMaterials?: AllocatedMaterial[]; // Materials allocated from other projects
+  materialOrder?: MaterialOrder; // Material order created by project manager
 }
 
 export interface ChecklistItem {
@@ -146,6 +147,33 @@ export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
   { label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
   { label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true },
 ];
+
+export interface MaterialOrderItem {
+  id: string;
+  materialType: MaterialType;
+  customMaterialType?: string; // For "Annat" option
+  quantity: number;
+  unit: string; // kvm², st, meter
+  notes?: string;
+  supplier?: string;
+  estimatedCost?: number;
+}
+
+export type MaterialOrderStatus = 'draft' | 'ready_to_order' | 'ordered' | 'delivered';
+
+export interface MaterialOrder {
+  id: string;
+  projectId: string;
+  projectAddress: string;
+  createdBy: string; // Project manager who created the order
+  createdAt: string;
+  updatedAt: string;
+  status: MaterialOrderStatus;
+  items: MaterialOrderItem[];
+  notes?: string;
+  orderText?: string; // Generated email text
+  appliedSalvagedMaterial?: MaterialItem[]; // Materials that were deducted from salvaged inventory
+}
 
 export interface AllocatedMaterial {
   id: string;

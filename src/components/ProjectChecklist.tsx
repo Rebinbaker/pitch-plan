@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed } from '@/types/project';
+import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed, MaterialOrder } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
+import { MaterialOrderModal } from '@/components/MaterialOrderModal';
 import { useToast } from '@/hooks/use-toast';
 import { generateMaterialOrderReminder, createMaterialOrderNotification } from '@/utils/linkopingInventory';
 
@@ -634,6 +635,37 @@ Tack!`);
       }
     };
     onUpdateProject(updatedProject);
+  };
+
+  const handleMaterialOrderSave = (materialOrder: MaterialOrder) => {
+    if (!project || !onUpdateProject) return;
+    
+    const updatedProject = {
+      ...project,
+      materialOrder
+    };
+    
+    onUpdateProject(updatedProject);
+    
+    // Auto-complete the material ordering checklist item if order is ready
+    if (materialOrder.status === 'ready_to_order' || materialOrder.status === 'ordered') {
+      const updatedChecklist = project.checklist.map(item => 
+        item.label === 'Materialbeställning' 
+          ? { 
+              ...item, 
+              completed: true, 
+              completedAt: new Date().toISOString().split('T')[0]
+            }
+          : item
+      );
+      
+      const finalProject = {
+        ...updatedProject,
+        checklist: updatedChecklist
+      };
+      
+      onUpdateProject(finalProject);
+    }
   };
 
   const handleItemToggle = (itemId: string) => {
@@ -1390,7 +1422,7 @@ Tack!`);
                         </div>
                       )}
 
-                      {/* Material Order Integration with Linköping Inventory */}
+                       {/* Material Order Integration with Linköping Inventory */}
                       {isMaterialOrder && project && (
                         <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
                           <div className="flex items-center gap-2">
@@ -1398,43 +1430,78 @@ Tack!`);
                             <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
                           </div>
                           
-                          {(() => {
-                            const reminder = generateMaterialOrderReminder(allProjects);
-                            
-                            if (reminder.availableMaterials.length > 0) {
-                              return (
-                                <div className="space-y-2">
-                                  <div className="p-2 bg-warning/10 border border-warning/30 rounded">
-                                    <div className="flex items-start gap-2">
-                                      <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                                      <div className="text-xs text-foreground">
-                                        <span className="font-bold block text-warning">⚠️ VIKTIGT!</span>
-                                        <span className="block mt-1 text-foreground font-medium">
-                                          Tillgängligt material från Linköpingsparken: {' '}
-                                          {reminder.availableMaterials.map(item => 
-                                            `${item.totalSquareMeters} m² ${item.materialType}`
-                                          ).join(', ')}
-                                        </span>
-                                        <span className="block mt-1 font-bold text-foreground">
-                                          Kontrollera detta innan beställning för att undvika onödiga kostnader!
-                                        </span>
+                          {/* Material Order Status */}
+                          {project.materialOrder ? (
+                            <div className="space-y-2">
+                              <div className="p-2 bg-green-50 border border-green-200 rounded">
+                                <div className="text-xs">
+                                  <span className="font-medium text-green-700">Status: </span>
+                                  <span className="text-green-600">
+                                    {project.materialOrder.status === 'draft' && 'Utkast sparat'}
+                                    {project.materialOrder.status === 'ready_to_order' && 'Klar för beställning'}
+                                    {project.materialOrder.status === 'ordered' && 'Beställd'}
+                                    {project.materialOrder.status === 'delivered' && 'Levererad'}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-green-600 mt-1">
+                                  {project.materialOrder.items.length} material(s), 
+                                  senast uppdaterad: {new Date(project.materialOrder.updatedAt).toLocaleDateString('sv-SE')}
+                                </div>
+                              </div>
+                              
+                              <MaterialOrderModal
+                                project={project}
+                                allProjects={allProjects}
+                                onSave={handleMaterialOrderSave}
+                              />
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {(() => {
+                                const reminder = generateMaterialOrderReminder(allProjects);
+                                
+                                if (reminder.availableMaterials.length > 0) {
+                                  return (
+                                    <div className="space-y-2">
+                                      <div className="p-2 bg-warning/10 border border-warning/30 rounded">
+                                        <div className="flex items-start gap-2">
+                                          <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+                                          <div className="text-xs text-foreground">
+                                            <span className="font-bold block text-warning">⚠️ VIKTIGT!</span>
+                                            <span className="block mt-1 text-foreground font-medium">
+                                              Tillgängligt material från Linköpingsparken: {' '}
+                                              {reminder.availableMaterials.map(item => 
+                                                `${item.totalSquareMeters} m² ${item.materialType}`
+                                              ).join(', ')}
+                                            </span>
+                                            <span className="block mt-1 font-bold text-foreground">
+                                              Kontrollera detta innan beställning för att undvika onödiga kostnader!
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="text-xs text-muted-foreground font-medium">
+                                        Totalt värde uppskattat: ~{(reminder.totalValue * 50).toLocaleString('sv-SE')} SEK
                                       </div>
                                     </div>
-                                  </div>
-                                  
-                                  <div className="text-xs text-muted-foreground font-medium">
-                                    Totalt värde uppskattat: ~{(reminder.totalValue * 50).toLocaleString('sv-SE')} SEK
-                                  </div>
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="text-xs text-muted-foreground">
-                                  Inget material tillgängligt i Linköpingsparken för detta projekt.
-                                </div>
-                              );
-                            }
-                          })()}
+                                  );
+                                } else {
+                                  return (
+                                    <div className="text-xs text-muted-foreground">
+                                      Inget material tillgängligt i Linköpingsparken för detta projekt.
+                                    </div>
+                                  );
+                                }
+                              })()}
+                              
+                              <MaterialOrderModal
+                                project={project}
+                                allProjects={allProjects}
+                                onSave={handleMaterialOrderSave}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                         
