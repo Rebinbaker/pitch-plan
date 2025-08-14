@@ -35,7 +35,7 @@ export const useLocalStorage = () => {
   const loadAllData = () => {
     setLoading(true);
     
-    // Migration function to ensure work phases and new planning fields
+    // Migration function to ensure work phases, checklist items and new planning fields
     const migrateProjects = (projects: Project[]): Project[] => {
       console.log('MIGRATION: Starting migration of projects:', projects.length);
       return projects.map(project => {
@@ -43,6 +43,29 @@ export const useLocalStorage = () => {
         
         // First migrate to new planning structure
         let migratedProject = migrateProjectToNewPlanning(project);
+        
+        // Migrate checklist to include new "Generera garantibevis" item if missing
+        if (migratedProject.checklist && !migratedProject.checklist.some(item => item.label === 'Generera garantibevis')) {
+          console.log('MIGRATION: Adding "Generera garantibevis" to checklist for:', migratedProject.name);
+          
+          // Find the index where "Mark ready for invoice" is located
+          const invoiceIndex = migratedProject.checklist.findIndex(item => item.label === 'Mark ready for invoice');
+          
+          const newChecklistItem = {
+            id: `checklist-${migratedProject.id}-generera-garantibevis`,
+            label: 'Generera garantibevis',
+            completed: false,
+            weight: 3
+          };
+          
+          if (invoiceIndex !== -1) {
+            // Insert before "Mark ready for invoice"
+            migratedProject.checklist.splice(invoiceIndex, 0, newChecklistItem);
+          } else {
+            // Append to end if "Mark ready for invoice" not found
+            migratedProject.checklist.push(newChecklistItem);
+          }
+        }
         
         // Then migrate work phases if needed
         if (!migratedProject.workPhases || migratedProject.workPhases.length === 0 || !migratedProject.workPhases[0].id || migratedProject.workPhases[0].completed === undefined) {
