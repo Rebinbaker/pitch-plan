@@ -18,7 +18,7 @@ const badgeVariants = cva(
         // Project status badges
         planned: "border-transparent bg-planned text-white shadow",
         ongoing: "border-transparent bg-ongoing text-white shadow",
-        completed: "border-transparent bg-completed text-white shadow",
+        completed: "border-transparent bg-success text-success-foreground shadow",
         invoiced: "border-transparent bg-invoiced text-white shadow",
         // ROT status badges  
         rot: "border-transparent bg-success text-success-foreground shadow",

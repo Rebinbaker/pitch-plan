@@ -76,7 +76,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
           </div>
           <div className="flex flex-col gap-2">
             <Badge variant={getStatusVariant(project.status)}>
-              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+              {project.status === 'completed' ? 'Avslutad' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
             </Badge>
             {project.rotStatus === 'Yes' && (
               <Badge variant="rot" className="text-xs">ROT</Badge>

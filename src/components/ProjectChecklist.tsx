@@ -682,11 +682,25 @@ Tack!`);
     // Auto-complete project if all items (checklist + work phases) are done
     if (allItemsCompleted && project && onUpdateProject && project.status !== 'completed') {
       console.log('handleItemToggle: calling onUpdateProject for project completion');
+      
+      // Create activity log entry for status change
+      const activityEntry = {
+        id: `activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        user: 'System',
+        action: 'Projekt slutfört - alla arbetsmoment och checklistepunkter klara',
+        description: 'status',
+        category: 'status' as const,
+        oldValue: project.status.charAt(0).toUpperCase() + project.status.slice(1),
+        newValue: 'Avslutad'
+      };
+      
       const updatedProject = {
         ...project,
         status: 'completed' as const,
         checklist: updatedChecklist,
         completionPercentage: newCompletionPercentage,
+        activityLog: [...(project.activityLog || []), activityEntry],
       };
       onUpdateProject(updatedProject);
     }
