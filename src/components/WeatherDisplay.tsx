@@ -99,7 +99,9 @@ export function WeatherDisplay({ region, address, startWeek, compact = false, cl
     return (
       <div className="space-y-2">
         <Dialog onOpenChange={(open) => {
+          console.log('WEATHER DIALOG DEBUG: Dialog onOpenChange triggered with:', open);
           if (open && onDialogOpen) {
+            console.log('WEATHER DIALOG DEBUG: Calling onDialogOpen callback');
             onDialogOpen();
           }
         }}>
