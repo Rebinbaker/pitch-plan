@@ -95,7 +95,7 @@ export function AvvaratMaterialOverview({ projects }: AvvaratMaterialOverviewPro
       case 'Allokeras till nästa bygge':
         return <Badge variant="secondary" className="bg-success/20 text-success border-success/30 text-xs">Allokerat</Badge>;
       case 'Körs till Linköpingsparken':
-        return <Badge variant="secondary" className="bg-info/20 text-info-foreground border-info/30 text-xs font-medium">📍 Linköpingsparken</Badge>;
+        return <Badge variant="secondary" className="bg-info text-white border-info text-xs font-bold">📍 Linköpingsparken</Badge>;
       case 'Transporteras till ställningspark':
         return <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">Ställningspark</Badge>;
       case 'Returneras till leverantör':
