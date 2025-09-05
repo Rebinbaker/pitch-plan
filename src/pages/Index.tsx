@@ -11,6 +11,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ProjectDashboard } from '@/components/ProjectDashboard';
 import { AddProjectModal } from '@/components/AddProjectModal';
 import { ScaffoldingView } from '@/components/ScaffoldingView';
+import { MobileProjectDashboard } from '@/components/mobile/MobileProjectDashboard';
+import { MobileScaffoldingView } from '@/components/mobile/MobileScaffoldingView';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
 import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
@@ -29,6 +32,7 @@ import { toast } from '@/hooks/use-toast';
 const Index = () => {
   const { signOut, user } = useAuth();
   const { isAdmin, role, loading: roleLoading } = useUserRole();
+  const isMobile = useIsMobile();
   
   // Debug logging
   console.log('Current user role:', role, 'isAdmin:', isAdmin, 'roleLoading:', roleLoading);
@@ -243,28 +247,47 @@ const Index = () => {
             </TabsList>
 
             <TabsContent value="projects" className="space-y-6">
-              <ProjectDashboard 
-                projects={projects}
-                onUpdateProject={updateProject}
-                onAddProject={handleAddProject}
-                trailers={scaffolding}
-                teams={teams}
-                onUpdateTeam={updateTeam}
-                onUpdateTrailer={updateScaffolding}
-                selectedProjectId={selectedProjectId}
-                onClearSelection={() => setSelectedProjectId(null)}
-                onAddNotifications={addNotifications}
-                onFileUploaded={uploadFile}
-              />
+              {isMobile ? (
+                <MobileProjectDashboard
+                  projects={projects}
+                  onUpdateProject={updateProject}
+                  onAddProject={addProject}
+                  trailers={scaffolding}
+                  teams={teams}
+                />
+              ) : (
+                <ProjectDashboard 
+                  projects={projects}
+                  onUpdateProject={updateProject}
+                  onAddProject={handleAddProject}
+                  trailers={scaffolding}
+                  teams={teams}
+                  onUpdateTeam={updateTeam}
+                  onUpdateTrailer={updateScaffolding}
+                  selectedProjectId={selectedProjectId}
+                  onClearSelection={() => setSelectedProjectId(null)}
+                  onAddNotifications={addNotifications}
+                  onFileUploaded={uploadFile}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="scaffolding" className="space-y-6">
-              <ScaffoldingView 
-                scaffolding={scaffolding}
-                onUpdateScaffolding={updateScaffolding}
-                onAddScaffolding={addScaffolding}
-                projects={projects}
-              />
+              {isMobile ? (
+                <MobileScaffoldingView
+                  scaffolding={scaffolding}
+                  onUpdateScaffolding={updateScaffolding}
+                  onAddScaffolding={addScaffolding}
+                  projects={projects}
+                />
+              ) : (
+                <ScaffoldingView 
+                  scaffolding={scaffolding}
+                  onUpdateScaffolding={updateScaffolding}
+                  onAddScaffolding={addScaffolding}
+                  projects={projects}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="teams" className="space-y-6">

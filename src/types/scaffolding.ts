@@ -10,4 +10,5 @@ export interface ScaffoldingTrailer {
   location?: string;
   moverNote?: string;
   lastUpdated: string;
+  description?: string; // Optional description field
 }
