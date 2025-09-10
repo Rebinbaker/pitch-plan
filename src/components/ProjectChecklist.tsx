@@ -1913,22 +1913,26 @@ Tack!`);
               description: "Garantibeviset har skapats och sparats",
             });
           }}
-          onFileUploaded={onFileUploaded ? (file) => {
+          onFileUploaded={onFileUploaded ? (file: any) => {
             onFileUploaded({
               name: file.name,
               url: file.url,
               type: file.type,
               projectId: project.id,
-              uploadedBy: 'current-user', // This should be the actual user ID
+              uploadedBy: 'current-user',
               description: 'Automatiskt genererat garantibevis',
               tags: ['guaranty', 'certificate']
             });
           } : undefined}
-        {/* Team Selection Modal */}
+        />
+      )}
+
+      {/* Team Selection Modal */}
+      {project && (
         <TeamSelectionModal
           isOpen={showTeamSelectionModal}
           onClose={() => setShowTeamSelectionModal(false)}
-          project={project!}
+          project={project}
           teams={teams}
           onTeamAssigned={handleTeamAssigned}
         />
