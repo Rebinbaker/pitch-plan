@@ -20,7 +20,7 @@ import { MobilePlanningView } from '@/components/mobile/MobilePlanningView';
 import { MobileNotificationsView } from '@/components/mobile/MobileNotificationsView';
 import { MobileMaterialView } from '@/components/mobile/MobileMaterialView';
 import { MobileSecurityView } from '@/components/mobile/MobileSecurityView';
-import { MobileNavigationBar } from '@/components/mobile/MobileNavigationBar';
+import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
