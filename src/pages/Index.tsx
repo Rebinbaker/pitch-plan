@@ -21,6 +21,7 @@ import { MobileNotificationsView } from '@/components/mobile/MobileNotifications
 import { MobileMaterialView } from '@/components/mobile/MobileMaterialView';
 import { MobileSecurityView } from '@/components/mobile/MobileSecurityView';
 import { MobileHeader } from '@/components/mobile/MobileHeader';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
@@ -179,6 +180,76 @@ const Index = () => {
           }}
         />
         <div className="relative z-10 container mx-auto px-4 py-8">
+          {/* Mobile Layout */}
+          {isMobile ? (
+            <div className="fixed inset-0 z-50">
+              <MobileHeader
+                user={user}
+                username={username}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onLogout={signOut}
+                unreadNotifications={notifications.filter(n => !n.isRead).length}
+              />
+              
+              <div className="pt-14 overflow-y-auto h-full">
+                {activeTab === 'projects' && (
+                  <MobileProjectDashboard
+                    projects={projects}
+                    onUpdateProject={updateProject}
+                    onAddProject={addProject}
+                    trailers={scaffolding}
+                    teams={teams}
+                  />
+                )}
+                {activeTab === 'scaffolding' && (
+                  <MobileScaffoldingView
+                    scaffolding={scaffolding}
+                    onUpdateScaffolding={updateScaffolding}
+                    onAddScaffolding={addScaffolding}
+                    projects={projects}
+                  />
+                )}
+                {activeTab === 'teams' && (
+                  <MobileTeamsView
+                    teams={teams}
+                    onUpdateTeam={updateTeam}
+                    onAddTeam={addTeam}
+                  />
+                )}
+                {activeTab === 'timetracking' && (
+                  <MobileTimeTrackingView projects={projects} />
+                )}
+                {activeTab === 'files' && (
+                  <MobileFilesView
+                    files={files}
+                    projects={projects}
+                    onUploadFile={uploadFile}
+                    onDeleteFile={deleteFile}
+                  />
+                )}
+                {activeTab === 'planning' && (
+                  <MobilePlanningView projects={projects} />
+                )}
+                {activeTab === 'material' && (
+                  <MobileMaterialView projects={projects} />
+                )}
+                {activeTab === 'security' && (
+                  <MobileSecurityView />
+                )}
+                {activeTab === 'notifications' && (
+                  <MobileNotificationsView
+                    notifications={notifications}
+                    onMarkAsRead={markNotificationAsRead}
+                    onDismiss={dismissNotification}
+                    onNavigateToProject={handleNavigateToProject}
+                  />
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Desktop Layout */
+            <div>
           {/* Header with logo on left and profile on right */}
           <div className="flex justify-between items-center mb-6">
             {/* Logo on the left */}
@@ -450,6 +521,8 @@ const Index = () => {
               setShowMigrationModal(false);
             }}
           />
+            </div>
+          )}
         </div>
       </div>
     </ProtectedRoute>
