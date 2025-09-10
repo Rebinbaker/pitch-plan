@@ -13,6 +13,14 @@ import { AddProjectModal } from '@/components/AddProjectModal';
 import { ScaffoldingView } from '@/components/ScaffoldingView';
 import { MobileProjectDashboard } from '@/components/mobile/MobileProjectDashboard';
 import { MobileScaffoldingView } from '@/components/mobile/MobileScaffoldingView';
+import { MobileTeamsView } from '@/components/mobile/MobileTeamsView';
+import { MobileTimeTrackingView } from '@/components/mobile/MobileTimeTrackingView';
+import { MobileFilesView } from '@/components/mobile/MobileFilesView';
+import { MobilePlanningView } from '@/components/mobile/MobilePlanningView';
+import { MobileNotificationsView } from '@/components/mobile/MobileNotificationsView';
+import { MobileMaterialView } from '@/components/mobile/MobileMaterialView';
+import { MobileSecurityView } from '@/components/mobile/MobileSecurityView';
+import { MobileNavigationBar } from '@/components/mobile/MobileNavigationBar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { TeamsView } from '@/components/TeamsView';
 import { FilesView } from '@/components/FilesView';
@@ -329,7 +337,7 @@ const Index = () => {
               {isMobile ? (
                 <MobilePlanningView projects={projects} />
               ) : (
-                <WeeklyPlanningView projects={projects} teams={teams} />
+                <WeeklyPlanningView projects={projects} />
               )}
             </TabsContent>
 
