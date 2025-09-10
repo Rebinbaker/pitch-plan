@@ -291,12 +291,88 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="teams" className="space-y-6">
-              <TeamsView 
-                teams={teams}
-                onUpdateTeam={updateTeam}
-                onAddTeam={addTeam}
-                projects={projects}
-              />
+              {isMobile ? (
+                <MobileTeamsView
+                  teams={teams}
+                  onUpdateTeam={updateTeam}
+                  onAddTeam={addTeam}
+                />
+              ) : (
+                <TeamsView 
+                  teams={teams}
+                  onUpdateTeam={updateTeam}
+                  onAddTeam={addTeam}
+                  projects={projects}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="files" className="space-y-6">
+              {isMobile ? (
+                <MobileFilesView
+                  files={files}
+                  projects={projects}
+                  onUploadFile={uploadFile}
+                  onDeleteFile={deleteFile}
+                />
+              ) : (
+                <FilesView 
+                  files={files}
+                  projects={projects}
+                  onUploadFile={uploadFile}
+                  onDeleteFile={deleteFile}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="planning" className="space-y-6">
+              {isMobile ? (
+                <MobilePlanningView projects={projects} />
+              ) : (
+                <WeeklyPlanningView projects={projects} teams={teams} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="timetracking" className="space-y-6">
+              {isMobile ? (
+                <MobileTimeTrackingView projects={projects} />
+              ) : (
+                <TimeTrackingView />
+              )}
+            </TabsContent>
+
+            <TabsContent value="material" className="space-y-6">
+              {isMobile ? (
+                <MobileMaterialView projects={projects} />
+              ) : (
+                <AvvaratMaterialOverview projects={projects} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="security" className="space-y-6">
+              {isMobile ? (
+                <MobileSecurityView />
+              ) : (
+                <SecurityStatus />
+              )}
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-6">
+              {isMobile ? (
+                <MobileNotificationsView
+                  notifications={notifications}
+                  onMarkAsRead={markNotificationAsRead}
+                  onDismiss={dismissNotification}
+                  onNavigateToProject={handleNavigateToProject}
+                />
+              ) : (
+                <NotificationsView 
+                  notifications={notifications}
+                  onMarkAsRead={markNotificationAsRead}
+                  onDismiss={dismissNotification}
+                  onNavigateToProject={handleNavigateToProject}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="files" className="space-y-6">
