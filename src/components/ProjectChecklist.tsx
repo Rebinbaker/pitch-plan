@@ -1407,9 +1407,23 @@ Tack!`);
                             Välj containertyp och skicka beställning automatiskt via e-post.
                           </div>
                           
-                          {/* Debug info */}
-                          <div className="text-xs bg-blue-50 p-2 rounded">
-                            🔧 DEBUG: Container order funktionalitet är aktiverad för "{item.label}"
+                          {/* Quick order templates */}
+                          <div className="mt-2">
+                            <Select>
+                              <SelectTrigger className="w-full h-8 text-xs">
+                                <SelectValue placeholder="Vanliga beställningstexter" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="akut">🚨 Akut container behövs imorgon</SelectItem>
+                                <SelectItem value="planerad">📅 Planerad leverans nästa vecka</SelectItem>
+                                <SelectItem value="storstadning">🧹 Container för storstädning</SelectItem>
+                                <SelectItem value="renovering">🔨 Byggavfall från renovering</SelectItem>
+                                <SelectItem value="flytt">📦 Container för flytt/utryming</SelectItem>
+                                <SelectItem value="tradgard">🌳 Trädgårdsavfall och grenar</SelectItem>
+                                <SelectItem value="betong">🧱 Container för betong och tegel</SelectItem>
+                                <SelectItem value="metall">⚡ Container för metallskrot</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                        )}
@@ -1422,12 +1436,25 @@ Tack!`);
                              <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
                            </div>
                            
-                           {/* Debug info */}
-                           <div className="text-xs bg-yellow-50 p-2 rounded">
-                             🔧 DEBUG: Material order funktionalitet är aktiverad för "{item.label}"<br/>
-                             Teams tillgängliga: {teams.length} st<br/>
-                             Team-modal kommer visas när du klickar för att slutföra denna uppgift
-                           </div>
+                            {/* Quick material order templates */}
+                            <div className="mt-2">
+                              <Select>
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                  <SelectValue placeholder="Vanliga materialbeställningar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="takpapp">🏠 Takpapp och tätskikt standard</SelectItem>
+                                  <SelectItem value="isolering">🧊 Isoleringsmaterial komplett</SelectItem>
+                                  <SelectItem value="plat">📐 Plåt och beslag enligt ritning</SelectItem>
+                                  <SelectItem value="takranna">🌊 Takränna och stuprör komplett</SelectItem>
+                                  <SelectItem value="farstor">🏗️ Färdigskuren takstol</SelectItem>
+                                  <SelectItem value="skruv">🔩 Skruvar och beslag standard</SelectItem>
+                                  <SelectItem value="säkerhet">⛑️ Säkerhetsutrustning för arbete</SelectItem>
+                                  <SelectItem value="verktyg">🔧 Specialverktyg för takarbete</SelectItem>
+                                  <SelectItem value="akut_material">🚨 Akut materialbehov imorgon</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                            
                            {/* Material Order Status */}
                            {project.materialOrder ? (
