@@ -177,7 +177,8 @@ export function ProjectChecklist({
   const generateWhatsAppURL = (project: Project, customName?: string) => {
     const groupName = customName || project.address;
     const groupInstructions = encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för projektet ${project.address}. Bjud in alla teammedlemmar.`);
-    return `https://wa.me/?text=${groupInstructions}`;
+    // Use different URL formats to avoid blocking
+    return `whatsapp://send?text=${groupInstructions}`;
   };
 
   const openWhatsApp = (itemId: string, project: Project) => {
@@ -222,29 +223,43 @@ export function ProjectChecklist({
       });
     }, 1000);
     
-    // Try to open WhatsApp directly
+    // Try to open WhatsApp using multiple methods
+    const whatsappProtocol = `whatsapp://send?text=${encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för projektet ${project.address}. Bjud in alla teammedlemmar.`)}`;
+    const waMe = `https://wa.me/?text=${encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för projektet ${project.address}. Bjud in alla teammedlemmar.`)}`;
+    
     try {
-      window.open(url, '_blank');
+      // First try the protocol handler
+      window.location.href = whatsappProtocol;
       toast({
         title: "WhatsApp öppnas",
-        description: "WhatsApp öppnas i ny flik eller app",
+        description: "WhatsApp öppnas via app-protokoll",
         duration: 3000,
       });
     } catch (error) {
-      // Fallback: copy to clipboard if opening fails
-      navigator.clipboard.writeText(url).then(() => {
+      try {
+        // Fallback to wa.me
+        window.open(waMe, '_blank');
         toast({
-          title: "WhatsApp-länk kopierad", 
-          description: "Klistra in länken för att öppna WhatsApp",
-          duration: 4000,
+          title: "WhatsApp öppnas",
+          description: "WhatsApp öppnas i webbläsare",
+          duration: 3000,
         });
-      }).catch(() => {
-        toast({
-          title: "WhatsApp-länk",
-          description: `Kopiera denna länk: ${url}`,
-          duration: 6000,
+      } catch (error2) {
+        // Final fallback: copy to clipboard
+        navigator.clipboard.writeText(waMe).then(() => {
+          toast({
+            title: "WhatsApp-länk kopierad", 
+            description: "Klistra in länken för att öppna WhatsApp",
+            duration: 4000,
+          });
+        }).catch(() => {
+          toast({
+            title: "Kunde inte öppna WhatsApp",
+            description: `Försök kopiera denna länk manuellt: ${waMe}`,
+            duration: 6000,
+          });
         });
-      });
+      }
     }
   };
 
