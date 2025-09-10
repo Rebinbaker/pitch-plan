@@ -192,7 +192,7 @@ const Index = () => {
                 unreadNotifications={notifications.filter(n => !n.isRead).length}
               />
               
-              <div className="pt-14 overflow-y-auto h-full">
+              <div className="pt-14 overflow-y-auto h-full bg-background/90 backdrop-blur-sm">
                 {activeTab === 'projects' && (
                   <MobileProjectDashboard
                     projects={projects}

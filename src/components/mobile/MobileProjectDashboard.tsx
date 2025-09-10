@@ -41,7 +41,7 @@ export function MobileProjectDashboard({
   const totalProjects = filteredProjects.length;
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-4">
+    <div className="min-h-screen bg-transparent p-4 space-y-4">
       {/* Mobile Header - Static, not sticky */}
       <div className="flex items-center justify-between py-3 mb-4">
         <div>

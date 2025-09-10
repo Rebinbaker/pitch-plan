@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Project, ProjectStatus } from '@/types/project';
 import { MobileEditProjectModal } from './MobileEditProjectModal';
+import { MobileProjectDetailModal } from './MobileProjectDetailModal';
 
 interface MobileProjectCardProps {
   project: Project;
@@ -16,6 +17,7 @@ interface MobileProjectCardProps {
 
 export function MobileProjectCard({ project, onUpdate, trailers = [], teams = [] }: MobileProjectCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
@@ -43,7 +45,10 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
 
   return (
     <>
-      <Card className="border border-border/50 hover:border-primary/30 transition-colors">
+      <Card 
+        className="border border-border/50 hover:border-primary/30 transition-colors cursor-pointer"
+        onClick={() => setIsDetailModalOpen(true)}
+      >
         <CardContent className="p-4">
           {/* Header with status and actions */}
           <div className="flex items-start justify-between mb-3">
@@ -58,23 +63,37 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditModalOpen(true);
+                }}>
                   <Edit className="h-4 w-4 mr-2" />
                   Redigera
                 </DropdownMenuItem>
                 {project.status === 'planned' && (
-                  <DropdownMenuItem onClick={() => quickStatusUpdate('ongoing')}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    quickStatusUpdate('ongoing');
+                  }}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Starta projekt
                   </DropdownMenuItem>
                 )}
                 {project.status === 'ongoing' && (
-                  <DropdownMenuItem onClick={() => quickStatusUpdate('completed')}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    quickStatusUpdate('completed');
+                  }}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Markera klart
                   </DropdownMenuItem>
@@ -138,6 +157,15 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
           )}
         </CardContent>
       </Card>
+
+      <MobileProjectDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        project={project}
+        onUpdate={onUpdate}
+        trailers={trailers}
+        teams={teams}
+      />
 
       <MobileEditProjectModal
         isOpen={isEditModalOpen}
