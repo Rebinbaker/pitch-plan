@@ -46,6 +46,17 @@ export function ProjectChecklist({
   onFileUploaded
 }: ProjectChecklistProps) {
   const { toast } = useToast();
+  
+  // Debug logging to see what data we have
+  console.log('DEBUG ProjectChecklist - Data received:', {
+    hasProject: !!project,
+    projectName: project?.name,
+    teamsCount: teams.length,
+    teams: teams,
+    trailersCount: trailers.length,
+    allProjectsCount: allProjects.length
+  });
+  
   const [materialAnswer, setMaterialAnswer] = useState<'yes' | 'no' | null>(() => {
     // Debug: Check current project data structure
     console.log('AVVARAT MATERIAL INIT:', {
@@ -1395,19 +1406,31 @@ Tack!`);
                           <div className="text-xs text-muted-foreground">
                             Välj containertyp och skicka beställning automatiskt via e-post.
                           </div>
-                        </div>
-                        )}
-
-                        {/* Material Order Integration with Linköping Inventory */}
-                       {isMaterialOrder && project && (
-                        <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Package className="w-4 h-4 text-info" />
-                            <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
-                          </div>
                           
-                          {/* Material Order Status */}
-                          {project.materialOrder ? (
+                          {/* Debug info */}
+                          <div className="text-xs bg-blue-50 p-2 rounded">
+                            🔧 DEBUG: Container order funktionalitet är aktiverad för "{item.label}"
+                          </div>
+                        </div>
+                       )}
+
+                         {/* Material Order Integration with Linköping Inventory */}
+                        {isMaterialOrder && project && (
+                         <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
+                           <div className="flex items-center gap-2">
+                             <Package className="w-4 h-4 text-info" />
+                             <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
+                           </div>
+                           
+                           {/* Debug info */}
+                           <div className="text-xs bg-yellow-50 p-2 rounded">
+                             🔧 DEBUG: Material order funktionalitet är aktiverad för "{item.label}"<br/>
+                             Teams tillgängliga: {teams.length} st<br/>
+                             Team-modal kommer visas när du klickar för att slutföra denna uppgift
+                           </div>
+                           
+                           {/* Material Order Status */}
+                           {project.materialOrder ? (
                             <div className="space-y-2">
                               <div className="p-2 bg-green-50 border border-green-200 rounded">
                                 <div className="text-xs">
