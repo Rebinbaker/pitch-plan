@@ -11,8 +11,12 @@ import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCirc
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
 import { MaterialOrderModal } from '@/components/MaterialOrderModal';
+import { ContainerOrderDropdown } from '@/components/ContainerOrderDropdown';
+import { TeamSelectionModal } from '@/components/TeamSelectionModal';
 import { useToast } from '@/hooks/use-toast';
 import { generateMaterialOrderReminder, createMaterialOrderNotification } from '@/utils/linkopingInventory';
+import { ConstructionTeam } from '@/types/team';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectChecklistProps {
   checklist: ChecklistItem[];
@@ -112,6 +116,10 @@ export function ProjectChecklist({
   
   // Warranty generator state
   const [showWarrantyGenerator, setShowWarrantyGenerator] = useState(false);
+
+  // Team selection modal state
+  const [showTeamSelectionModal, setShowTeamSelectionModal] = useState(false);
+  const [materialReadyItemId, setMaterialReadyItemId] = useState<string>('');
 
   const materialTypes: MaterialType[] = [
     'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
@@ -682,6 +690,15 @@ Tack!`);
       });
       return;
     }
+
+    // Special handling for material order completion - require team selection
+    const item = checklist.find(item => item.id === itemId);
+    if (item && item.label === 'Materialbeställning' && !item.completed && teams.length > 0) {
+      // Show team selection modal when trying to complete material order
+      setMaterialReadyItemId(itemId);
+      setShowTeamSelectionModal(true);
+      return;
+    }
     
     const updatedChecklist = checklist.map(item => 
       item.id === itemId 
@@ -810,6 +827,50 @@ Tack!`);
       });
     }
     
+    onChecklistUpdate(updatedChecklist);
+  };
+
+  const handleTeamAssigned = async (teamId: string, teamName: string) => {
+    if (!project || !onUpdateProject) return;
+
+    // Update the project with assigned team
+    const updatedProject = {
+      ...project,
+      constructionTeam: teamName,
+      assignedTeamId: teamId
+    };
+    onUpdateProject(updatedProject);
+
+    // Mark the material order item as completed
+    const updatedChecklist = checklist.map(item => 
+      item.id === materialReadyItemId 
+        ? { 
+            ...item, 
+            completed: true,
+            completedAt: new Date().toISOString().split('T')[0]
+          }
+        : item
+    );
+    onChecklistUpdate(updatedChecklist);
+
+    toast({
+      title: "Material redo för bygglag",
+      description: `${teamName} har tilldelats och kommer att få påminnelse om att fylla i materialistan.`,
+    });
+  };
+
+  const handleContainerOrderSent = () => {
+    // Mark container order as completed
+    const updatedChecklist = checklist.map(item => 
+      isContainerOrderItem(item.label)
+        ? { 
+            ...item, 
+            completed: true,
+            completedAt: new Date().toISOString().split('T')[0],
+            containerOrderSent: true
+          }
+        : item
+    );
     onChecklistUpdate(updatedChecklist);
   };
 
@@ -1317,113 +1378,28 @@ Tack!`);
                         </div>
                       )}
 
-                      {/* Enhanced Container Order Integration */}
-                      {isContainerOrder && project && !item.containerOrderConfirmed && (
-                       <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
-                         <div className="flex items-center gap-2">
-                           <Package className="w-4 h-4 text-primary" />
-                           <span className="text-xs font-medium text-primary">Container Beställning</span>
-                         </div>
-                         
-                         {/* Message text preview */}
-                         <div className="space-y-2">
-                           <span className="text-xs text-muted-foreground">Meddelande att skicka:</span>
-                           <div className="flex items-center justify-between p-2 bg-background/50 rounded">
-                             <span className="text-xs font-medium">
-                               Hej vi skulle vilja boka container till {project.address}
-                             </span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0 ml-2"
-                               onClick={() => copyToClipboard(`Hej vi skulle vilja boka container till ${project.address}`)}
-                             >
-                               <Copy className="h-3 w-3" />
-                             </Button>
-                           </div>
-                         </div>
-
-                         {/* Status and actions */}
-                         {(() => {
-                           const state = containerStates[item.id];
-                           const status = state?.status || 'idle';
-                           
-                           switch (status) {
-                             case 'idle':
-                               return (
-                                 <div className="space-y-2">
-                                   <p className="text-xs text-muted-foreground">
-                                     Klicka för att öppna Outlook och skicka containerbeställning.
-                                   </p>
-                                   <Button
-                                      size="sm"
-                                      onClick={() => openContainerOrderOutlook(item.id, project)}
-                                      className="w-full h-8 text-xs bg-[#0078D4] hover:bg-[#0078D4]/80 text-white"
-                                    >
-                                      <Mail className="w-3 h-3 mr-1" />
-                                      Kopiera email-innehåll
-                                    </Button>
-                                 </div>
-                               );
-                             
-                             case 'opened':
-                               const timeLeft = timers[item.id] || 0;
-                               const minutes = Math.floor(timeLeft / 60);
-                               const seconds = timeLeft % 60;
-                               const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                               
-                               return (
-                                 <div className="space-y-2">
-                                   <div className="flex items-center gap-2 text-xs text-amber-600">
-                                     <Clock className="w-3 h-3" />
-                                     <span>Outlook öppnad - väntar på bekräftelse</span>
-                                   </div>
-                                   <p className="text-xs text-muted-foreground">
-                                     Har du skickat emailet för container beställning? Bekräfta när du är klar.
-                                     {timeLeft > 0 && (
-                                       <span className="block mt-1 text-amber-600">
-                                         Påminnelse om {timeDisplay}
-                                       </span>
-                                     )}
-                                   </p>
-                                   <div className="flex gap-2">
-                                     <Button
-                                       size="sm"
-                                        onClick={() => confirmContainerOrder(item.id)}
-                                       className="flex-1 h-8 text-xs"
-                                     >
-                                       <Check className="w-3 h-3 mr-1" />
-                                       Email skickat
-                                     </Button>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       onClick={() => resetContainerStatus(item.id)}
-                                       className="h-8 text-xs"
-                                     >
-                                       Börja om
-                                     </Button>
-                                   </div>
-                                 </div>
-                               );
-                             
-                             case 'confirmed':
-                               return (
-                                 <div className="flex items-center gap-2 text-xs text-success">
-                                   <CheckCircle2 className="w-3 h-3" />
-                                   <span>Container beställning skickad och bekräftad</span>
-                                 </div>
-                               );
-                             
-                             default:
-                               return null;
-                           }
-                         })()}
+                       {/* Enhanced Container Order Integration with Dropdown */}
+                       {isContainerOrder && project && !item.containerOrderConfirmed && (
+                        <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Package className="w-4 h-4 text-primary" />
+                              <span className="text-xs font-medium text-primary">Container Beställning</span>
+                            </div>
+                            <ContainerOrderDropdown 
+                              project={project} 
+                              onOrderSent={handleContainerOrderSent}
+                            />
+                          </div>
+                          
+                          <div className="text-xs text-muted-foreground">
+                            Välj containertyp och skicka beställning automatiskt via e-post.
+                          </div>
                         </div>
-                      )}
+                        )}
 
-                       {/* Material Order Integration with Linköping Inventory */}
-                      {isMaterialOrder && project && (
+                        {/* Material Order Integration with Linköping Inventory */}
+                       {isMaterialOrder && project && (
                         <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
                           <div className="flex items-center gap-2">
                             <Package className="w-4 h-4 text-info" />
@@ -1948,6 +1924,13 @@ Tack!`);
               tags: ['guaranty', 'certificate']
             });
           } : undefined}
+        {/* Team Selection Modal */}
+        <TeamSelectionModal
+          isOpen={showTeamSelectionModal}
+          onClose={() => setShowTeamSelectionModal(false)}
+          project={project!}
+          teams={teams}
+          onTeamAssigned={handleTeamAssigned}
         />
       )}
     </Card>

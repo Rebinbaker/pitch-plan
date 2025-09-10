@@ -2,3 +2,12 @@ project_id = "mskdohetwbbkuexcolcl"
 
 [functions.send-welcome-email]
 verify_jwt = false
+
+[functions.send-container-order]
+verify_jwt = false
+
+[functions.send-material-reminder]
+verify_jwt = false
+
+[functions.send-material-order]
+verify_jwt = false
