@@ -222,21 +222,30 @@ export function ProjectChecklist({
       });
     }, 1000);
     
-    // Copy WhatsApp link to clipboard instead of opening window to avoid auth issues
-    navigator.clipboard.writeText(url).then(() => {
+    // Try to open WhatsApp directly
+    try {
+      window.open(url, '_blank');
       toast({
-        title: "WhatsApp-länk kopierad",
-        description: "Klistra in länken i din webbläsare för att öppna WhatsApp",
-        duration: 4000,
+        title: "WhatsApp öppnas",
+        description: "WhatsApp öppnas i ny flik eller app",
+        duration: 3000,
       });
-    }).catch(() => {
-      // Fallback for older browsers
-      toast({
-        title: "WhatsApp-länk",
-        description: `Kopiera denna länk: ${url}`,
-        duration: 6000,
+    } catch (error) {
+      // Fallback: copy to clipboard if opening fails
+      navigator.clipboard.writeText(url).then(() => {
+        toast({
+          title: "WhatsApp-länk kopierad", 
+          description: "Klistra in länken för att öppna WhatsApp",
+          duration: 4000,
+        });
+      }).catch(() => {
+        toast({
+          title: "WhatsApp-länk",
+          description: `Kopiera denna länk: ${url}`,
+          duration: 6000,
+        });
       });
-    });
+    }
   };
 
   const confirmWhatsAppGroup = (itemId: string) => {
