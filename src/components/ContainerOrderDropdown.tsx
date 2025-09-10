@@ -297,12 +297,34 @@ Lokala Hantverkarna`;
     const emailContent = generateCombinedEmailContent();
     const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
     const subject = `Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${project.address}`;
+    
+    // Create mailto URL with proper encoding
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
     
+    // Try multiple methods to open the email client
     try {
-      window.location.href = mailtoUrl;
+      // First try: Direct window open
+      const newWindow = window.open(mailtoUrl, '_blank');
+      
+      // If popup was blocked or failed, try location assignment
+      if (!newWindow) {
+        window.location.assign(mailtoUrl);
+      }
     } catch (error) {
-      window.open(mailtoUrl, '_blank');
+      // Fallback: Copy to clipboard and notify user
+      navigator.clipboard.writeText(emailContent).then(() => {
+        toast({
+          title: "E-postklient kunde inte öppnas",
+          description: "Texten har kopierats till urklipp istället.",
+          variant: "destructive"
+        });
+      }).catch(() => {
+        toast({
+          title: "Fel",
+          description: "Kunde inte öppna e-postklient eller kopiera text.",
+          variant: "destructive"
+        });
+      });
     }
   };
 
