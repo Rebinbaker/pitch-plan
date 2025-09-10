@@ -43,7 +43,7 @@ export function MobileProjectDashboard({
   return (
     <div className="min-h-screen bg-background p-4 space-y-4">
       {/* Mobile Header */}
-      <div className="flex items-center justify-between sticky top-4 bg-background/95 backdrop-blur-sm z-10 py-2 -mx-4 px-4 border-b">
+      <div className="flex items-center justify-between bg-background py-2 border-b">
         <div>
           <h1 className="text-xl font-bold">Projekt</h1>
           <p className="text-sm text-muted-foreground">
