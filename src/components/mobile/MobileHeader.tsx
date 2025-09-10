@@ -63,9 +63,9 @@ export function MobileHeader({
           {/* Logo and current page */}
           <div className="flex items-center gap-3">
             <img 
-              src="/src/assets/logo.png" 
+              src="/lovable-uploads/c09b6995-d03a-4e86-b925-942212af5d38.png" 
               alt="Lokala Hantverkarna Logo" 
-              className="h-6 w-auto"
+              className="h-8 w-auto"
             />
             <div className="h-4 w-px bg-border" />
             <span className="text-sm font-medium text-foreground">

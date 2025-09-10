@@ -42,8 +42,8 @@ export function MobileProjectDashboard({
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-4">
-      {/* Mobile Header */}
-      <div className="flex items-center justify-between bg-background py-2 border-b">
+      {/* Mobile Header - Static, not sticky */}
+      <div className="flex items-center justify-between py-3 mb-4">
         <div>
           <h1 className="text-xl font-bold">Projekt</h1>
           <p className="text-sm text-muted-foreground">
