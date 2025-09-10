@@ -165,6 +165,7 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
         onUpdate={onUpdate}
         trailers={trailers}
         teams={teams}
+        projects={[]}
       />
 
       <MobileEditProjectModal
