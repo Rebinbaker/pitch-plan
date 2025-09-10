@@ -9,11 +9,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+interface ContainerSummary {
+  name: string;
+  description: string;
+  quantity: number;
+  size: string;
+  type: string;
+}
+
 interface ContainerOrderRequest {
   projectName: string;
   projectAddress: string;
-  containerType: string;
-  containerDescription: string;
+  containers: ContainerSummary[];
   emailContent: string;
 }
 
@@ -27,12 +34,26 @@ const handler = async (req: Request): Promise<Response> => {
     const { 
       projectName, 
       projectAddress, 
-      containerType, 
-      containerDescription, 
+      containers,
       emailContent 
     }: ContainerOrderRequest = await req.json();
     
-    console.log('Sending container order email for project:', projectName, 'container:', containerType);
+    const totalContainers = containers.reduce((sum, c) => sum + c.quantity, 0);
+    console.log('Sending container order email for project:', projectName, 'total containers:', totalContainers);
+
+    // Generate container list HTML
+    const containerListHtml = containers.map(container => `
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong style="color: #333333; font-size: 16px;">${container.quantity}x ${container.name}</strong>
+          <div>
+            <span style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px;">${container.size}</span>
+            <span style="background: #dee2e6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${container.type}</span>
+          </div>
+        </div>
+        <p style="color: #666666; margin: 0; font-size: 14px;">${container.description}</p>
+      </div>
+    `).join('');
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -40,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Container-beställning - ${containerType}</title>
+          <title>Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''}</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
@@ -51,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
                 🚛 Container-beställning
               </h1>
               <p style="color: #666666; margin: 10px 0 0 0; font-size: 16px;">
-                ${containerType} - ${containerDescription}
+                ${totalContainers} container${totalContainers > 1 ? 's' : ''} för ${projectName}
               </p>
             </div>
             
@@ -63,9 +84,16 @@ const handler = async (req: Request): Promise<Response> => {
               <div style="color: #555555; line-height: 1.6;">
                 <p style="margin: 5px 0;"><strong>Projekt:</strong> ${projectName}</p>
                 <p style="margin: 5px 0;"><strong>Adress:</strong> ${projectAddress}</p>
-                <p style="margin: 5px 0;"><strong>Container typ:</strong> ${containerType}</p>
-                <p style="margin: 5px 0;"><strong>Beskrivning:</strong> ${containerDescription}</p>
+                <p style="margin: 5px 0;"><strong>Antal containers:</strong> ${totalContainers}</p>
               </div>
+            </div>
+            
+            <!-- Container list -->
+            <div style="margin-bottom: 25px;">
+              <h2 style="color: #333333; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">
+                📦 Beställda containers
+              </h2>
+              ${containerListHtml}
             </div>
             
             <!-- Email content -->
@@ -96,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Lokala Hantverkarna <noreply@lokalahantverkarna.se>",
       to: ["container@example.com"], // Replace with actual supplier email
-      subject: `Container-beställning - ${containerType} - ${projectAddress}`,
+      subject: `Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${projectAddress}`,
       html: emailHtml,
       text: emailContent, // Plain text fallback
     });
@@ -107,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
     await resend.emails.send({
       from: "Lokala Hantverkarna <noreply@lokalahantverkarna.se>",
       to: ["team@lokalahantverkarna.se"], // Replace with actual team email
-      subject: `[KOPIA] Container-beställning - ${containerType} - ${projectAddress}`,
+      subject: `[KOPIA] Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${projectAddress}`,
       html: emailHtml,
       text: `KOPIA AV CONTAINER-BESTÄLLNING:\n\n${emailContent}`,
     });
@@ -115,7 +143,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({
       success: true,
       message: "Container order sent successfully",
-      containerType,
+      totalContainers,
+      containers: containers.map(c => `${c.quantity}x ${c.name}`).join(', '),
       projectName
     }), {
       status: 200,

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Truck, Mail, Copy, Check } from 'lucide-react';
+import { Truck, Mail, Copy, Check, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/project';
@@ -142,32 +142,91 @@ interface ContainerOrderDropdownProps {
   onOrderSent: () => void;
 }
 
+interface SelectedContainer {
+  id: string;
+  order: ContainerOrder;
+  quantity: number;
+}
+
 export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderDropdownProps) {
   const { toast } = useToast();
-  const [selectedOrder, setSelectedOrder] = useState<string>('');
+  const [selectedContainers, setSelectedContainers] = useState<SelectedContainer[]>([]);
+  const [currentSelection, setCurrentSelection] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
 
-  const handleOrderSelect = (orderId: string) => {
-    setSelectedOrder(orderId);
+  const addContainer = () => {
+    const order = CONTAINER_ORDERS.find(o => o.id === currentSelection);
+    if (!order) return;
+
+    const existingContainer = selectedContainers.find(c => c.order.id === order.id);
+    if (existingContainer) {
+      // Increase quantity if container already exists
+      setSelectedContainers(prev => 
+        prev.map(c => 
+          c.order.id === order.id 
+            ? { ...c, quantity: c.quantity + 1 }
+            : c
+        )
+      );
+    } else {
+      // Add new container
+      const newContainer: SelectedContainer = {
+        id: `${order.id}-${Date.now()}`,
+        order,
+        quantity: 1
+      };
+      setSelectedContainers(prev => [...prev, newContainer]);
+    }
+    setCurrentSelection('');
   };
 
-  const getSelectedOrderDetails = () => {
-    return CONTAINER_ORDERS.find(order => order.id === selectedOrder);
+  const removeContainer = (containerId: string) => {
+    setSelectedContainers(prev => prev.filter(c => c.id !== containerId));
   };
 
-  const generateEmailContent = (order: ContainerOrder) => {
-    return order.emailTemplate
-      .replace('{PROJECT_NAME}', project.name)
-      .replace('{PROJECT_ADDRESS}', project.address || 'Ej angiven');
+  const updateQuantity = (containerId: string, quantity: number) => {
+    if (quantity < 1) {
+      removeContainer(containerId);
+      return;
+    }
+    setSelectedContainers(prev =>
+      prev.map(c => c.id === containerId ? { ...c, quantity } : c)
+    );
+  };
+
+  const generateCombinedEmailContent = () => {
+    if (selectedContainers.length === 0) return '';
+    
+    const containerList = selectedContainers.map(container => 
+      `- ${container.quantity}x ${container.order.name} (${container.order.description})`
+    ).join('\n');
+
+    const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
+
+    return `Hej,
+
+Vi behöver beställa ${totalContainers} container${totalContainers > 1 ? 's' : ''} för följande projekt:
+
+Projekt: ${project.name}
+Adress: ${project.address || 'Ej angiven'}
+
+Container-beställning:
+${containerList}
+
+Leveransdatum: Så snart som möjligt
+
+Kontakta oss för leveransdetaljer.
+
+Med vänliga hälsningar,
+Lokala Hantverkarna`;
   };
 
   const copyOrderText = () => {
-    const order = getSelectedOrderDetails();
-    if (!order) return;
+    if (selectedContainers.length === 0) return;
 
-    const emailContent = generateEmailContent(order);
+    const emailContent = generateCombinedEmailContent();
     navigator.clipboard.writeText(emailContent);
     
     toast({
@@ -177,20 +236,25 @@ export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderD
   };
 
   const sendOrderEmail = async () => {
-    const order = getSelectedOrderDetails();
-    if (!order) return;
+    if (selectedContainers.length === 0) return;
 
     setIsSending(true);
 
     try {
-      const emailContent = generateEmailContent(order);
+      const emailContent = generateCombinedEmailContent();
+      const containerSummary = selectedContainers.map(c => ({
+        name: c.order.name,
+        description: c.order.description,
+        quantity: c.quantity,
+        size: c.order.size,
+        type: c.order.type
+      }));
       
       const { error } = await supabase.functions.invoke('send-container-order', {
         body: {
           projectName: project.name,
           projectAddress: project.address,
-          containerType: order.name,
-          containerDescription: order.description,
+          containers: containerSummary,
           emailContent: emailContent
         }
       });
@@ -202,16 +266,17 @@ export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderD
       setOrderSent(true);
       onOrderSent();
       
+      const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
       toast({
         title: "Container-beställning skickad!",
-        description: `${order.name} har beställts för ${project.address}`,
+        description: `${totalContainers} container${totalContainers > 1 ? 's' : ''} har beställts för ${project.address}`,
       });
 
       // Auto-close dialog after success
       setTimeout(() => {
         setIsOpen(false);
         setOrderSent(false);
-        setSelectedOrder('');
+        setSelectedContainers([]);
       }, 2000);
 
     } catch (error) {
@@ -227,11 +292,11 @@ export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderD
   };
 
   const openInOutlook = () => {
-    const order = getSelectedOrderDetails();
-    if (!order) return;
+    if (selectedContainers.length === 0) return;
 
-    const emailContent = generateEmailContent(order);
-    const subject = `Container-beställning - ${order.name} - ${project.address}`;
+    const emailContent = generateCombinedEmailContent();
+    const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
+    const subject = `Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${project.address}`;
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
     
     try {
@@ -262,50 +327,99 @@ export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderD
             Adress: {project.address}
           </div>
 
+          {/* Add container section */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Välj containertyp:</label>
-            <Select value={selectedOrder} onValueChange={handleOrderSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Välj container..." />
-              </SelectTrigger>
-              <SelectContent>
-                {CONTAINER_ORDERS.map(order => (
-                  <SelectItem key={order.id} value={order.id}>
-                    <div className="flex flex-col">
-                      <span>{order.name}</span>
-                      <span className="text-xs text-muted-foreground">{order.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium">Lägg till container:</label>
+            <div className="flex gap-2">
+              <Select value={currentSelection} onValueChange={setCurrentSelection}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Välj container..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTAINER_ORDERS.map(order => (
+                    <SelectItem key={order.id} value={order.id}>
+                      <div className="flex flex-col">
+                        <span>{order.name}</span>
+                        <span className="text-xs text-muted-foreground">{order.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={addContainer} 
+                disabled={!currentSelection}
+                size="sm"
+                className="gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                Lägg till
+              </Button>
+            </div>
           </div>
 
-          {selectedOrder && (
-            <Card>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{getSelectedOrderDetails()?.size}</Badge>
-                    <Badge variant="secondary">{getSelectedOrderDetails()?.type}</Badge>
+          {/* Selected containers list */}
+          {selectedContainers.length > 0 && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Valda containers:</label>
+              {selectedContainers.map(container => (
+                <Card key={container.id} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium">{container.order.name}</span>
+                        <Badge variant="outline">{container.order.size}</Badge>
+                        <Badge variant="secondary">{container.order.type}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {container.order.description}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => updateQuantity(container.id, container.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <span className="min-w-8 text-center">{container.quantity}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => updateQuantity(container.id, container.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => removeContainer(container.id)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="text-sm">
-                    <strong>Beskrivning:</strong> {getSelectedOrderDetails()?.description}
-                  </div>
-                  
+                </Card>
+              ))}
+              
+              {/* Email preview */}
+              <Card>
+                <CardContent className="pt-4">
                   <div className="text-sm bg-muted p-3 rounded-md">
                     <strong>E-postmall:</strong>
                     <div className="mt-2 whitespace-pre-line text-xs">
-                      {generateEmailContent(getSelectedOrderDetails()!)}
+                      {generateCombinedEmailContent()}
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
-          {selectedOrder && (
+          {selectedContainers.length > 0 && (
             <div className="flex flex-wrap gap-2">
               <Button 
                 onClick={sendOrderEmail} 
