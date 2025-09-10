@@ -122,9 +122,9 @@ export interface WorkPhaseItem {
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Containerbeställning', completed: false, weight: 5 },
   { label: 'Ställningshantering', completed: false, weight: 5 },
-  { label: 'Materialbeställning', completed: false, weight: 5 },
   { label: 'Schedule construction team', completed: false, weight: 2 },
   { label: 'Skapa WhatsApp grupp', completed: false, weight: 1 },
+  { label: 'Materialbeställning', completed: false, weight: 5 },
   { label: 'Dagliga egenkontroller', completed: false, weight: 5 },
   { label: 'Boka hemtag av container', completed: false, weight: 3 },
   { label: 'Nedmontering av ställningar', completed: false, weight: 4 },
