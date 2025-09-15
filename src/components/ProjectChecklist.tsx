@@ -109,12 +109,10 @@ export function ProjectChecklist({
     return false;
   };
   
-  // WhatsApp state management
-  const [whatsappStates, setWhatsappStates] = useState<{[key: string]: {
-    status: 'idle' | 'opened' | 'confirmed';
-    openedAt?: number;
-    customGroupName?: string;
-  }}>({});
+  
+  // WhatsApp state management - REMOVED
+  
+  const [materialOrderAnswer, setMaterialOrderAnswer] = useState<'yes' | 'no' | ''>('');
   
   const [showGroupNameEdit, setShowGroupNameEdit] = useState<{[key: string]: boolean}>({});
   const [timers, setTimers] = useState<{ [key: string]: number }>({});
@@ -174,14 +172,25 @@ export function ProjectChecklist({
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
 
   // WhatsApp helper functions
-  const generateWhatsAppURL = (project: Project, customName?: string) => {
-    const groupName = customName || project.address;
-    const groupInstructions = encodeURIComponent(`Hej! Skapa en WhatsApp-grupp med namnet "${groupName}" för projektet ${project.address}. Bjud in alla teammedlemmar.`);
-    // Use different URL formats to avoid blocking
-    return `whatsapp://send?text=${groupInstructions}`;
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Kopierat!",
+        description: "Adressen har kopierats till urklipp",
+        duration: 2000,
+      });
+    } catch (err) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte kopiera till urklipp",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
   };
 
-  const openWhatsApp = (itemId: string, project: Project) => {
+  // Container booking helper functions
     console.log('WhatsApp: openWhatsApp called for item:', itemId);
     const state = whatsappStates[itemId];
     const groupName = state?.customGroupName || project.address;
@@ -310,16 +319,6 @@ export function ProjectChecklist({
     setTimers(prev => ({ ...prev, [itemId]: 0 }));
   };
 
-  const updateGroupName = (itemId: string, groupName: string) => {
-    setWhatsappStates(prev => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        customGroupName: groupName
-      }
-    }));
-  };
-
   
   const copyToClipboard = async (text: string) => {
     try {
@@ -337,13 +336,6 @@ export function ProjectChecklist({
         duration: 2000,
       });
     }
-  };
-
-  const isWhatsAppItem = (itemLabel: string) => {
-    return itemLabel.toLowerCase().includes('whatsapp') || 
-           itemLabel.toLowerCase().includes('whats app') ||
-           itemLabel.toLowerCase().includes('chat') ||
-           itemLabel.toLowerCase().includes('grupp');
   };
 
   // Container booking helper functions
@@ -953,7 +945,6 @@ Tack!`);
             const isBookScaffolding = item.label === 'Ställningshantering';
             const isScheduleTeam = item.label === 'Schedule construction team';
             const isAvvaratMaterial = item.label === 'Avvarat material?';
-            const isWhatsApp = isWhatsAppItem(item.label);
             const isContainerBooking = isContainerBookingItem(item.label);
             const isContainerOrder = isContainerOrderItem(item.label);
             const isMaterialOrder = item.label === 'Materialbeställning';
@@ -986,7 +977,7 @@ Tack!`);
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial || isContainerBooking || isContainerOrder) return; // These items disabled for manual click
                     if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
@@ -999,12 +990,12 @@ Tack!`);
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding || isWhatsApp || isContainerBooking) return; // These items disabled for manual completion
+                          if (isBookScaffolding || isContainerBooking) return; // These items disabled for manual completion
                           if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || isContainerBooking || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
@@ -1036,16 +1027,14 @@ Tack!`);
                       }`}
                     >
                        {isContainerBooking 
-                         ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
-                         : isWhatsApp
-                           ? (isItemComplete ? "Skapat WhatsApp grupp" : "Skapa WhatsApp grupp")
-                           : isScheduleTeam
-                             ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
-                             : isContainerOrder
-                               ? (isItemComplete ? "Bokad Container" : "Boka Container")
-                               : isBookScaffolding
-                                 ? (isItemComplete ? "Ställningsvagn bokad" : "Boka ställningsvagn")
-                                 : item.label
+                          ? (isItemComplete ? "Bokad hemtag av container" : "Boka hemtag av container")
+                          : isScheduleTeam
+                              ? (isItemComplete ? "Bygglag tillsatt" : "Tillsätt bygglag")
+                              : isContainerOrder
+                                ? (isItemComplete ? "Bokad Container" : "Boka Container")
+                                : isBookScaffolding
+                                  ? (isItemComplete ? "Ställningsvagn bokad" : "Boka ställningsvagn")
+                                  : item.label
                       }
                       {itemLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -1188,134 +1177,7 @@ Tack!`);
                        </div>
                       )}
                       
-                    {/* Enhanced WhatsApp Integration */}
-                     {isWhatsApp && project && !item.whatsappConfirmed && (
-                       <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
-                         <div className="flex items-center gap-2">
-                           <MessageCircle className="w-4 h-4 text-primary" />
-                           <span className="text-xs font-medium text-primary">WhatsApp Grupp</span>
-                         </div>
-                         
-                         {/* Group name preview/edit */}
-                         <div className="space-y-2">
-                           <div className="flex items-center justify-between">
-                             <span className="text-xs text-muted-foreground">Gruppnamn:</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 px-2 text-xs"
-                               onClick={() => setShowGroupNameEdit(prev => ({
-                                 ...prev,
-                                 [item.id]: !prev[item.id]
-                               }))}
-                             >
-                               {showGroupNameEdit[item.id] ? 'Spara' : 'Ändra'}
-                             </Button>
-                           </div>
-                           
-                           {showGroupNameEdit[item.id] ? (
-                             <Input
-                               className="h-7 text-xs"
-                               value={whatsappStates[item.id]?.customGroupName || project.address}
-                               onChange={(e) => updateGroupName(item.id, e.target.value)}
-                               placeholder="Ange gruppnamn"
-                             />
-                            ) : (
-                              <div className="flex items-center justify-between p-2 bg-background/50 rounded">
-                                <span className="text-xs font-medium">
-                                  {whatsappStates[item.id]?.customGroupName || project.address}
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 ml-2"
-                                  onClick={() => copyToClipboard(whatsappStates[item.id]?.customGroupName || project.address)}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                         </div>
-
-                         {/* Status and actions */}
-                         {(() => {
-                           const state = whatsappStates[item.id];
-                           const status = state?.status || 'idle';
-                           
-                           switch (status) {
-                             case 'idle':
-                               return (
-                                 <div className="space-y-2">
-                                   <p className="text-xs text-muted-foreground">
-                                     Klicka för att öppna WhatsApp och skapa en grupp med förslaget namn.
-                                   </p>
-                                   <Button
-                                     size="sm"
-                                     onClick={() => openWhatsApp(item.id, project)}
-                                     className="w-full h-8 text-xs bg-[#25D366] hover:bg-[#25D366]/80 text-white"
-                                   >
-                                     <MessageCircle className="w-3 h-3 mr-1" />
-                                     Öppna WhatsApp
-                                   </Button>
-                                 </div>
-                               );
-                             
-                             case 'opened':
-                               const timeLeft = timers[item.id] || 0;
-                               const minutes = Math.floor(timeLeft / 60);
-                               const seconds = timeLeft % 60;
-                               const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                               
-                               return (
-                                 <div className="space-y-2">
-                                   <div className="flex items-center justify-between">
-                                     <div className="flex items-center gap-2 text-xs text-amber-600">
-                                       <Clock className="w-3 h-3" />
-                                       <span>WhatsApp öppnad - väntar på bekräftelse</span>
-                                     </div>
-                                     {timeLeft > 0 && (
-                                       <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                                         {timeDisplay}
-                                       </div>
-                                     )}
-                                   </div>
-                                   <p className="text-xs text-muted-foreground">
-                                     Har du skapat gruppen? Bekräfta när du är klar.
-                                     {timeLeft > 0 && (
-                                       <span className="block mt-1 text-amber-600">
-                                         Påminnelse om {timeDisplay}
-                                       </span>
-                                     )}
-                                   </p>
-                                   <div className="flex gap-2">
-                                     <Button
-                                       size="sm"
-                                       onClick={() => confirmWhatsAppGroup(item.id)}
-                                       className="flex-1 h-8 text-xs"
-                                     >
-                                       <Check className="w-3 h-3 mr-1" />
-                                       Grupp skapad
-                                     </Button>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       onClick={() => resetWhatsAppStatus(item.id)}
-                                       className="h-8 text-xs"
-                                     >
-                                       Börja om
-                                     </Button>
-                                   </div>
-                                 </div>
-                               );
-                             
-                             default:
-                               return null;
-                           }
-                         })()}
-                       </div>
-                     )}
-
-                    {/* Container Booking Integration */}
+                     {/* Container Booking Integration */}
                      {isContainerBooking && project && !item.containerConfirmed && (
                        <div className="mt-3 p-3 bg-accent/30 rounded-lg border border-accent/50 space-y-3">
                          <div className="flex items-center gap-2">
@@ -1452,13 +1314,50 @@ Tack!`);
                         </div>
                        )}
 
-                         {/* Material Order Integration with Linköping Inventory */}
-                        {isMaterialOrder && project && (
-                         <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
-                           <div className="flex items-center gap-2">
-                             <Package className="w-4 h-4 text-info" />
-                             <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
-                           </div>
+                          {/* Material Order with Yes/No Selection */}
+                         {isMaterialOrder && project && (
+                          <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Package className="w-4 h-4 text-info" />
+                              <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
+                            </div>
+                            
+                            {/* Yes/No buttons for material ordering */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Ska material beställas nu?</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant={materialOrderAnswer === 'yes' ? 'default' : 'outline'}
+                                  onClick={() => setMaterialOrderAnswer('yes')}
+                                >
+                                  Ja
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={materialOrderAnswer === 'no' ? 'default' : 'outline'}
+                                  onClick={() => setMaterialOrderAnswer('no')}
+                                >
+                                  Nej
+                                </Button>
+                              </div>
+                              
+                              {materialOrderAnswer === 'no' && (
+                                <div className="text-xs text-amber-600 font-medium">
+                                  ℹ️ Material lista kan fortfarande skapas - beställning avvaktas närmare byggstart
+                                </div>
+                              )}
+                            </div>
+
+                            <MaterialOrderModal
+                              project={project}
+                              allProjects={allProjects}
+                              onSave={handleMaterialOrderSave}
+                            />
+                         </div>
+                       )}
                            
                             {/* Quick material order templates */}
                             <div className="mt-2">
