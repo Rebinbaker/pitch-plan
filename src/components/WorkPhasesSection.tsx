@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project, ActivityLogEntry } from '@/types/project';
-import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, AlertTriangle, Copy, MessageCircle } from 'lucide-react';
+import { Hammer, Calendar, ChevronDown, ChevronUp, Camera, Mail, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -216,21 +216,6 @@ Tack! 👷‍♂️`;
     }
   };
 
-  const openWhatsApp = (phaseLabel: string) => {
-    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
-📍 ${project.address}
-
-Pågående: ${phaseLabel}
-
-⚠️ VIKTIGT: Skicka minst 20 bilder idag!
-📸 Fotografera arbetsområdet, säkerhet och kvalitet
-📱 Skicka bilderna direkt till projektledaren
-
-Tack! 👷‍♂️`;
-    
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reminderText)}`;
-    window.open(whatsappUrl, '_blank');
-  };
 
   const getPhaseStatusIcon = (phase: any) => {
     if (!phase.requiresDailyInspection) return null;
@@ -685,29 +670,26 @@ Tack! 👷‍♂️`;
                                 ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
                                 : ""
                             }`}
-                            onClick={() => copiedPhases.has(phase.id) 
-                              ? openWhatsApp(phase.label)
-                              : copyReminderText(phase.label, phase.id)
-                            }
+                             onClick={() => copyReminderText(phase.label, phase.id)}
                           >
-                            {copiedPhases.has(phase.id) ? (
-                              <>
-                                <MessageCircle className="h-3 w-3" />
-                                Öppna WhatsApp
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3 w-3" />
-                                Kopiera påminnelsetext
-                              </>
-                            )}
+                             {copiedPhases.has(phase.id) ? (
+                               <>
+                                 <Check className="h-3 w-3" />
+                                 Kopierat
+                               </>
+                             ) : (
+                               <>
+                                 <Copy className="h-3 w-3" />
+                                 Kopiera påminnelsetext
+                               </>
+                             )}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {copiedPhases.has(phase.id) 
-                            ? "Öppna WhatsApp för att skicka påminnelse"
-                            : "Kopiera påminnelsetext för arbetare"
-                          }
+                           {copiedPhases.has(phase.id) 
+                             ? "Text kopierad till urklipp"
+                             : "Kopiera påminnelsetext för arbetare"
+                           }
                         </TooltipContent>
                       </Tooltip>
                     )}
