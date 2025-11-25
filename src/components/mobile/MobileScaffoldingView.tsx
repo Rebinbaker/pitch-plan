@@ -11,13 +11,15 @@ interface MobileScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
   onUpdateScaffolding: (trailer: ScaffoldingTrailer) => void;
   onAddScaffolding: (trailer: ScaffoldingTrailer) => void;
+  onDeleteScaffolding: (trailerId: string) => void;
   projects?: any[];
 }
 
 export function MobileScaffoldingView({ 
   scaffolding, 
   onUpdateScaffolding, 
-  onAddScaffolding, 
+  onAddScaffolding,
+  onDeleteScaffolding,
   projects = [] 
 }: MobileScaffoldingViewProps) {
   const [searchTerm, setSearchTerm] = useState('');

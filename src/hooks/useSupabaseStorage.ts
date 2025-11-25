@@ -332,6 +332,36 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const deleteScaffolding = async (trailerId: string) => {
+    try {
+      if (user && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('scaffolding' as any)
+          .delete()
+          .eq('id', trailerId);
+        
+        if (error) throw error;
+        // Reload scaffolding after deleting
+        await loadSupabaseScaffolding();
+      } else {
+        await localStorageHook.deleteScaffolding(trailerId);
+      }
+      
+      toast({
+        title: "Ställning raderad",
+        description: "Ställningen har raderats framgångsrikt.",
+      });
+    } catch (error) {
+      console.error('Error deleting scaffolding:', error);
+      toast({
+        variant: "destructive",
+        title: "Fel vid radering",
+        description: "Kunde inte radera ställningen. Försök igen.",
+      });
+      throw error;
+    }
+  };
+
   const updateTeam = async (updatedTeam: ConstructionTeam) => {
     try {
       await localStorageHook.updateTeam(updatedTeam);
@@ -437,6 +467,7 @@ export const useSupabaseStorage = () => {
     addProject,
     updateScaffolding,
     addScaffolding,
+    deleteScaffolding,
     updateTeam,
     addTeam,
     uploadFile,

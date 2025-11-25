@@ -326,6 +326,14 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.SCAFFOLDING, JSON.stringify(newScaffolding));
   };
 
+  const deleteScaffolding = async (trailerId: string) => {
+    console.log('Deleting scaffolding from localStorage:', trailerId);
+
+    const newScaffolding = scaffolding.filter(trailer => trailer.id !== trailerId);
+    setScaffolding(newScaffolding);
+    localStorage.setItem(STORAGE_KEYS.SCAFFOLDING, JSON.stringify(newScaffolding));
+  };
+
   const updateTeam = async (updatedTeam: ConstructionTeam) => {
     console.log('Saving team to localStorage:', updatedTeam.id, updatedTeam.name);
 
@@ -405,12 +413,13 @@ export const useLocalStorage = () => {
     addProject,
     updateScaffolding,
     addScaffolding,
+    deleteScaffolding,
     updateTeam,
     addTeam,
     uploadFile,
     deleteFile,
     markNotificationAsRead,
     dismissNotification,
-    addNotifications
+    addNotifications,
   };
 };

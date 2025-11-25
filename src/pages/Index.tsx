@@ -57,6 +57,7 @@ const Index = () => {
     addProject,
     updateScaffolding,
     addScaffolding,
+    deleteScaffolding,
     updateTeam,
     addTeam,
     uploadFile,
@@ -207,6 +208,7 @@ const Index = () => {
                     scaffolding={scaffolding}
                     onUpdateScaffolding={updateScaffolding}
                     onAddScaffolding={addScaffolding}
+                    onDeleteScaffolding={deleteScaffolding}
                     projects={projects}
                   />
                 )}
@@ -357,15 +359,17 @@ const Index = () => {
                   scaffolding={scaffolding}
                   onUpdateScaffolding={updateScaffolding}
                   onAddScaffolding={addScaffolding}
+                  onDeleteScaffolding={deleteScaffolding}
                   projects={projects}
                 />
               ) : (
-                <ScaffoldingView 
-                  scaffolding={scaffolding}
-                  onUpdateScaffolding={updateScaffolding}
-                  onAddScaffolding={addScaffolding}
-                  projects={projects}
-                />
+                  <ScaffoldingView
+                    scaffolding={scaffolding}
+                    onUpdateScaffolding={updateScaffolding}
+                    onAddScaffolding={addScaffolding}
+                    onDeleteScaffolding={deleteScaffolding}
+                    projects={projects}
+                  />
               )}
             </TabsContent>
 
