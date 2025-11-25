@@ -170,39 +170,37 @@ Lokala Hantverkarna`;
     const emailContent = generateCombinedEmailContent();
     const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
     const subject = `Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${project.address}`;
-    
-    // Create mailto URL
-    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
-    
+
+    // Begränsa längden på body så att mailto-länken inte blir för lång
+    const maxBodyLength = 1500;
+    let body = emailContent;
+    if (body.length > maxBodyLength) {
+      body = body.slice(0, maxBodyLength - 100) + '\n\n... (text avkortad pga längd)';
+    }
+
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
     try {
-      // Create a temporary link and trigger it
-      const tempLink = document.createElement('a');
-      tempLink.href = mailtoUrl;
-      tempLink.target = '_self';
-      document.body.appendChild(tempLink);
-      tempLink.click();
-      
-      // Clean up after a short delay
-      setTimeout(() => {
-        document.body.removeChild(tempLink);
-      }, 100);
-      
+      const newWindow = window.open(mailtoUrl, '_blank');
+
+      if (!newWindow) {
+        throw new Error('Popup eller mailto-blockerad');
+      }
+
       toast({
-        title: "E-postklient öppnas",
-        description: "Om inget händer, använd 'Kopiera Text' och klistra in i Outlook manuellt.",
+        title: 'Försöker öppna Outlook',
+        description: "Om inget händer, kontrollera popup-inställningar eller använd 'Kopiera Text'.",
       });
     } catch (error) {
       console.error('Error opening email client:', error);
-      // Fallback: copy to clipboard
       navigator.clipboard.writeText(emailContent);
       toast({
-        title: "Text kopierad",
-        description: "E-postklient kunde inte öppnas. Texten har kopierats till urklipp.",
-        variant: "destructive"
+        title: 'Text kopierad istället',
+        description: 'E-postklient kunde inte öppnas. Texten har kopierats till urklipp.',
+        variant: 'destructive',
       });
     }
   };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
