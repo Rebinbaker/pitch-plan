@@ -469,7 +469,34 @@ export const useSupabaseStorage = () => {
 
   const updateTeam = async (updatedTeam: ConstructionTeam) => {
     try {
-      await localStorageHook.updateTeam(updatedTeam);
+      if (user && organizationId && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('teams' as any)
+          .update({
+            name: updatedTeam.name,
+            type: updatedTeam.type,
+            leader: updatedTeam.leader,
+            availability_next_week: updatedTeam.availabilityNextWeek,
+            current_job: updatedTeam.currentJob,
+            performance_notes: updatedTeam.performanceNotes,
+            contact_info: updatedTeam.contactInfo,
+            skills: updatedTeam.skills || [],
+            members: updatedTeam.members || [],
+            sellers: updatedTeam.sellers || [],
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', updatedTeam.id)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Team uppdaterat",
+          description: `${updatedTeam.name} har uppdaterats framgångsrikt.`,
+        });
+      } else {
+        await localStorageHook.updateTeam(updatedTeam);
+      }
     } catch (error) {
       console.error('Error updating team:', error);
       toast({
@@ -483,7 +510,29 @@ export const useSupabaseStorage = () => {
 
   const addTeam = async (newTeam: ConstructionTeam) => {
     try {
-      await localStorageHook.addTeam(newTeam);
+      if (user && organizationId && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('teams' as any)
+          .insert({
+            name: newTeam.name,
+            type: newTeam.type,
+            leader: newTeam.leader,
+            availability_next_week: newTeam.availabilityNextWeek,
+            current_job: newTeam.currentJob,
+            performance_notes: newTeam.performanceNotes,
+            contact_info: newTeam.contactInfo,
+            skills: newTeam.skills || [],
+            members: newTeam.members || [],
+            sellers: newTeam.sellers || [],
+            user_id: user.id,
+            organization_id: organizationId,
+          });
+        
+        if (error) throw error;
+      } else {
+        await localStorageHook.addTeam(newTeam);
+      }
+      
       toast({
         title: "Team skapat",
         description: `${newTeam.name} har skapats framgångsrikt.`,
@@ -494,6 +543,37 @@ export const useSupabaseStorage = () => {
         variant: "destructive",
         title: "Fel vid skapande",
         description: "Kunde inte skapa teamet. Försök igen.",
+      });
+      throw error;
+    }
+  };
+
+  const deleteTeam = async (teamId: string) => {
+    try {
+      if (user && organizationId && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('teams' as any)
+          .delete()
+          .eq('id', teamId)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Fallback to localStorage (implement in localStorageHook if needed)
+        const updatedTeams = localStorageHook.teams.filter(t => t.id !== teamId);
+        localStorage.setItem('teams', JSON.stringify(updatedTeams));
+      }
+      
+      toast({
+        title: "Team raderat",
+        description: "Teamet har raderats framgångsrikt.",
+      });
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      toast({
+        variant: "destructive",
+        title: "Fel vid radering",
+        description: "Kunde inte radera teamet. Försök igen.",
       });
       throw error;
     }
@@ -576,6 +656,7 @@ export const useSupabaseStorage = () => {
     clearScaffolding,
     updateTeam,
     addTeam,
+    deleteTeam,
     uploadFile,
     deleteFile,
     markNotificationAsRead,

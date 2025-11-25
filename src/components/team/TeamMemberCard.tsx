@@ -5,12 +5,23 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
   User, Crown, Clock, AlertTriangle, TrendingUp, 
-  Phone, Mail, Edit, CheckCircle, XCircle 
+  Phone, Mail, Edit, CheckCircle, XCircle, Trash2 
 } from 'lucide-react';
 import { TeamMember, ConstructionTeam } from '@/types/team';
 import { WorkloadMetrics } from '@/types/workload';
 import { getWorkloadColor } from '@/utils/workloadCalculations';
 import { AddTeamMemberModal } from './AddTeamMemberModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -51,6 +62,14 @@ export function TeamMemberCard({
     }
   };
 
+  const handleDeleteMember = () => {
+    const updatedMembers = (team.members || []).filter(m => m.id !== member.id);
+    onUpdateTeam({
+      ...team,
+      members: updatedMembers,
+    });
+  };
+
   return (
     <Card className="shadow-card hover:shadow-hover transition-shadow">
       <CardHeader className="pb-3">
@@ -71,16 +90,39 @@ export function TeamMemberCard({
               </div>
             </div>
           </div>
-          <AddTeamMemberModal
-            team={team}
-            onUpdateTeam={onUpdateTeam}
-            editingMember={member}
-            trigger={
-              <Button variant="outline" size="sm">
-                <Edit className="w-4 h-4" />
-              </Button>
-            }
-          />
+          <div className="flex gap-2">
+            <AddTeamMemberModal
+              team={team}
+              onUpdateTeam={onUpdateTeam}
+              editingMember={member}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Edit className="w-4 h-4" />
+                </Button>
+              }
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Ta bort {member.firstName} {member.lastName}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Är du säker på att du vill ta bort denna medlem från teamet? Detta kan inte ångras.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Radera medlem
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </CardHeader>
 
