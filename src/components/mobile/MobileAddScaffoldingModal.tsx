@@ -53,11 +53,12 @@ export function MobileAddScaffoldingModal({ isOpen, onClose, onAdd }: MobileAddS
     
     try {
       const newTrailer: ScaffoldingTrailer = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         name: values.name,
         description: values.description || '',
         status: values.status,
-        ownership: 'Egna ställningar', // Default value
+        ownership: 'Egna ställningar',
+        moverNote: values.description || '',
         lastUpdated: new Date().toISOString(),
       };
 
