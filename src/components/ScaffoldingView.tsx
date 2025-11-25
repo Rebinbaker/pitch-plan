@@ -19,10 +19,11 @@ interface ScaffoldingViewProps {
   onAddScaffolding: (trailer: ScaffoldingTrailer) => void;
   onDeleteScaffolding: (trailerId: string) => void;
   onReloadScaffolding?: () => void;
+  onClearAllScaffolding?: () => Promise<void> | void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, onDeleteScaffolding, onReloadScaffolding, projects = [] }: ScaffoldingViewProps) {
+export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, onDeleteScaffolding, onReloadScaffolding, onClearAllScaffolding, projects = [] }: ScaffoldingViewProps) {
   const [editingTrailer, setEditingTrailer] = useState<ScaffoldingTrailer | null>(null);
   const [filterStatus, setFilterStatus] = useState<ScaffoldingStatus | 'all'>('all');
   const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
@@ -136,7 +137,18 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
           <p className="text-muted-foreground">Track and manage scaffolding trailers</p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
+          {onClearAllScaffolding && (
+            <Button
+              variant="outline"
+              onClick={onClearAllScaffolding}
+              className="border-destructive text-destructive hover:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Nollställ alla
+            </Button>
+          )}
+
           <Button
             variant="outline"
             onClick={handleCleanupDuplicates}
