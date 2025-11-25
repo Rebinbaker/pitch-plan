@@ -1064,7 +1064,7 @@ Tack!`);
                       </p>
                     )}
                     
-                    {/* Show trailer dropdown for Book scaffolding */}
+                     {/* Show trailer dropdown for Book scaffolding */}
                     {isBookScaffolding && trailers.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center gap-2">
@@ -1075,76 +1075,19 @@ Tack!`);
                             value={project.assignedTrailer || ''} 
                             onValueChange={(trailerId) => {
                               if (trailerId === 'none') {
-                                // Releasing current trailer
-                                if (project.assignedTrailer && onUpdateTrailer) {
-                                  const currentTrailer = trailers.find(t => t.id === project.assignedTrailer);
-                                  if (currentTrailer) {
-                                    onUpdateTrailer({
-                                      ...currentTrailer,
-                                      status: 'Tillgänglig',
-                                      assignedProject: undefined,
-                                      lastUpdated: new Date().toISOString().split('T')[0]
-                                    });
-                                  }
-                                }
-                                
+                                // Just remove the assignment, don't change trailer status yet
                                 const updatedProject = {
                                   ...project,
                                   assignedTrailer: undefined,
                                 };
                                 onUpdateProject(updatedProject);
                               } else {
-                                // Assigning new trailer
-                                const selectedTrailer = trailers.find(t => t.id === trailerId);
-                                if (selectedTrailer && onUpdateTrailer) {
-                                  // Release old trailer if exists
-                                  if (project.assignedTrailer && project.assignedTrailer !== trailerId) {
-                                    const oldTrailer = trailers.find(t => t.id === project.assignedTrailer);
-                                    if (oldTrailer) {
-                                      onUpdateTrailer({
-                                        ...oldTrailer,
-                                        status: 'Tillgänglig',
-                                        assignedProject: undefined,
-                                        lastUpdated: new Date().toISOString().split('T')[0]
-                                      });
-                                    }
-                                  }
-                                  
-                                  // Update new trailer
-                                  onUpdateTrailer({
-                                    ...selectedTrailer,
-                                    status: 'I bruk',
-                                    assignedProject: project.id,
-                                    lastUpdated: new Date().toISOString().split('T')[0]
-                                  });
-                                }
-                                
+                                // Just assign the trailer, don't change status until checkbox is ticked
                                 const updatedProject = {
                                   ...project,
                                   assignedTrailer: trailerId,
                                 };
                                 onUpdateProject(updatedProject);
-                                
-                                // Mark the scaffolding item as complete if not already completed
-                                if (!item.completed) {
-                                  const updatedChecklist = checklist.map(checkItem => {
-                                    if (checkItem.id === item.id) {
-                                      return {
-                                        ...checkItem,
-                                        completed: true,
-                                        completedAt: new Date().toISOString().split('T')[0],
-                                      };
-                                    }
-                                    return checkItem;
-                                  });
-                                  onChecklistUpdate(updatedChecklist);
-                                  
-                                  toast({
-                                    title: "Ställningsvagn tilldelad",
-                                    description: `${selectedTrailer?.name} är nu tilldelad detta projekt`,
-                                    duration: 3000,
-                                  });
-                                }
                               }
                             }}
                           >
@@ -1169,6 +1112,13 @@ Tack!`);
                            </SelectContent>
                          </Select>
                          
+                         {/* Show selected trailer */}
+                         {project.assignedTrailer && (
+                           <div className="text-xs text-muted-foreground">
+                             Vald: {trailers.find(t => t.id === project.assignedTrailer)?.name}
+                           </div>
+                         )}
+                         
                          {/* Responsible person field */}
                          <div className="space-y-1">
                            <Label className="text-xs">Ansvarig person:</Label>
@@ -1182,6 +1132,41 @@ Tack!`);
                                  scaffoldingResponsible: e.target.value,
                                };
                                onUpdateProject(updatedProject);
+                               
+                               // If both trailer and responsible person are set, mark as complete and update trailer status
+                               if (project.assignedTrailer && e.target.value && !item.completed && onUpdateTrailer) {
+                                 const selectedTrailer = trailers.find(t => t.id === project.assignedTrailer);
+                                 if (selectedTrailer) {
+                                   // Update trailer to "I bruk"
+                                   onUpdateTrailer({
+                                     ...selectedTrailer,
+                                     status: 'I bruk',
+                                     assignedProject: project.name,
+                                     location: project.address || undefined,
+                                     moverNote: `Ansvarig: ${e.target.value}`,
+                                     lastUpdated: new Date().toISOString()
+                                   });
+                                   
+                                   // Mark checklist item as complete
+                                   const updatedChecklist = checklist.map(checkItem => {
+                                     if (checkItem.id === item.id) {
+                                       return {
+                                         ...checkItem,
+                                         completed: true,
+                                         completedAt: new Date().toISOString().split('T')[0],
+                                       };
+                                     }
+                                     return checkItem;
+                                   });
+                                   onChecklistUpdate(updatedChecklist);
+                                   
+                                   toast({
+                                     title: "Ställningsvagn bokad",
+                                     description: `${selectedTrailer.name} är nu i bruk för detta projekt`,
+                                     duration: 3000,
+                                   });
+                                 }
+                               }
                              }}
                            />
                          </div>

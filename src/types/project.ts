@@ -88,6 +88,7 @@ export interface Project {
   avvaratMaterial?: AvvaratMaterial;
   assignedTrailer?: string; // ID of assigned trailer
   scaffoldingResponsible?: string; // Person responsible for scaffolding
+  scaffoldingBooked?: boolean; // True when trailer is assigned and responsible person is set
   workPhases?: WorkPhaseItem[];
   activityLog?: ActivityLogEntry[];
   allocatedMaterials?: AllocatedMaterial[]; // Materials allocated from other projects
