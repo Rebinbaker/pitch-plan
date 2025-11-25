@@ -14,10 +14,11 @@ interface ScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
   onUpdateScaffolding: (updated: ScaffoldingTrailer) => void;
   onAddScaffolding: (trailer: ScaffoldingTrailer) => void;
+  onDeleteScaffolding: (trailerId: string) => void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, projects = [] }: ScaffoldingViewProps) {
+export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, onDeleteScaffolding, projects = [] }: ScaffoldingViewProps) {
   const [editingTrailer, setEditingTrailer] = useState<ScaffoldingTrailer | null>(null);
   const [filterStatus, setFilterStatus] = useState<ScaffoldingStatus | 'all'>('all');
 
@@ -185,6 +186,7 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
                   <ScaffoldingEditForm
                     trailer={trailer}
                     onSave={handleUpdateTrailer}
+                    onDelete={onDeleteScaffolding}
                   />
                 </DialogContent>
               </Dialog>
@@ -199,10 +201,12 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
 interface ScaffoldingEditFormProps {
   trailer: ScaffoldingTrailer;
   onSave: (trailer: ScaffoldingTrailer) => void;
+  onDelete: (trailerId: string) => void;
 }
 
-function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
+function ScaffoldingEditForm({ trailer, onSave, onDelete }: ScaffoldingEditFormProps) {
   const [formData, setFormData] = useState(trailer);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,6 +214,11 @@ function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
       ...formData,
       lastUpdated: new Date().toISOString().split('T')[0],
     });
+  };
+
+  const handleDelete = () => {
+    onDelete(trailer.id);
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -260,9 +269,37 @@ function ScaffoldingEditForm({ trailer, onSave }: ScaffoldingEditFormProps) {
         />
       </div>
       
-      <Button type="submit" className="w-full">
-        Spara ändringar
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1">
+          Spara ändringar
+        </Button>
+        
+        {!showDeleteConfirm ? (
+          <Button 
+            type="button"
+            variant="destructive" 
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex-1"
+          >
+            Radera
+          </Button>
+        ) : (
+          <Button 
+            type="button"
+            variant="destructive" 
+            onClick={handleDelete}
+            className="flex-1"
+          >
+            Bekräfta radering
+          </Button>
+        )}
+      </div>
+      
+      {showDeleteConfirm && (
+        <p className="text-sm text-destructive text-center">
+          Klicka igen för att bekräfta radering
+        </p>
+      )}
     </form>
   );
 }
