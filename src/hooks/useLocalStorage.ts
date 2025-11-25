@@ -347,6 +347,12 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.SCAFFOLDING, JSON.stringify(newScaffolding));
   };
 
+  const clearScaffolding = async () => {
+    console.log('Clearing all scaffolding from localStorage');
+    setScaffolding([]);
+    localStorage.setItem(STORAGE_KEYS.SCAFFOLDING, JSON.stringify([]));
+  };
+
   const updateTeam = async (updatedTeam: ConstructionTeam) => {
     console.log('Saving team to localStorage:', updatedTeam.id, updatedTeam.name);
 
@@ -427,6 +433,7 @@ export const useLocalStorage = () => {
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
+    clearScaffolding,
     updateTeam,
     addTeam,
     uploadFile,

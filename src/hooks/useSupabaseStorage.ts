@@ -377,7 +377,34 @@ export const useSupabaseStorage = () => {
     }
   };
 
-  const updateTeam = async (updatedTeam: ConstructionTeam) => {
+  const clearScaffolding = async () => {
+    try {
+      if (user && organizationId && migrationStatus === 'completed') {
+        const { error } = await supabase
+          .from('scaffolding' as any)
+          .delete()
+          .eq('organization_id', organizationId);
+        
+        if (error) throw error;
+        await loadSupabaseScaffolding();
+      } else {
+        await localStorageHook.clearScaffolding();
+      }
+
+      toast({
+        title: 'Alla ställningsvagnar borttagna',
+        description: 'Du börjar nu om från 0 släpvagnar.',
+      });
+    } catch (error) {
+      console.error('Error clearing scaffolding:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Fel vid nollställning',
+        description: 'Kunde inte nollställa ställningsvagnarna. Försök igen.',
+      });
+      throw error;
+    }
+  };
     try {
       await localStorageHook.updateTeam(updatedTeam);
     } catch (error) {
@@ -483,6 +510,7 @@ export const useSupabaseStorage = () => {
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
+    clearScaffolding,
     updateTeam,
     addTeam,
     uploadFile,
