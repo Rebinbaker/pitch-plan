@@ -299,6 +299,20 @@ export const useSupabaseStorage = () => {
 
   const addScaffolding = async (newTrailer: ScaffoldingTrailer) => {
     try {
+      const currentScaffolding = migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding;
+      const existing = currentScaffolding.find(
+        (trailer) => trailer.name.trim().toLowerCase() === newTrailer.name.trim().toLowerCase()
+      );
+
+      if (existing) {
+        toast({
+          variant: 'destructive',
+          title: 'Släpvagn finns redan',
+          description: `Det finns redan en ställningsvagn med namnet "${newTrailer.name}".`,
+        });
+        return;
+      }
+
       if (user && organizationId && migrationStatus === 'completed') {
         const { error } = await supabase
           .from('scaffolding' as any)
@@ -318,20 +332,19 @@ export const useSupabaseStorage = () => {
       }
       
       toast({
-        title: "Ställning skapad",
+        title: 'Ställning skapad',
         description: `${newTrailer.name} har skapats framgångsrikt.`,
       });
     } catch (error) {
       console.error('Error adding scaffolding:', error);
       toast({
-        variant: "destructive",
-        title: "Fel vid skapande",
-        description: "Kunde inte skapa ställningen. Försök igen.",
+        variant: 'destructive',
+        title: 'Fel vid skapande',
+        description: 'Kunde inte skapa ställningen. Försök igen.',
       });
       throw error;
     }
   };
-
   const deleteScaffolding = async (trailerId: string) => {
     try {
       if (user && migrationStatus === 'completed') {
