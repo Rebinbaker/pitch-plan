@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Project } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { Truck, CheckCircle2, Circle } from 'lucide-react';
@@ -9,12 +10,13 @@ interface TrailerAssignmentSectionProps {
   project: Project;
   trailers: ScaffoldingTrailer[];
   onUpdateProject: (project: Project) => void;
+  onUpdateTrailer: (trailer: ScaffoldingTrailer) => void;
 }
 
-export function TrailerAssignmentSection({ project, trailers, onUpdateProject }: TrailerAssignmentSectionProps) {
+export function TrailerAssignmentSection({ project, trailers, onUpdateProject, onUpdateTrailer }: TrailerAssignmentSectionProps) {
   const assignedTrailer = trailers.find(trailer => trailer.id === project.assignedTrailer);
   
-  // Only show available trailers
+  // Show available trailers AND the currently assigned trailer (even if it's "I bruk")
   const availableTrailers = trailers.filter(trailer => 
     trailer.status === 'Tillgänglig' || trailer.id === project.assignedTrailer
   );
@@ -33,19 +35,63 @@ export function TrailerAssignmentSection({ project, trailers, onUpdateProject }:
     }
   };
 
-  const isCompleted = !!project.assignedTrailer;
+  // Check if all required fields are filled to mark as completed AND update trailer status
+  const isCompleted = !!project.assignedTrailer && !!project.scaffoldingResponsible;
+
+  const handleCheckboxChange = () => {
+    if (!isCompleted) {
+      // Cannot check if requirements not met
+      return;
+    }
+    
+    // If already completed, uncheck it
+    if (project.scaffoldingBooked) {
+      onUpdateProject({
+        ...project,
+        scaffoldingBooked: false
+      });
+      
+      // Update trailer status back to available
+      if (assignedTrailer) {
+        onUpdateTrailer({
+          ...assignedTrailer,
+          status: 'Tillgänglig',
+          assignedProject: undefined,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+    } else {
+      // Mark as completed and update trailer
+      onUpdateProject({
+        ...project,
+        scaffoldingBooked: true
+      });
+      
+      // Update trailer status to "I bruk" and assign project
+      if (assignedTrailer) {
+        onUpdateTrailer({
+          ...assignedTrailer,
+          status: 'I bruk',
+          assignedProject: project.name,
+          location: project.address || undefined,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+    }
+  };
 
   return (
     <div 
       className={`flex items-center space-x-3 p-3 rounded-lg border transition-smooth ${
-        isCompleted 
+        project.scaffoldingBooked 
           ? 'bg-success/5 border-success/20' 
           : 'bg-card border-border'
       }`}
     >
       <Checkbox 
-        checked={isCompleted}
-        disabled={true}
+        checked={project.scaffoldingBooked || false}
+        onCheckedChange={handleCheckboxChange}
+        disabled={!isCompleted}
         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
       />
       
@@ -79,6 +125,27 @@ export function TrailerAssignmentSection({ project, trailers, onUpdateProject }:
             ))}
           </SelectContent>
         </Select>
+        
+        {/* Show selected trailer */}
+        {assignedTrailer && (
+          <div className="text-xs text-muted-foreground">
+            Vald: {assignedTrailer.name}
+          </div>
+        )}
+        
+        {/* Ansvarig person input */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Ansvarig person:</label>
+          <Input
+            value={project.scaffoldingResponsible || ''}
+            onChange={(e) => onUpdateProject({
+              ...project,
+              scaffoldingResponsible: e.target.value
+            })}
+            placeholder="Ange ansvarig person"
+            className="h-8 text-xs"
+          />
+        </div>
       </div>
       
       {isCompleted ? (
