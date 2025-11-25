@@ -6,12 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Truck, MapPin, User, Plus, Trash2 } from 'lucide-react';
+import { Truck, MapPin, User, Plus } from 'lucide-react';
 import { ScaffoldingTrailer, ScaffoldingStatus, ScaffoldingOwnership } from '@/types/scaffolding';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 import { formatInTimeZone } from 'date-fns-tz';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 interface ScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
@@ -19,14 +17,12 @@ interface ScaffoldingViewProps {
   onAddScaffolding: (trailer: ScaffoldingTrailer) => void;
   onDeleteScaffolding: (trailerId: string) => void;
   onReloadScaffolding?: () => void;
-  onClearAllScaffolding?: () => Promise<void> | void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, onDeleteScaffolding, onReloadScaffolding, onClearAllScaffolding, projects = [] }: ScaffoldingViewProps) {
+export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffolding, onDeleteScaffolding, onReloadScaffolding, projects = [] }: ScaffoldingViewProps) {
   const [editingTrailer, setEditingTrailer] = useState<ScaffoldingTrailer | null>(null);
   const [filterStatus, setFilterStatus] = useState<ScaffoldingStatus | 'all'>('all');
-  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
 
   const filteredScaffolding = scaffolding.filter(trailer => 
     filterStatus === 'all' || trailer.status === filterStatus
@@ -46,89 +42,6 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
     setEditingTrailer(null);
   };
 
-  const handleCleanupDuplicates = async () => {
-    setIsCleaningDuplicates(true);
-    try {
-      // Fetch all scaffolding from Supabase
-      const { data: allScaffolding, error: fetchError } = await supabase
-        .from('scaffolding')
-        .select('id, name, updated_at, created_at')
-        .order('name');
-
-      if (fetchError) throw fetchError;
-
-      if (!allScaffolding || allScaffolding.length === 0) {
-        toast({
-          title: 'Inga dubletter',
-          description: 'Inga släpvagnar hittades.',
-        });
-        return;
-      }
-
-      // Group by name (case-insensitive and trimmed)
-      const groupedByName = new Map<string, any[]>();
-      allScaffolding.forEach((record) => {
-        const normalizedName = record.name.trim().toLowerCase();
-        if (!groupedByName.has(normalizedName)) {
-          groupedByName.set(normalizedName, []);
-        }
-        groupedByName.get(normalizedName)!.push(record);
-      });
-
-      // Find duplicates
-      const idsToDelete: string[] = [];
-      groupedByName.forEach((records) => {
-        if (records.length > 1) {
-          // Sort by updated_at DESC (most recent first)
-          records.sort((a, b) => {
-            const dateA = new Date(a.updated_at || a.created_at).getTime();
-            const dateB = new Date(b.updated_at || b.created_at).getTime();
-            return dateB - dateA;
-          });
-
-          // Keep the first, delete the rest
-          const [, ...toDelete] = records;
-          idsToDelete.push(...toDelete.map(r => r.id));
-        }
-      });
-
-      if (idsToDelete.length === 0) {
-        toast({
-          title: 'Inga dubletter',
-          description: 'Inga dubbletter hittades.',
-        });
-        return;
-      }
-
-      // Delete duplicates
-      const { error: deleteError } = await supabase
-        .from('scaffolding')
-        .delete()
-        .in('id', idsToDelete);
-
-      if (deleteError) throw deleteError;
-
-      toast({
-        title: 'Dubletter rensade',
-        description: `${idsToDelete.length} dubbletter har tagits bort.`,
-      });
-
-      // Reload scaffolding
-      if (onReloadScaffolding) {
-        onReloadScaffolding();
-      }
-    } catch (error) {
-      console.error('Error cleaning duplicates:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Fel vid rensning',
-        description: 'Kunde inte rensa dubbletter. Försök igen.',
-      });
-    } finally {
-      setIsCleaningDuplicates(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -138,27 +51,6 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
         </div>
         
         <div className="flex flex-wrap gap-2 justify-end">
-          {onClearAllScaffolding && (
-            <Button
-              variant="outline"
-              onClick={onClearAllScaffolding}
-              className="border-destructive text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Nollställ alla
-            </Button>
-          )}
-
-          <Button
-            variant="outline"
-            onClick={handleCleanupDuplicates}
-            disabled={isCleaningDuplicates}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {isCleaningDuplicates ? 'Rensar...' : 'Rensa dubletter'}
-          </Button>
-          
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90">

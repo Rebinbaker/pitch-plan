@@ -58,7 +58,6 @@ const Index = () => {
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
-    clearScaffolding,
     updateTeam,
     addTeam,
     uploadFile,
@@ -370,7 +369,6 @@ const Index = () => {
                     onAddScaffolding={addScaffolding}
                     onDeleteScaffolding={deleteScaffolding}
                     onReloadScaffolding={() => window.location.reload()}
-                    onClearAllScaffolding={clearScaffolding}
                     projects={projects}
                   />
               )}
