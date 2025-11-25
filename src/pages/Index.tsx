@@ -485,14 +485,8 @@ const Index = () => {
               />
             </TabsContent>
 
-            <TabsContent value="security" className="space-y-6">
-              <SecurityStatus 
-                onShowDataExport={() => setShowDataExportModal(true)}
-              />
-            </TabsContent>
-
             <TabsContent value="notifications" className="space-y-6">
-              <NotificationsView 
+              <NotificationsView
                 notifications={notifications}
                 onMarkAsRead={markNotificationAsRead}
                 onDismiss={dismissNotification}
