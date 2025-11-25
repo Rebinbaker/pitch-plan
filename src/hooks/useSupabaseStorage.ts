@@ -297,6 +297,38 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const deleteProject = async (projectId: string) => {
+    try {
+      if (user && organizationId) {
+        const { error } = await supabase
+          .from('projects' as any)
+          .delete()
+          .eq('id', projectId)
+          .eq('organization_id', organizationId);
+        
+        if (error) throw error;
+        
+        // Update local state
+        setSupabaseProjects(prev => prev.filter(p => p.id !== projectId));
+      } else {
+        await localStorageHook.deleteProject(projectId);
+      }
+      
+      toast({
+        title: "Projekt raderat",
+        description: "Projektet har raderats framgångsrikt.",
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        variant: "destructive",
+        title: "Fel vid radering",
+        description: "Kunde inte radera projektet. Försök igen.",
+      });
+      throw error;
+    }
+  };
+
   const updateScaffolding = async (updatedTrailer: Partial<ScaffoldingTrailer> & { id: string }) => {
     try {
       // Always use Supabase if user is logged in
@@ -570,6 +602,7 @@ export const useSupabaseStorage = () => {
     migrationStatus,
     updateProject,
     addProject,
+    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
