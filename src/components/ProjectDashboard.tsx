@@ -9,7 +9,6 @@ interface ProjectDashboardProps {
   projects: Project[];
   onUpdateProject: (updatedProject: Project) => void;
   onAddProject: () => void;
-  onDeleteProject?: (projectId: string) => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
@@ -21,11 +20,10 @@ interface ProjectDashboardProps {
 }
 
 // Simple Project Card Component (no drag functionality)
-function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
+function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
-  onDeleteProject?: (projectId: string) => void;
   trailers: ScaffoldingTrailer[];
   teams: any[];
   onUpdateTeam?: (team: any) => void;
@@ -37,7 +35,6 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
       project={project}
       onViewDetails={onViewDetails}
       onUpdateProject={onUpdateProject}
-      onDeleteProject={onDeleteProject}
       trailers={trailers}
       teams={teams}
       onUpdateTeam={onUpdateTeam}
@@ -47,10 +44,12 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
+  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -75,7 +74,28 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDe
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
     
-    return matchesSearch && matchesStatus && matchesRegion;
+    // Date filtering - check if project's start date or deadline falls within selected range
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const projectStartDate = project.startDate ? new Date(project.startDate) : null;
+      const projectDeadline = project.deadline ? new Date(project.deadline) : null;
+      
+      if (dateFrom && dateTo) {
+        // Both dates selected - check if project overlaps with date range
+        matchesDate = 
+          (projectStartDate && projectStartDate >= dateFrom && projectStartDate <= dateTo) ||
+          (projectDeadline && projectDeadline >= dateFrom && projectDeadline <= dateTo) ||
+          (projectStartDate && projectDeadline && projectStartDate <= dateTo && projectDeadline >= dateFrom);
+      } else if (dateFrom) {
+        // Only start date - show projects starting on or after this date
+        matchesDate = projectStartDate ? projectStartDate >= dateFrom : false;
+      } else if (dateTo) {
+        // Only end date - show projects ending on or before this date
+        matchesDate = projectDeadline ? projectDeadline <= dateTo : false;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesRegion && matchesDate;
   });
 
   const handleViewDetails = (project: Project) => {
@@ -123,6 +143,10 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDe
         regionFilter={regionFilter}
         onRegionFilterChange={setRegionFilter}
         onAddProject={onAddProject}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
       />
 
       {/* Statistics Cards */}
@@ -157,7 +181,6 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDe
             project={project}
             onViewDetails={handleViewDetails}
             onUpdateProject={handleUpdateProjectFromCard}
-            onDeleteProject={onDeleteProject}
             trailers={trailers}
             teams={teams}
             onUpdateTeam={onUpdateTeam}
@@ -180,7 +203,6 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDe
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetailModal}
           onUpdateProject={handleUpdateProjectFromModal}
-          onDeleteProject={onDeleteProject}
           trailers={trailers}
           teams={teams}
           onUpdateTrailer={onUpdateTrailer}

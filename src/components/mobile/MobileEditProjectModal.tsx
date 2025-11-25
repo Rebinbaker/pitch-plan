@@ -32,7 +32,7 @@ const editProjectSchema = z.object({
   customerName: z.string().min(1, 'Kundnamn krävs'),
   customerPhone: z.string().min(1, 'Telefonnummer krävs'),
   address: z.string().optional(),
-  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced'] as const),
+  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   completion_percentage: z.number().min(0).max(100),
   construction_team: z.string().optional(),
   assigned_trailer: z.string().optional(),
@@ -233,6 +233,7 @@ export function MobileEditProjectModal({
                           <SelectItem value="ongoing">Pågående</SelectItem>
                           <SelectItem value="completed">Avslutat</SelectItem>
                           <SelectItem value="invoiced">Fakturerat</SelectItem>
+                          <SelectItem value="ånger">Ånger</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

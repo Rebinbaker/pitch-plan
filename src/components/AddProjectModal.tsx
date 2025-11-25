@@ -43,7 +43,7 @@ const projectFormSchema = z.object({
   constructionStartWeek: z.string().min(1, 'Construction start week is required'),
   estimatedWorkDays: z.number().min(1, 'Estimated work days is required'),
   rotStatus: z.enum(['Yes', 'No'] as const),
-  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced'] as const),
+  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   region: z.enum(['Stockholm', 'Västra Götaland'] as const),
   notes: z.string().optional(),
 });
@@ -435,6 +435,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         <SelectItem value="ongoing">Pågående</SelectItem>
                         <SelectItem value="completed">Slutförd</SelectItem>
                         <SelectItem value="invoiced">Fakturerad</SelectItem>
+                        <SelectItem value="ånger">Ånger</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

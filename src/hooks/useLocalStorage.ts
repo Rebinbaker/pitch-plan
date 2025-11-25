@@ -438,7 +438,6 @@ export const useLocalStorage = () => {
     loading,
     updateProject,
     addProject,
-    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
