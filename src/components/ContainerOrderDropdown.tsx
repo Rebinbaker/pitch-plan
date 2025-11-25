@@ -21,114 +21,45 @@ interface ContainerOrder {
 
 const CONTAINER_ORDERS: ContainerOrder[] = [
   {
+    id: 'container-10m3',
+    name: '10 Kubikare',
+    description: 'Mindre container för byggavfall',
+    size: '10m³',
+    type: 'Byggavfall',
+    supplier: 'Standard leverantör',
+    emailTemplate: `Hej,
+
+Vi behöver beställa en 10 kubikare container för byggavfall till följande projekt:
+
+Projekt: {PROJECT_NAME}
+Adress: {PROJECT_ADDRESS}
+
+Leveransdatum: Så snart som möjligt
+Container typ: Byggavfall
+Storlek: 10 kubikare
+
+Kontakta oss för leveransdetaljer.
+
+Med vänliga hälsningar,
+Lokala Hantverkarna`
+  },
+  {
     id: 'container-20m3',
-    name: '20m³ Container',
-    description: 'Standard byggavfall container',
+    name: '20 Kubikare',
+    description: 'Standard container för byggavfall',
     size: '20m³',
     type: 'Byggavfall',
     supplier: 'Standard leverantör',
     emailTemplate: `Hej,
 
-Vi behöver beställa en 20m³ container för byggavfall till följande projekt:
+Vi behöver beställa en 20 kubikare container för byggavfall till följande projekt:
 
 Projekt: {PROJECT_NAME}
 Adress: {PROJECT_ADDRESS}
 
 Leveransdatum: Så snart som möjligt
 Container typ: Byggavfall
-Storlek: 20m³
-
-Kontakta oss för leveransdetaljer.
-
-Med vänliga hälsningar,
-Lokala Hantverkarna`
-  },
-  {
-    id: 'container-30m3',
-    name: '30m³ Container',
-    description: 'Stor byggavfall container',
-    size: '30m³',
-    type: 'Byggavfall',
-    supplier: 'Standard leverantör',
-    emailTemplate: `Hej,
-
-Vi behöver beställa en 30m³ container för byggavfall till följande projekt:
-
-Projekt: {PROJECT_NAME}
-Adress: {PROJECT_ADDRESS}
-
-Leveransdatum: Så snart som möjligt
-Container typ: Byggavfall
-Storlek: 30m³
-
-Kontakta oss för leveransdetaljer.
-
-Med vänliga hälsningar,
-Lokala Hantverkarna`
-  },
-  {
-    id: 'container-bauschutt',
-    name: 'Bauschutt Container',
-    description: 'För tegel, betong och sten',
-    size: '20m³',
-    type: 'Bauschutt',
-    supplier: 'Standard leverantör',
-    emailTemplate: `Hej,
-
-Vi behöver beställa en Bauschutt container till följande projekt:
-
-Projekt: {PROJECT_NAME}
-Adress: {PROJECT_ADDRESS}
-
-Leveransdatum: Så snart som möjligt
-Container typ: Bauschutt (tegel, betong, sten)
-Storlek: 20m³
-
-Kontakta oss för leveransdetaljer.
-
-Med vänliga hälsningar,
-Lokala Hantverkarna`
-  },
-  {
-    id: 'container-tra',
-    name: 'Trä Container',
-    description: 'För rent träavfall',
-    size: '20m³',
-    type: 'Träavfall',
-    supplier: 'Standard leverantör',
-    emailTemplate: `Hej,
-
-Vi behöver beställa en container för träavfall till följande projekt:
-
-Projekt: {PROJECT_NAME}
-Adress: {PROJECT_ADDRESS}
-
-Leveransdatum: Så snart som möjligt
-Container typ: Träavfall (rent trä)
-Storlek: 20m³
-
-Kontakta oss för leveransdetaljer.
-
-Med vänliga hälsningar,
-Lokala Hantverkarna`
-  },
-  {
-    id: 'container-metall',
-    name: 'Metall Container',
-    description: 'För metallskrot',
-    size: '20m³',
-    type: 'Metallskrot',
-    supplier: 'Standard leverantör',
-    emailTemplate: `Hej,
-
-Vi behöver beställa en container för metallskrot till följande projekt:
-
-Projekt: {PROJECT_NAME}
-Adress: {PROJECT_ADDRESS}
-
-Leveransdatum: Så snart som möjligt
-Container typ: Metallskrot
-Storlek: 20m³
+Storlek: 20 kubikare
 
 Kontakta oss för leveransdetaljer.
 
