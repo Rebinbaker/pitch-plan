@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Truck, MapPin, User, Plus } from 'lucide-react';
 import { ScaffoldingTrailer, ScaffoldingStatus, ScaffoldingOwnership } from '@/types/scaffolding';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface ScaffoldingViewProps {
   scaffolding: ScaffoldingTrailer[];
@@ -219,7 +220,7 @@ function ScaffoldingEditForm({ trailer, onSave, onDelete }: ScaffoldingEditFormP
     e.preventDefault();
     onSave({
       ...formData,
-      lastUpdated: new Date().toISOString().split('T')[0],
+      lastUpdated: formatInTimeZone(new Date(), 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
     });
   };
 
@@ -329,7 +330,7 @@ function NewTrailerForm({ onSave }: NewTrailerFormProps) {
       status: 'Tillgänglig',
       ownership,
       moverNote: '',
-      lastUpdated: new Date().toISOString().split('T')[0],
+      lastUpdated: formatInTimeZone(new Date(), 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
     };
 
     onSave(trailer);
