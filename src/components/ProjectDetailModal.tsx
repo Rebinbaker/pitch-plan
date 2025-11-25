@@ -33,8 +33,7 @@ import {
   AlertTriangle,
   Mail,
   MessageCircle,
-  RefreshCw,
-  Trash2
+  RefreshCw
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +45,6 @@ interface ProjectDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateProject: (updatedProject: Project) => void;
-  onDeleteProject?: (projectId: string) => void;
   trailers?: any[];
   teams?: any[];
   onUpdateTrailer?: (trailer: any) => void;
@@ -59,7 +57,6 @@ export function ProjectDetailModal({
   isOpen, 
   onClose, 
   onUpdateProject,
-  onDeleteProject,
   trailers = [],
   teams = [],
   onUpdateTrailer,
@@ -80,6 +77,7 @@ export function ProjectDetailModal({
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
+      case 'ånger': return 'destructive' as const;
       default: return 'default';
     }
   };
@@ -393,28 +391,6 @@ Tack! 👷‍♂️`;
                     {refreshSuccess ? 'Uppdaterat!' : 'Uppdatera projektdata'}
                   </TooltipContent>
                 </Tooltip>
-                {onDeleteProject && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (window.confirm(`Är du säker på att du vill radera projektet "${project.name}"? Detta kan inte ångras.`)) {
-                            onDeleteProject(project.id);
-                            onClose();
-                          }
-                        }}
-                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Radera projekt
-                    </TooltipContent>
-                  </Tooltip>
-                )}
               </div>
               <DialogDescription className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />

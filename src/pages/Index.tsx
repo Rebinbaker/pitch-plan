@@ -55,7 +55,6 @@ const Index = () => {
     loading,
     updateProject,
     addProject,
-    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
@@ -342,7 +341,6 @@ const Index = () => {
                   projects={projects}
                   onUpdateProject={updateProject}
                   onAddProject={handleAddProject}
-                  onDeleteProject={deleteProject}
                   trailers={scaffolding}
                   teams={teams}
                   onUpdateTeam={updateTeam}

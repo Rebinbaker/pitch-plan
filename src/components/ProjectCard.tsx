@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2 } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock } from 'lucide-react';
 import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +18,6 @@ interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
-  onDeleteProject?: (projectId: string) => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
@@ -26,7 +25,7 @@ interface ProjectCardProps {
   onAddNotifications?: (notifications: any[]) => void;
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
   const { toast } = useToast();
 
   // Auto-complete project if it's 100% but still showing as ongoing
@@ -81,6 +80,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
+      case 'ånger': return 'destructive' as const;
       default: return 'default';
     }
   };
@@ -137,27 +137,14 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
             })()}
             <div className="flex items-center gap-2">
               <Badge variant={getStatusVariant(project.status)}>
-                {project.status === 'completed' ? 'Avslutad' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {project.status === 'completed' ? 'Avslutad' : 
+                 project.status === 'ånger' ? 'Ånger' :
+                 project.status.charAt(0).toUpperCase() + project.status.slice(1)}
               </Badge>
               {project.rotStatus === 'Yes' && (
                 <Badge variant="rot" className="text-xs">ROT</Badge>
               )}
             </div>
-            {onDeleteProject && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Är du säker på att du vill radera projektet "${project.name}"? Detta kan inte ångras.`)) {
-                    onDeleteProject(project.id);
-                  }
-                }}
-                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
