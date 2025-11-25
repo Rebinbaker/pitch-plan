@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-material-order]
 verify_jwt = false
+
+[functions.cleanup-scaffolding-duplicates]
+verify_jwt = false

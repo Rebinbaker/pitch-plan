@@ -368,6 +368,7 @@ const Index = () => {
                     onUpdateScaffolding={updateScaffolding}
                     onAddScaffolding={addScaffolding}
                     onDeleteScaffolding={deleteScaffolding}
+                    onReloadScaffolding={() => window.location.reload()}
                     projects={projects}
                   />
               )}
