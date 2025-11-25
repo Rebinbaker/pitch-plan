@@ -19,6 +19,7 @@ export const useSupabaseStorage = () => {
   const [migrationStatus, setMigrationStatus] = useState<'pending' | 'migrating' | 'completed' | 'error'>('pending');
   const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
   const [supabaseScaffolding, setSupabaseScaffolding] = useState<ScaffoldingTrailer[]>([]);
+  const [supabaseTeams, setSupabaseTeams] = useState<ConstructionTeam[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load projects and scaffolding from Supabase immediately when user is logged in
@@ -26,6 +27,7 @@ export const useSupabaseStorage = () => {
     if (user && organizationId) {
       loadSupabaseProjects();
       loadSupabaseScaffolding();
+      loadSupabaseTeams();
       setMigrationStatus('completed');
     }
   }, [user, organizationId]);
@@ -131,6 +133,38 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const loadSupabaseTeams = async () => {
+    if (!user || !organizationId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('teams' as any)
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedTeams = data.map((team: any) => ({
+        id: team.id,
+        name: team.name,
+        type: team.type,
+        currentJob: team.current_job,
+        availabilityNextWeek: team.availability_next_week,
+        performanceNotes: team.performance_notes,
+        contactInfo: team.contact_info,
+        skills: team.skills || [],
+        members: team.members || [],
+        sellers: team.sellers || [],
+        leader: team.leader,
+      }));
+      
+      setSupabaseTeams(mappedTeams);
+    } catch (error) {
+      console.error('Error loading Supabase teams:', error);
+    }
+  };
+
   // Set up real-time subscriptions for scaffolding
   useEffect(() => {
     if (!user || !organizationId) return;
@@ -153,6 +187,31 @@ export const useSupabaseStorage = () => {
 
     return () => {
       supabase.removeChannel(scaffoldingChannel);
+    };
+  }, [user, organizationId]);
+
+  // Set up real-time subscriptions for teams
+  useEffect(() => {
+    if (!user || !organizationId) return;
+
+    const teamsChannel = supabase
+      .channel('teams-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'teams',
+          filter: `organization_id=eq.${organizationId}`
+        },
+        () => {
+          loadSupabaseTeams();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(teamsChannel);
     };
   }, [user, organizationId]);
 
@@ -470,25 +529,53 @@ export const useSupabaseStorage = () => {
   const updateTeam = async (updatedTeam: ConstructionTeam) => {
     try {
       if (user && organizationId && migrationStatus === 'completed') {
-        const { error } = await supabase
-          .from('teams' as any)
-          .update({
-            name: updatedTeam.name,
-            type: updatedTeam.type,
-            leader: updatedTeam.leader,
-            availability_next_week: updatedTeam.availabilityNextWeek,
-            current_job: updatedTeam.currentJob,
-            performance_notes: updatedTeam.performanceNotes,
-            contact_info: updatedTeam.contactInfo,
-            skills: updatedTeam.skills || [],
-            members: updatedTeam.members || [],
-            sellers: updatedTeam.sellers || [],
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', updatedTeam.id)
-          .eq('user_id', user.id);
+        // Check if this is a mock team (non-UUID ID like "team-alpha")
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(updatedTeam.id);
         
-        if (error) throw error;
+        if (!isUUID) {
+          // This is a mock team, create it as a new team in Supabase instead
+          const { error } = await supabase
+            .from('teams' as any)
+            .insert({
+              name: updatedTeam.name,
+              type: updatedTeam.type,
+              leader: updatedTeam.leader,
+              availability_next_week: updatedTeam.availabilityNextWeek,
+              current_job: updatedTeam.currentJob,
+              performance_notes: updatedTeam.performanceNotes,
+              contact_info: updatedTeam.contactInfo,
+              skills: updatedTeam.skills || [],
+              members: updatedTeam.members || [],
+              sellers: updatedTeam.sellers || [],
+              user_id: user.id,
+              organization_id: organizationId,
+            });
+          
+          if (error) throw error;
+          await loadSupabaseTeams();
+        } else {
+          // This is a real Supabase team, update it
+          const { error } = await supabase
+            .from('teams' as any)
+            .update({
+              name: updatedTeam.name,
+              type: updatedTeam.type,
+              leader: updatedTeam.leader,
+              availability_next_week: updatedTeam.availabilityNextWeek,
+              current_job: updatedTeam.currentJob,
+              performance_notes: updatedTeam.performanceNotes,
+              contact_info: updatedTeam.contactInfo,
+              skills: updatedTeam.skills || [],
+              members: updatedTeam.members || [],
+              sellers: updatedTeam.sellers || [],
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', updatedTeam.id)
+            .eq('user_id', user.id);
+          
+          if (error) throw error;
+          await loadSupabaseTeams();
+        }
         
         toast({
           title: "Team uppdaterat",
@@ -529,6 +616,7 @@ export const useSupabaseStorage = () => {
           });
         
         if (error) throw error;
+        await loadSupabaseTeams();
       } else {
         await localStorageHook.addTeam(newTeam);
       }
@@ -558,10 +646,9 @@ export const useSupabaseStorage = () => {
           .eq('user_id', user.id);
         
         if (error) throw error;
+        await loadSupabaseTeams();
       } else {
-        // Fallback to localStorage (implement in localStorageHook if needed)
-        const updatedTeams = localStorageHook.teams.filter(t => t.id !== teamId);
-        localStorage.setItem('teams', JSON.stringify(updatedTeams));
+        await localStorageHook.deleteTeam(teamId);
       }
       
       toast({
@@ -646,6 +733,7 @@ export const useSupabaseStorage = () => {
     ...localStorageHook,
     projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
     scaffolding: migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding,
+    teams: migrationStatus === 'completed' ? supabaseTeams : localStorageHook.teams,
     loading: loading || localStorageHook.loading,
     migrationStatus,
     updateProject,
@@ -666,5 +754,6 @@ export const useSupabaseStorage = () => {
     markMigrationCompleted,
     loadSupabaseProjects,
     loadSupabaseScaffolding,
+    loadSupabaseTeams,
   };
 };

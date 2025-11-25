@@ -380,6 +380,14 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(newTeams));
   };
 
+  const deleteTeam = async (teamId: string) => {
+    console.log('Deleting team from localStorage:', teamId);
+
+    const newTeams = teams.filter(team => team.id !== teamId);
+    setTeams(newTeams);
+    localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(newTeams));
+  };
+
   const uploadFile = async (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
     const newFile: ProjectFile = {
       ...file,
@@ -444,6 +452,7 @@ export const useLocalStorage = () => {
     clearScaffolding,
     updateTeam,
     addTeam,
+    deleteTeam,
     uploadFile,
     deleteFile,
     markNotificationAsRead,
