@@ -6,7 +6,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Phone, Briefcase, Star, Plus, UserPlus } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Users, Phone, Briefcase, Star, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { TeamDetailModal } from './team/TeamDetailModal';
 import { AddTeamMemberModal } from './team/AddTeamMemberModal';
 import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
@@ -16,10 +27,11 @@ interface TeamsViewProps {
   teams: ConstructionTeam[];
   onUpdateTeam: (updated: ConstructionTeam) => void;
   onAddTeam: (team: ConstructionTeam) => void;
+  onDeleteTeam?: (teamId: string) => void;
   projects?: any[]; // Add projects to calculate remaining time
 }
 
-export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: TeamsViewProps) {
+export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projects = [] }: TeamsViewProps) {
   const [filterType, setFilterType] = useState<TeamType | 'all'>('all');
   const [filterAvailability, setFilterAvailability] = useState<AvailabilityStatus | 'all'>('all');
 
@@ -198,6 +210,42 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
                   </Button>
                 }
               />
+              
+              {onDeleteTeam && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-destructive hover:text-destructive"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Radera team
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Radera {team.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Är du säker på att du vill radera detta team? Detta kommer att ta bort alla medlemmar och kan inte ångras.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTeam(team.id);
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Radera team
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -207,6 +255,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, projects = [] }: Tea
           open={isDetailOpen}
           onOpenChange={setIsDetailOpen}
           onUpdateTeam={onUpdateTeam}
+          onDeleteTeam={onDeleteTeam}
           timeEntries={[]}
         />
       </>

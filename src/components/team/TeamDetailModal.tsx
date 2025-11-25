@@ -7,8 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { 
   Users, Clock, AlertTriangle, Calendar, TrendingUp, 
-  MapPin, Phone, Star, Shield, UserCheck 
+  MapPin, Phone, Star, Shield, UserCheck, Trash2 
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { ConstructionTeam } from '@/types/team';
 import { WorkloadMetrics, WorkloadWarning } from '@/types/workload';
 import { calculateMemberWorkload, generateWorkloadWarnings, getWorkloadColor } from '@/utils/workloadCalculations';
@@ -23,6 +34,7 @@ interface TeamDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateTeam: (team: ConstructionTeam) => void;
+  onDeleteTeam?: (teamId: string) => void;
   timeEntries?: any[];
 }
 
@@ -31,6 +43,7 @@ export function TeamDetailModal({
   open, 
   onOpenChange, 
   onUpdateTeam,
+  onDeleteTeam,
   timeEntries = []
 }: TeamDetailModalProps) {
   const [workloadMetrics, setWorkloadMetrics] = useState<Map<string, WorkloadMetrics>>(new Map());
@@ -88,6 +101,13 @@ export function TeamDetailModal({
   const highWarnings = warnings.filter(w => w.severity === 'high');
   const totalWarnings = warnings.length;
 
+  const handleDelete = () => {
+    if (onDeleteTeam) {
+      onDeleteTeam(team.id);
+      onOpenChange(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
@@ -110,6 +130,37 @@ export function TeamDetailModal({
               >
                 {team.availabilityNextWeek}
               </Badge>
+              {onDeleteTeam && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Radera team
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Radera {team.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Är du säker på att du vill radera detta team? Detta kommer att ta bort alla medlemmar och kan inte ångras.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Radera team
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           </div>
         </DialogHeader>

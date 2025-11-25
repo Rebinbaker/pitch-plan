@@ -35,6 +35,7 @@ import { DataExportModal } from '@/components/DataExportModal';
 import TimeTrackingView from '@/components/TimeTrackingView';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Project } from '@/types/project';
+import { ConstructionTeam } from '@/types/team';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -60,6 +61,7 @@ const Index = () => {
     deleteScaffolding,
     updateTeam,
     addTeam,
+    deleteTeam,
     uploadFile,
     deleteFile,
     markNotificationAsRead,
@@ -155,6 +157,18 @@ const Index = () => {
       console.log('Index.tsx calling updateProject with:', updates);
       updateProject({ ...project, ...updates });
     }
+  };
+
+  const handleUpdateTeam = (updatedTeam: ConstructionTeam) => {
+    updateTeam(updatedTeam);
+  };
+
+  const handleAddTeam = (newTeam: ConstructionTeam) => {
+    addTeam(newTeam);
+  };
+
+  const handleDeleteTeam = (teamId: string) => {
+    deleteTeam(teamId);
   };
 
   if (loading) {
@@ -384,8 +398,9 @@ const Index = () => {
               ) : (
                 <TeamsView 
                   teams={teams}
-                  onUpdateTeam={updateTeam}
-                  onAddTeam={addTeam}
+                  onUpdateTeam={handleUpdateTeam}
+                  onAddTeam={handleAddTeam}
+                  onDeleteTeam={handleDeleteTeam}
                   projects={projects}
                 />
               )}
