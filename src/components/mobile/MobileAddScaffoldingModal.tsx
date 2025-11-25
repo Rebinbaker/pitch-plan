@@ -61,22 +61,13 @@ export function MobileAddScaffoldingModal({ isOpen, onClose, onAdd }: MobileAddS
         lastUpdated: new Date().toISOString(),
       };
 
-      onAdd(newTrailer);
-      
-      toast({
-        title: "Ställningsvagn skapad",
-        description: `${values.name} har lagts till i systemet.`,
-      });
+      await onAdd(newTrailer);
       
       form.reset();
       onClose();
     } catch (error) {
       console.error('Error adding scaffolding trailer:', error);
-      toast({
-        title: "Fel",
-        description: "Kunde inte skapa ställningsvagn. Försök igen.",
-        variant: "destructive",
-      });
+      // Error toast is already shown by useSupabaseStorage
     } finally {
       setIsSubmitting(false);
     }
