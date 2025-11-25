@@ -140,6 +140,11 @@ export function MobileScaffoldingView({
                         {trailer.name}
                       </h3>
                     </div>
+                    {trailer.ownership && (
+                      <div className="text-xs text-muted-foreground mb-2">
+                        {trailer.ownership}
+                      </div>
+                    )}
                     <Badge className={`text-xs ${getStatusColor(trailer.status)}`}>
                       {getStatusLabel(trailer.status)}
                     </Badge>
