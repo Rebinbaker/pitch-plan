@@ -280,10 +280,11 @@ function NewTrailerForm({ onSave }: NewTrailerFormProps) {
     if (!trailerNumber) return;
 
     const trailer: ScaffoldingTrailer = {
-      id: `trailer-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: trailerNumber,
       status: 'Tillgänglig',
       ownership,
+      moverNote: '',
       lastUpdated: new Date().toISOString().split('T')[0],
     };
 
