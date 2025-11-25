@@ -21,13 +21,14 @@ export const useSupabaseStorage = () => {
   const [supabaseScaffolding, setSupabaseScaffolding] = useState<ScaffoldingTrailer[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load projects and scaffolding from Supabase when migration is completed
+  // Load projects and scaffolding from Supabase immediately when user is logged in
   useEffect(() => {
-    if (user && migrationStatus === 'completed') {
+    if (user && organizationId) {
       loadSupabaseProjects();
       loadSupabaseScaffolding();
+      setMigrationStatus('completed');
     }
-  }, [user, migrationStatus]);
+  }, [user, organizationId]);
 
   const loadSupabaseProjects = async () => {
     if (!user || !organizationId) return;
@@ -71,13 +72,35 @@ export const useSupabaseStorage = () => {
       setSupabaseProjects(mappedProjects);
     } catch (error) {
       console.error('Error loading Supabase projects:', error);
-      // Fallback to localStorage if Supabase fails
-      setMigrationStatus('pending');
-      localStorage.removeItem('supabase_migration_completed');
     } finally {
       setLoading(false);
     }
   };
+
+  // Set up real-time subscriptions for projects
+  useEffect(() => {
+    if (!user || !organizationId) return;
+
+    const projectsChannel = supabase
+      .channel('projects-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'projects',
+          filter: `organization_id=eq.${organizationId}`
+        },
+        () => {
+          loadSupabaseProjects();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(projectsChannel);
+    };
+  }, [user, organizationId]);
 
   const loadSupabaseScaffolding = async () => {
     if (!user || !organizationId) return;
@@ -108,19 +131,31 @@ export const useSupabaseStorage = () => {
     }
   };
 
-  // For now, return localStorage data but with enhanced error handling and migration preparation
+  // Set up real-time subscriptions for scaffolding
   useEffect(() => {
-    if (user && migrationStatus === 'pending') {
-      // Check if migration is needed
-      const migrationNeeded = checkMigrationNeeded();
-      if (migrationNeeded) {
-        setMigrationStatus('pending');
-        // Migration will be triggered separately
-      } else {
-        setMigrationStatus('completed');
-      }
-    }
-  }, [user, migrationStatus]);
+    if (!user || !organizationId) return;
+
+    const scaffoldingChannel = supabase
+      .channel('scaffolding-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scaffolding',
+          filter: `organization_id=eq.${organizationId}`
+        },
+        () => {
+          loadSupabaseScaffolding();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(scaffoldingChannel);
+    };
+  }, [user, organizationId]);
+
 
   const checkMigrationNeeded = (): boolean => {
     // For now, always return false to use Supabase data directly
