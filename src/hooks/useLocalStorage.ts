@@ -321,7 +321,20 @@ export const useLocalStorage = () => {
   const addScaffolding = async (newTrailer: ScaffoldingTrailer) => {
     console.log('Adding scaffolding to localStorage:', newTrailer.id, newTrailer.name);
 
-    const newScaffolding = [...scaffolding, newTrailer];
+    const existing = scaffolding.find(
+      (trailer) => trailer.name.trim().toLowerCase() === newTrailer.name.trim().toLowerCase()
+    );
+
+    let newScaffolding: ScaffoldingTrailer[];
+    if (existing) {
+      // Update existing trailer with same name instead of creating duplicate
+      newScaffolding = scaffolding.map((trailer) =>
+        trailer.id === existing.id ? { ...trailer, ...newTrailer, id: existing.id } : trailer
+      );
+    } else {
+      newScaffolding = [...scaffolding, newTrailer];
+    }
+
     setScaffolding(newScaffolding);
     localStorage.setItem(STORAGE_KEYS.SCAFFOLDING, JSON.stringify(newScaffolding));
   };

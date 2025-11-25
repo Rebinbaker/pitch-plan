@@ -304,11 +304,13 @@ export const useSupabaseStorage = () => {
         (trailer) => trailer.name.trim().toLowerCase() === newTrailer.name.trim().toLowerCase()
       );
 
+      // If a trailer with this name already exists, update it instead of creating a duplicate
       if (existing) {
-        toast({
-          variant: 'destructive',
-          title: 'Släpvagn finns redan',
-          description: `Det finns redan en ställningsvagn med namnet "${newTrailer.name}".`,
+        await updateScaffolding({
+          id: existing.id,
+          name: newTrailer.name,
+          status: newTrailer.status,
+          moverNote: newTrailer.moverNote,
         });
         return;
       }
