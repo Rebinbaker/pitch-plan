@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Truck, Mail, Copy, Check, Plus, X } from 'lucide-react';
+import { Truck, Mail, Copy, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/project';
@@ -84,8 +84,6 @@ export function ContainerOrderDropdown({ project, onOrderSent }: ContainerOrderD
   const [selectedContainers, setSelectedContainers] = useState<SelectedContainer[]>([]);
   const [currentSelection, setCurrentSelection] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [orderSent, setOrderSent] = useState(false);
 
   const addContainer = () => {
     const order = CONTAINER_ORDERS.find(o => o.id === currentSelection);
@@ -164,62 +162,6 @@ Lokala Hantverkarna`;
       title: "Beställningstext kopierad",
       description: "Texten har kopierats till urklipp.",
     });
-  };
-
-  const sendOrderEmail = async () => {
-    if (selectedContainers.length === 0) return;
-
-    setIsSending(true);
-
-    try {
-      const emailContent = generateCombinedEmailContent();
-      const containerSummary = selectedContainers.map(c => ({
-        name: c.order.name,
-        description: c.order.description,
-        quantity: c.quantity,
-        size: c.order.size,
-        type: c.order.type
-      }));
-      
-      const { error } = await supabase.functions.invoke('send-container-order', {
-        body: {
-          projectName: project.name,
-          projectAddress: project.address,
-          containers: containerSummary,
-          emailContent: emailContent
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setOrderSent(true);
-      onOrderSent();
-      
-      const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
-      toast({
-        title: "Container-beställning skickad!",
-        description: `${totalContainers} container${totalContainers > 1 ? 's' : ''} har beställts för ${project.address}`,
-      });
-
-      // Auto-close dialog after success
-      setTimeout(() => {
-        setIsOpen(false);
-        setOrderSent(false);
-        setSelectedContainers([]);
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error sending container order:', error);
-      toast({
-        title: "Fel vid beställning",
-        description: "Kunde inte skicka container-beställningen. Försök igen.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSending(false);
-    }
   };
 
   const openInOutlook = () => {
@@ -374,26 +316,6 @@ Lokala Hantverkarna`;
 
           {selectedContainers.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              <Button 
-                onClick={sendOrderEmail} 
-                disabled={isSending || orderSent}
-                className="gap-2"
-              >
-                {orderSent ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Skickad!
-                  </>
-                ) : isSending ? (
-                  'Skickar...'
-                ) : (
-                  <>
-                    <Mail className="w-4 h-4" />
-                    Skicka E-post
-                  </>
-                )}
-              </Button>
-              
               <Button variant="outline" onClick={copyOrderText} className="gap-2">
                 <Copy className="w-4 h-4" />
                 Kopiera Text
