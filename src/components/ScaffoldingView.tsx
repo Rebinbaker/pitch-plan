@@ -120,10 +120,17 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
           <Card key={trailer.id} className="shadow-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Truck className="w-5 h-5" />
-                  {trailer.name}
-                </CardTitle>
+                <div className="flex flex-col gap-1">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Truck className="w-5 h-5" />
+                    {trailer.name}
+                  </CardTitle>
+                  {trailer.ownership && (
+                    <span className="text-xs text-muted-foreground">
+                      {trailer.ownership}
+                    </span>
+                  )}
+                </div>
                 <Badge variant="secondary" className={`${getStatusColor(trailer.status)} text-white`}>
                   {trailer.status}
                 </Badge>
