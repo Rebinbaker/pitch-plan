@@ -169,7 +169,7 @@ export const WarrantyGenerator: React.FC<WarrantyGeneratorProps> = ({
       );
 
       // Create blob URL for preview
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
       // Open in new tab for preview

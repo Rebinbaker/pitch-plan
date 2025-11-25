@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Download, FileText, TrendingUp } from 'lucide-react';
 import { TimeReport, TimeEntry } from '@/types/timeTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
@@ -16,6 +17,7 @@ import TeamTimeChart from './TeamTimeChart';
 
 const TimeReportsView = () => {
   const { user } = useAuth();
+  const { organizationId } = useOrganization();
   const { toast } = useToast();
   const [reports, setReports] = useState<TimeReport[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -199,6 +201,7 @@ const TimeReportsView = () => {
           .from('time_reports')
           .insert({
             user_id: user!.id,
+            organization_id: organizationId!,
             report_type: reportType,
             title,
             start_date: format(new Date(period.start), 'yyyy-MM-dd'),

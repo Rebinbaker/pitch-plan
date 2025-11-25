@@ -7,6 +7,7 @@ import { Play, Pause, Square, Clock, Calendar, BarChart3 } from 'lucide-react';
 import { TimeEntry, TimeTrackingStats } from '@/types/timeTracking';
 import { useSupabaseStorage } from '@/hooks/useSupabaseStorage';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -18,6 +19,7 @@ const TimeTrackingView = memo(() => {
   console.log('TimeTrackingView re-rendered');
   
   const { user } = useAuth();
+  const { organizationId } = useOrganization();
   const { toast } = useToast();
   const { projects } = useSupabaseStorage();
   const [teams, setTeams] = useState<any[]>([]);
@@ -130,6 +132,7 @@ const TimeTrackingView = memo(() => {
         .from('time_entries')
         .insert({
           user_id: user!.id,
+          organization_id: organizationId!,
           project_id: projectId,
           team_id: teamId,
           start_time: new Date().toISOString(),

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 import { Project } from '@/types/project';
 import { ScaffoldingTrailer, ScaffoldingStatus, ScaffoldingOwnership } from '@/types/scaffolding';
 import { ConstructionTeam } from '@/types/team';
@@ -13,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 // This hook provides Supabase storage with localStorage fallback
 export const useSupabaseStorage = () => {
   const { user } = useAuth();
+  const { organizationId } = useOrganization();
   const localStorageHook = useLocalStorage();
   const [migrationStatus, setMigrationStatus] = useState<'pending' | 'migrating' | 'completed' | 'error'>('pending');
   const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
@@ -28,14 +30,14 @@ export const useSupabaseStorage = () => {
   }, [user, migrationStatus]);
 
   const loadSupabaseProjects = async () => {
-    if (!user) return;
+    if (!user || !organizationId) return;
     
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('projects' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -78,13 +80,13 @@ export const useSupabaseStorage = () => {
   };
 
   const loadSupabaseScaffolding = async () => {
-    if (!user) return;
+    if (!user || !organizationId) return;
     
     try {
       const { data, error } = await supabase
         .from('scaffolding' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -201,7 +203,7 @@ export const useSupabaseStorage = () => {
 
   const addProject = async (newProject: Project) => {
     try {
-      if (user && migrationStatus === 'completed') {
+      if (user && organizationId && migrationStatus === 'completed') {
         // Helper function to convert empty strings to null for date fields
         const formatDateField = (dateValue: string | undefined | null): string | null => {
           if (!dateValue || dateValue.trim() === '') {
@@ -235,6 +237,7 @@ export const useSupabaseStorage = () => {
             activity_log: newProject.activityLog || [],
             region: newProject.region,
             user_id: user.id,
+            organization_id: organizationId,
           });
         
         if (error) throw error;
@@ -296,7 +299,7 @@ export const useSupabaseStorage = () => {
 
   const addScaffolding = async (newTrailer: ScaffoldingTrailer) => {
     try {
-      if (user && migrationStatus === 'completed') {
+      if (user && organizationId && migrationStatus === 'completed') {
         const { error } = await supabase
           .from('scaffolding' as any)
           .insert({
@@ -304,6 +307,7 @@ export const useSupabaseStorage = () => {
             status: newTrailer.status,
             description: newTrailer.moverNote,
             user_id: user.id,
+            organization_id: organizationId,
           });
         
         if (error) throw error;
