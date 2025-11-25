@@ -10,6 +10,7 @@ import { Play, Pause, Plus } from 'lucide-react';
 import { Project } from '@/types/project';
 import { TimeEntry } from '@/types/timeTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { LocationVerification } from './LocationVerification';
@@ -33,6 +34,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   onStopTimer
 }) => {
   const { user } = useAuth();
+  const { organizationId } = useOrganization();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     project_id: '',
@@ -130,6 +132,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         .from('time_entries')
         .insert({
           user_id: user!.id,
+          organization_id: organizationId!,
           project_id: formData.project_id || null,
           team_id: formData.team_id || null,
           work_phase_name: formData.work_phase_name || null,
