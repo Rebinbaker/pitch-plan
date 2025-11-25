@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -715,26 +715,23 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_users_for_admin: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          user_id: string
-          email: string
-          username: string
-          role: Database["public"]["Enums"]["app_role"]
           created_at: string
+          email: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          username: string
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
-      sync_trailer_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      sync_trailer_status: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
