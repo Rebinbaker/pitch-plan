@@ -264,7 +264,8 @@ export const useSupabaseStorage = () => {
 
   const updateScaffolding = async (updatedTrailer: Partial<ScaffoldingTrailer> & { id: string }) => {
     try {
-      if (user && migrationStatus === 'completed') {
+      // Always use Supabase if user is logged in
+      if (user && organizationId) {
         const { error } = await supabase
           .from('scaffolding' as any)
           .update({
@@ -297,25 +298,34 @@ export const useSupabaseStorage = () => {
     }
   };
 
+
   const addScaffolding = async (newTrailer: ScaffoldingTrailer) => {
     try {
-      const currentScaffolding = migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding;
-      const existing = currentScaffolding.find(
-        (trailer) => trailer.name.trim().toLowerCase() === newTrailer.name.trim().toLowerCase()
-      );
+      // Always use Supabase if user is logged in with organization
+      if (user && organizationId) {
+        // Load current scaffolding from Supabase to check for duplicates
+        const { data: existingData, error: searchError } = await supabase
+          .from('scaffolding' as any)
+          .select('*')
+          .eq('organization_id', organizationId)
+          .ilike('name', newTrailer.name.trim());
 
-      // If a trailer with this name already exists, update it instead of creating a duplicate
-      if (existing) {
-        await updateScaffolding({
-          id: existing.id,
-          name: newTrailer.name,
-          status: newTrailer.status,
-          moverNote: newTrailer.moverNote,
-        });
-        return;
-      }
+        if (searchError) {
+          console.error('Error searching for existing scaffolding:', searchError);
+        }
 
-      if (user && organizationId && migrationStatus === 'completed') {
+        // If a trailer with this name already exists, update it instead of creating a duplicate
+        if (!searchError && existingData && Array.isArray(existingData) && existingData.length > 0) {
+          const existingTrailer = existingData[0] as any;
+          await updateScaffolding({
+            id: existingTrailer.id,
+            name: newTrailer.name,
+            status: newTrailer.status,
+            moverNote: newTrailer.moverNote,
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('scaffolding' as any)
           .insert({
@@ -330,6 +340,21 @@ export const useSupabaseStorage = () => {
         // Reload scaffolding after adding
         await loadSupabaseScaffolding();
       } else {
+        // Fallback to localStorage if not logged in
+        const existing = localStorageHook.scaffolding.find(
+          (trailer) => trailer.name.trim().toLowerCase() === newTrailer.name.trim().toLowerCase()
+        );
+        
+        if (existing) {
+          await updateScaffolding({
+            id: existing.id,
+            name: newTrailer.name,
+            status: newTrailer.status,
+            moverNote: newTrailer.moverNote,
+          });
+          return;
+        }
+        
         await localStorageHook.addScaffolding(newTrailer);
       }
       
@@ -349,7 +374,8 @@ export const useSupabaseStorage = () => {
   };
   const deleteScaffolding = async (trailerId: string) => {
     try {
-      if (user && migrationStatus === 'completed') {
+      // Always use Supabase if user is logged in
+      if (user && organizationId) {
         const { error } = await supabase
           .from('scaffolding' as any)
           .delete()
