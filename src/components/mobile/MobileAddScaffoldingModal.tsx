@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ScaffoldingTrailer, ScaffoldingStatus } from '@/types/scaffolding';
 import { useToast } from '@/hooks/use-toast';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const scaffoldingSchema = z.object({
   name: z.string().min(1, 'Vagnnamn krävs'),
@@ -59,7 +60,7 @@ export function MobileAddScaffoldingModal({ isOpen, onClose, onAdd }: MobileAddS
         status: values.status,
         ownership: 'Egna ställningar',
         moverNote: values.description || '',
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: formatInTimeZone(new Date(), 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
       };
 
       await onAdd(newTrailer);
