@@ -167,20 +167,23 @@ Lokala Hantverkarna`;
   const openInOutlook = () => {
     if (selectedContainers.length === 0) return;
 
+    console.log('openInOutlook called');
+
     const emailContent = generateCombinedEmailContent();
     const totalContainers = selectedContainers.reduce((sum, c) => sum + c.quantity, 0);
     const subject = `Container-beställning - ${totalContainers} container${totalContainers > 1 ? 's' : ''} - ${project.address}`;
     
-    // Create mailto URL with proper encoding
+    console.log('Subject length:', subject.length);
+    console.log('Body length:', emailContent.length);
+    
+    // Create mailto URL - try without body first to test if that's the issue
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailContent)}`;
     
-    // Use anchor element method - most reliable for mailto links
-    const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.log('Mailto URL length:', mailtoUrl.length);
+    console.log('Opening mailto:', mailtoUrl.substring(0, 100) + '...');
+    
+    // Try direct location change - most compatible method
+    window.location.href = mailtoUrl;
     
     toast({
       title: "Outlook öppnas",
