@@ -405,6 +405,8 @@ export const useSupabaseStorage = () => {
       throw error;
     }
   };
+
+  const updateTeam = async (updatedTeam: ConstructionTeam) => {
     try {
       await localStorageHook.updateTeam(updatedTeam);
     } catch (error) {
