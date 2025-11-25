@@ -9,6 +9,7 @@ interface ProjectDashboardProps {
   projects: Project[];
   onUpdateProject: (updatedProject: Project) => void;
   onAddProject: () => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
@@ -20,10 +21,11 @@ interface ProjectDashboardProps {
 }
 
 // Simple Project Card Component (no drag functionality)
-function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
+function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers: ScaffoldingTrailer[];
   teams: any[];
   onUpdateTeam?: (team: any) => void;
@@ -35,6 +37,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, 
       project={project}
       onViewDetails={onViewDetails}
       onUpdateProject={onUpdateProject}
+      onDeleteProject={onDeleteProject}
       trailers={trailers}
       teams={teams}
       onUpdateTeam={onUpdateTeam}
@@ -44,7 +47,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, 
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onAddProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -154,6 +157,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
             project={project}
             onViewDetails={handleViewDetails}
             onUpdateProject={handleUpdateProjectFromCard}
+            onDeleteProject={onDeleteProject}
             trailers={trailers}
             teams={teams}
             onUpdateTeam={onUpdateTeam}
@@ -176,6 +180,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetailModal}
           onUpdateProject={handleUpdateProjectFromModal}
+          onDeleteProject={onDeleteProject}
           trailers={trailers}
           teams={teams}
           onUpdateTrailer={onUpdateTrailer}

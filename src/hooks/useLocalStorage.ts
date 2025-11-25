@@ -305,6 +305,14 @@ export const useLocalStorage = () => {
     localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(newProjects));
   };
 
+  const deleteProject = async (projectId: string) => {
+    console.log('Deleting project from localStorage:', projectId);
+
+    const newProjects = projects.filter(p => p.id !== projectId);
+    setProjects(newProjects);
+    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(newProjects));
+  };
+
   const updateScaffolding = async (updatedTrailer: Partial<ScaffoldingTrailer> & { id: string }) => {
     console.log('Saving scaffolding to localStorage:', updatedTrailer.id);
 
@@ -430,6 +438,7 @@ export const useLocalStorage = () => {
     loading,
     updateProject,
     addProject,
+    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
