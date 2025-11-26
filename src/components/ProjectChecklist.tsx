@@ -10,8 +10,7 @@ import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, ar
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
-import { SimpleMaterialOrderDropdown } from './SimpleMaterialOrderDropdown';
-import { MaterialOrderModal } from '@/components/MaterialOrderModal';
+import { MaterialOrderWithTemplate } from "./MaterialOrderWithTemplate";
 import { ContainerOrderDropdown } from '@/components/ContainerOrderDropdown';
 import { TeamSelectionModal } from '@/components/TeamSelectionModal';
 import { useToast } from '@/hooks/use-toast';
@@ -1438,11 +1437,11 @@ Tack!`);
                         </div>
                        )}
 
-                         {/* Material Order Integration with Linköping Inventory */}
+                         {/* Material Order Integration with Template */}
                         {isMaterialOrder && project && (
                          <div className="mt-3 space-y-3">
                            {!project.materialOrder ? (
-                             <SimpleMaterialOrderDropdown
+                             <MaterialOrderWithTemplate
                                project={project}
                                allProjects={allProjects}
                                onOrderSaved={handleMaterialOrderSave}
@@ -1469,20 +1468,26 @@ Tack!`);
                                      <div className="text-xs text-muted-foreground">
                                        {project.materialOrder.items.length} material{project.materialOrder.items.length !== 1 ? 'typer' : 'typ'}
                                      </div>
-                                     {project.materialOrder.items.map((item, idx) => (
-                                       <div key={idx} className="text-xs">
-                                         • {item.quantity} {item.unit} {item.materialType === 'Annat' ? item.customMaterialType : item.materialType}
-                                       </div>
-                                     ))}
+                                     <div className="text-xs space-y-1 font-mono">
+                                       {project.materialOrder.items.map((item, idx) => {
+                                         const colorText = item.color ? ` ${item.color}` : '';
+                                         return (
+                                           <div key={idx}>
+                                             • {item.quantity} {item.unit} {item.materialType}{colorText}
+                                           </div>
+                                         );
+                                       })}
+                                     </div>
                                    </div>
                                  </CardContent>
                                </Card>
                                
                                <div className="flex gap-2">
-                                 <SimpleMaterialOrderDropdown
+                                 <MaterialOrderWithTemplate
                                    project={project}
                                    allProjects={allProjects}
                                    onOrderSaved={handleMaterialOrderSave}
+                                   existingOrder={project.materialOrder}
                                  />
                                  
                                  <Button 
@@ -1490,13 +1495,17 @@ Tack!`);
                                    size="sm"
                                    className="flex-1"
                                    onClick={() => {
-                                     if (project.materialOrder?.orderText) {
-                                       navigator.clipboard.writeText(project.materialOrder.orderText);
-                                       toast({
-                                         title: "Kopierat",
-                                         description: "Beställningstexten har kopierats"
-                                       });
-                                     }
+                                     const address = project.address || 'Ej angiven adress';
+                                     const materialLines = project.materialOrder!.items.map(item => {
+                                       const colorText = item.color ? ` ${item.color}` : '';
+                                       return `${item.materialType} ${item.quantity}${item.unit}${colorText}`;
+                                     }).join('\n');
+                                     const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
+                                     navigator.clipboard.writeText(text);
+                                     toast({
+                                       title: "Kopierat",
+                                       description: "Beställningstexten har kopierats"
+                                     });
                                    }}
                                  >
                                    <Copy className="w-4 h-4 mr-2" />

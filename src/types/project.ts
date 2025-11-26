@@ -151,7 +151,7 @@ export const defaultWorkPhases: Omit<WorkPhaseItem, 'id'>[] = [
 
 export interface MaterialOrderItem {
   id: string;
-  materialType: MaterialType;
+  materialType: MaterialType | string; // Allow custom material names
   customMaterialType?: string; // For "Annat" option
   quantity: number;
   unit: string; // kvm², st, meter
@@ -161,6 +161,7 @@ export interface MaterialOrderItem {
   unitPrice?: number;
   totalPrice?: number;
   estimatedCost?: number;
+  color?: string; // Color selection for materials
 }
 
 export type MaterialOrderStatus = 'draft' | 'ready_to_order' | 'ordered' | 'delivered';
