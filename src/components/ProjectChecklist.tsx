@@ -10,6 +10,7 @@ import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, ar
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
+import { SimpleMaterialOrderDropdown } from './SimpleMaterialOrderDropdown';
 import { MaterialOrderModal } from '@/components/MaterialOrderModal';
 import { ContainerOrderDropdown } from '@/components/ContainerOrderDropdown';
 import { TeamSelectionModal } from '@/components/TeamSelectionModal';
@@ -1439,104 +1440,71 @@ Tack!`);
 
                          {/* Material Order Integration with Linköping Inventory */}
                         {isMaterialOrder && project && (
-                         <div className="mt-3 p-3 bg-info/5 rounded-lg border border-info/20 space-y-3">
-                           <div className="flex items-center gap-2">
-                             <Package className="w-4 h-4 text-info" />
-                             <span className="text-xs font-medium text-info">📦 Materialbeställning</span>
-                           </div>
-                           
-                            {/* Quick material order templates */}
-                            <div className="mt-2">
-                              <Select>
-                                <SelectTrigger className="w-full h-8 text-xs">
-                                  <SelectValue placeholder="Vanliga materialbeställningar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="takpapp">🏠 Takpapp och tätskikt standard</SelectItem>
-                                  <SelectItem value="isolering">🧊 Isoleringsmaterial komplett</SelectItem>
-                                  <SelectItem value="plat">📐 Plåt och beslag enligt ritning</SelectItem>
-                                  <SelectItem value="takranna">🌊 Takränna och stuprör komplett</SelectItem>
-                                  <SelectItem value="farstor">🏗️ Färdigskuren takstol</SelectItem>
-                                  <SelectItem value="skruv">🔩 Skruvar och beslag standard</SelectItem>
-                                  <SelectItem value="säkerhet">⛑️ Säkerhetsutrustning för arbete</SelectItem>
-                                  <SelectItem value="verktyg">🔧 Specialverktyg för takarbete</SelectItem>
-                                  <SelectItem value="akut_material">🚨 Akut materialbehov imorgon</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                           
-                           {/* Material Order Status */}
-                           {project.materialOrder ? (
-                            <div className="space-y-2">
-                              <div className="p-2 bg-green-50 border border-green-200 rounded">
-                                <div className="text-xs">
-                                  <span className="font-medium text-green-700">Status: </span>
-                                  <span className="text-green-600">
-                                    {project.materialOrder.status === 'draft' && 'Utkast sparat'}
-                                    {project.materialOrder.status === 'ready_to_order' && 'Klar för beställning'}
-                                    {project.materialOrder.status === 'ordered' && 'Beställd'}
-                                    {project.materialOrder.status === 'delivered' && 'Levererad'}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-green-600 mt-1">
-                                  {project.materialOrder.items.length} material(s), 
-                                  senast uppdaterad: {new Date(project.materialOrder.updatedAt).toLocaleDateString('sv-SE')}
-                                </div>
-                              </div>
-                              
-                              <MaterialOrderModal
-                                project={project}
-                                allProjects={allProjects}
-                                onSave={handleMaterialOrderSave}
-                              />
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {(() => {
-                                const reminder = generateMaterialOrderReminder(allProjects);
-                                
-                                if (reminder.availableMaterials.length > 0) {
-                                  return (
-                                    <div className="space-y-2">
-                                      <div className="p-2 bg-warning/10 border border-warning/30 rounded">
-                                        <div className="flex items-start gap-2">
-                                          <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                                          <div className="text-xs text-foreground">
-                                            <span className="font-bold block text-warning">⚠️ VIKTIGT!</span>
-                                            <span className="block mt-1 text-foreground font-medium">
-                                              Tillgängligt material från Linköpingsparken: {' '}
-                                              {reminder.availableMaterials.map(item => 
-                                                `${item.totalSquareMeters} m² ${item.materialType}`
-                                              ).join(', ')}
-                                            </span>
-                                            <span className="block mt-1 font-bold text-foreground">
-                                              Kontrollera detta innan beställning för att undvika onödiga kostnader!
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="text-xs text-muted-foreground font-medium">
-                                        Totalt värde uppskattat: ~{(reminder.totalValue * 50).toLocaleString('sv-SE')} SEK
-                                      </div>
-                                    </div>
-                                  );
-                                } else {
-                                  return (
-                                    <div className="text-xs text-muted-foreground">
-                                      Inget material tillgängligt i Linköpingsparken för detta projekt.
-                                    </div>
-                                  );
-                                }
-                              })()}
-                              
-                              <MaterialOrderModal
-                                project={project}
-                                allProjects={allProjects}
-                                onSave={handleMaterialOrderSave}
-                              />
-                            </div>
-                          )}
+                         <div className="mt-3 space-y-3">
+                           {!project.materialOrder ? (
+                             <SimpleMaterialOrderDropdown
+                               project={project}
+                               allProjects={allProjects}
+                               onOrderSaved={handleMaterialOrderSave}
+                             />
+                           ) : (
+                             <div className="space-y-2">
+                               {/* Show order summary */}
+                               <Card className="bg-muted/30">
+                                 <CardContent className="pt-4 pb-3">
+                                   <div className="space-y-2">
+                                     <div className="flex items-center justify-between">
+                                       <span className="text-sm font-medium">Materialbeställning skapad</span>
+                                       <Badge variant={
+                                         project.materialOrder.status === 'ordered' ? 'default' : 
+                                         project.materialOrder.status === 'ready_to_order' ? 'secondary' : 
+                                         'outline'
+                                       }>
+                                         {project.materialOrder.status === 'ordered' ? 'Beställd' :
+                                          project.materialOrder.status === 'ready_to_order' ? 'Klar att skicka' :
+                                          project.materialOrder.status === 'delivered' ? 'Levererad' :
+                                          'Utkast'}
+                                       </Badge>
+                                     </div>
+                                     <div className="text-xs text-muted-foreground">
+                                       {project.materialOrder.items.length} material{project.materialOrder.items.length !== 1 ? 'typer' : 'typ'}
+                                     </div>
+                                     {project.materialOrder.items.map((item, idx) => (
+                                       <div key={idx} className="text-xs">
+                                         • {item.quantity} {item.unit} {item.materialType === 'Annat' ? item.customMaterialType : item.materialType}
+                                       </div>
+                                     ))}
+                                   </div>
+                                 </CardContent>
+                               </Card>
+                               
+                               <div className="flex gap-2">
+                                 <SimpleMaterialOrderDropdown
+                                   project={project}
+                                   allProjects={allProjects}
+                                   onOrderSaved={handleMaterialOrderSave}
+                                 />
+                                 
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm"
+                                   className="flex-1"
+                                   onClick={() => {
+                                     if (project.materialOrder?.orderText) {
+                                       navigator.clipboard.writeText(project.materialOrder.orderText);
+                                       toast({
+                                         title: "Kopierat",
+                                         description: "Beställningstexten har kopierats"
+                                       });
+                                     }
+                                   }}
+                                 >
+                                   <Copy className="w-4 h-4 mr-2" />
+                                   Kopiera text
+                                 </Button>
+                               </div>
+                             </div>
+                           )}
                         </div>
                       )}
                         
