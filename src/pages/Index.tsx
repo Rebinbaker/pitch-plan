@@ -385,7 +385,14 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="planning" className="space-y-6">
-                  <WeeklyPlanningView projects={projects} />
+                  <WeeklyPlanningView 
+                    projects={projects}
+                    onUpdateProject={handleUpdateProject}
+                    trailers={scaffolding}
+                    onUpdateTrailer={updateScaffolding}
+                    onAddNotifications={addNotifications}
+                    onFileUploaded={uploadFile}
+                  />
                 </TabsContent>
 
                 <TabsContent value="timetracking" className="space-y-6">
