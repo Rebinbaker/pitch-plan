@@ -866,8 +866,14 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     );
   }
 
+  // Apply optimistic updates to projects before using them
+  const projectsWithOptimisticUpdates = projects.map(project => {
+    const optimisticUpdate = optimisticUpdates.get(project.id);
+    return optimisticUpdate ? { ...project, ...optimisticUpdate } : project;
+  });
+
   // Use frozen projects during drag to prevent visual jumps
-  const projectsToUse = frozenProjects.length > 0 ? frozenProjects : projects;
+  const projectsToUse = frozenProjects.length > 0 ? frozenProjects : projectsWithOptimisticUpdates;
   
   // Filter projects within the date range
   const monthlyProjects = projectsToUse.filter(project => {
@@ -969,15 +975,33 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
       newValue: `${newWeekString} (${format(newStartDate, 'yyyy-MM-dd')})`
     };
     
-    // Update project with new planning data
-    onUpdateProject(projectId, {
+    const updates = {
       bygg_start_vecka: newWeekString,
       planerad_start_datum: calculatePlannedStartDate(newWeekString),
       beräknat_slut_datum: format(newDeadline, 'yyyy-MM-dd'),
       startDate: format(newStartDate, 'yyyy-MM-dd'), // Legacy compatibility
       deadline: format(newDeadline, 'yyyy-MM-dd'), // Legacy compatibility
       activityLog: [...(project.activityLog || []), newActivityEntry]
+    };
+
+    // Apply optimistic update immediately
+    setOptimisticUpdates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(projectId, updates);
+      return newMap;
     });
+    
+    // Update project in database
+    onUpdateProject(projectId, updates);
+    
+    // Clear optimistic update after a delay to let database update propagate
+    setTimeout(() => {
+      setOptimisticUpdates(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(projectId);
+        return newMap;
+      });
+    }, 2000);
     
     console.log(`MONTHLY: Moved project ${project.name} to week ${newWeekString}, planerad_start_datum: ${calculatePlannedStartDate(newWeekString)}`);
 
