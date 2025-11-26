@@ -855,6 +855,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
   const [frozenProjects, setFrozenProjects] = useState<Project[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [localProjects, setLocalProjects] = useState<Project[]>(projects);
   
   console.log('MonthlyView re-rendered, projects count:', projects.length, 'activeId:', activeId, 'isTransitioning:', isTransitioning);
   if (!dateRange?.from || !dateRange?.to) {
@@ -933,7 +934,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     }
     
     const projectId = active.id as string;
-    const project = projects.find(p => p.id === projectId);
+    const project = localProjects.find(p => p.id === projectId);
     console.log('MONTHLY DRAG: Project found:', project?.name, 'ID:', projectId);
     
     const newWeekId = over.id as string;
@@ -1045,7 +1046,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
           setActiveId(event.active.id as string);
           setIsTransitioning(true);
           // Freeze current state to prevent visual jumps
-          setFrozenProjects([...projects]);
+          setFrozenProjects(projectsWithOptimisticUpdates);
         }}
         onDragEnd={(event) => {
           // Process the update but don't change visual state yet
