@@ -1526,26 +1526,19 @@ Tack!`);
                                          const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
                                          const subject = `Materialbeställning - ${project.name}`;
                                          
-                                         // Try Outlook-specific protocol first (works on Windows with Outlook installed)
-                                         const outlookUrl = `outlook:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-                                         
-                                         // Try to open Outlook directly
-                                         const outlookWindow = window.open(outlookUrl, '_self');
-                                         
-                                         // If that doesn't work (non-Windows or Outlook not default), fall back to mailto
-                                         setTimeout(() => {
-                                           const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-                                           window.location.href = mailtoLink;
-                                         }, 500);
+                                         // Use mailto: which works on both Mac and Windows
+                                         // Opens default mail client (Outlook, Apple Mail, etc.)
+                                         const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+                                         window.location.href = mailtoLink;
                                          
                                          toast({
                                            title: "Öppnar mejlklient",
-                                           description: "Om Outlook inte öppnas automatiskt, använd 'Kopiera text' istället"
+                                           description: "Din standardmejlklient öppnas (Outlook, Mail, etc.)"
                                          });
                                        }}
                                      >
                                        <Mail className="w-4 h-4 mr-1" />
-                                       Öppna i Outlook
+                                       Öppna i mejlklient
                                      </Button>
                                      <Button
                                        size="sm"
