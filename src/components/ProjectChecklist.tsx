@@ -1464,7 +1464,7 @@ Tack!`);
                                      </div>
                                      
                                      {project.materialOrder.status === 'pending_review' && (
-                                       <div className="text-xs space-y-1 font-mono bg-background/50 p-2 rounded border">
+                                       <div className="text-xs space-y-1 font-mono bg-background/50 p-2 rounded border max-h-32 overflow-y-auto">
                                          {project.materialOrder.items.map((item, idx) => {
                                            const colorText = item.color ? ` (${item.color})` : '';
                                            return (
