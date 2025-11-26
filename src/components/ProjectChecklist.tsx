@@ -12,7 +12,6 @@ import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
 import { MaterialOrderWithTemplate } from "./MaterialOrderWithTemplate";
 import { ContainerOrderDropdown } from '@/components/ContainerOrderDropdown';
-import { TeamSelectionModal } from '@/components/TeamSelectionModal';
 import { useToast } from '@/hooks/use-toast';
 import { generateMaterialOrderReminder, createMaterialOrderNotification } from '@/utils/linkopingInventory';
 import { ConstructionTeam } from '@/types/team';
@@ -127,10 +126,6 @@ export function ProjectChecklist({
   
   // Warranty generator state
   const [showWarrantyGenerator, setShowWarrantyGenerator] = useState(false);
-
-  // Team selection modal state
-  const [showTeamSelectionModal, setShowTeamSelectionModal] = useState(false);
-  const [materialReadyItemId, setMaterialReadyItemId] = useState<string>('');
 
   const materialTypes: MaterialType[] = [
     'Takpannor', 'Underlagsduk', 'Läkt', 'Plåtdetaljer', 'Isolering', 'Annat'
@@ -726,14 +721,6 @@ Tack!`);
       return;
     }
 
-    // Special handling for material order completion - require team selection
-    const item = checklist.find(item => item.id === itemId);
-    if (item && item.label === 'Materialbeställning' && !item.completed && teams.length > 0) {
-      // Show team selection modal when trying to complete material order
-      setMaterialReadyItemId(itemId);
-      setShowTeamSelectionModal(true);
-      return;
-    }
     
     const updatedChecklist = checklist.map(item => 
       item.id === itemId 
@@ -865,34 +852,6 @@ Tack!`);
     onChecklistUpdate(updatedChecklist);
   };
 
-  const handleTeamAssigned = async (teamId: string, teamName: string) => {
-    if (!project || !onUpdateProject) return;
-
-    // Update the project with assigned team
-    const updatedProject = {
-      ...project,
-      constructionTeam: teamName,
-      assignedTeamId: teamId
-    };
-    onUpdateProject(updatedProject);
-
-    // Mark the material order item as completed
-    const updatedChecklist = checklist.map(item => 
-      item.id === materialReadyItemId 
-        ? { 
-            ...item, 
-            completed: true,
-            completedAt: new Date().toISOString().split('T')[0]
-          }
-        : item
-    );
-    onChecklistUpdate(updatedChecklist);
-
-    toast({
-      title: "Material redo för bygglag",
-      description: `${teamName} har tilldelats och kommer att få påminnelse om att fylla i materialistan.`,
-    });
-  };
 
   const handleContainerOrderSent = () => {
     // Mark container order as completed
@@ -1963,16 +1922,6 @@ Tack!`);
         />
       )}
 
-      {/* Team Selection Modal */}
-      {project && (
-        <TeamSelectionModal
-          isOpen={showTeamSelectionModal}
-          onClose={() => setShowTeamSelectionModal(false)}
-          project={project}
-          teams={teams}
-          onTeamAssigned={handleTeamAssigned}
-        />
-      )}
     </Card>
   );
 }
