@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Camera, Upload, Download, Eye, Search, X } from 'lucide-react';
 import { ProjectFile, FileType } from '@/types/files';
 import { Project } from '@/types/project';
 import { FilePreviewModal } from './FilePreviewModal';
+import { OrderHistoryView } from './OrderHistoryView';
 
 interface FilesViewProps {
   files: ProjectFile[];
@@ -23,6 +25,7 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
   const [filterType, setFilterType] = useState<FileType | 'all'>('all');
   const [selectedFile, setSelectedFile] = useState<ProjectFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState('files');
 
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,200 +67,215 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
           <h2 className="text-2xl font-bold text-foreground">Projektfiler & Inspektioner</h2>
           <p className="text-muted-foreground">Ladda upp och hantera projektdokumentation</p>
         </div>
-        
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="shadow-primary">
-              <Upload className="w-4 h-4" />
-              Ladda upp fil
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Ladda upp ny fil</DialogTitle>
-            </DialogHeader>
-            <FileUploadForm
-              projects={projects}
-              onUpload={onUploadFile}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Sök filer..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <Select value={filterProject} onValueChange={setFilterProject}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrera efter projekt" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla projekt</SelectItem>
-              {projects.map(project => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={filterType} onValueChange={(value: FileType | 'all') => setFilterType(value)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Filtyp" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla typer</SelectItem>
-              <SelectItem value="photo">Foton</SelectItem>
-              <SelectItem value="pdf">PDFs</SelectItem>
-              <SelectItem value="inspection">Inspektioner</SelectItem>
-              <SelectItem value="warranty">Garantibevis</SelectItem>
-              <SelectItem value="other">Övrigt</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="files">Filer</TabsTrigger>
+          <TabsTrigger value="order-history">Beställningshistorik</TabsTrigger>
+        </TabsList>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {files.filter(f => f.type === 'photo').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Foton</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {files.filter(f => f.type === 'inspection').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Inspektioner</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">
-              {files.filter(f => f.type === 'pdf').length}
-            </div>
-            <div className="text-sm text-muted-foreground">PDF-dokument</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-foreground">
-              {files.length}
-            </div>
-            <div className="text-sm text-muted-foreground">Totalt filer</div>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="files" className="space-y-6">
+          <div className="flex justify-end">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="shadow-primary">
+                  <Upload className="w-4 h-4" />
+                  Ladda upp fil
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ladda upp ny fil</DialogTitle>
+                </DialogHeader>
+                <FileUploadForm
+                  projects={projects}
+                  onUpload={onUploadFile}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
 
-      {/* Files Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredFiles.map(file => {
-          const FileIcon = getFileIcon(file.type);
-          return (
-            <Card key={file.id} className="shadow-card">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg flex items-start gap-2 flex-1 min-w-0">
-                    <FileIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <span className="break-words leading-tight">{file.name}</span>
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white flex-shrink-0`}>
-                      {file.type}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDeleteFile(file.id)}
-                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Sök filer..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Select value={filterProject} onValueChange={setFilterProject}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrera efter projekt" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla projekt</SelectItem>
+                  {projects.map(project => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterType} onValueChange={(value: FileType | 'all') => setFilterType(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Filtyp" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alla typer</SelectItem>
+                  <SelectItem value="photo">Foton</SelectItem>
+                  <SelectItem value="pdf">PDFs</SelectItem>
+                  <SelectItem value="inspection">Inspektioner</SelectItem>
+                  <SelectItem value="warranty">Garantibevis</SelectItem>
+                  <SelectItem value="other">Övrigt</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-green-600">
+                  {files.filter(f => f.type === 'photo').length}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Projekt</div>
-                  <div className="text-sm text-muted-foreground break-words">{getProjectName(file.projectId)}</div>
-                </div>
-                
-                {file.description && (
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-foreground">Beskrivning</div>
-                    <div className="text-sm text-muted-foreground break-words">{file.description}</div>
-                  </div>
-                )}
-                
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-foreground">Taggar</div>
-                  <div className="flex flex-wrap gap-1">
-                    {file.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="text-xs text-muted-foreground break-words">
-                  Uppladdad: {new Date(file.uploadedAt).toLocaleDateString()} av {file.uploadedBy}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => {
-                      setSelectedFile(file);
-                      setIsPreviewOpen(true);
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Visa
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Download className="w-4 h-4 mr-1" />
-                    Ladda ner
-                  </Button>
-                </div>
+                <div className="text-sm text-muted-foreground">Foton</div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
-
-      {filteredFiles.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground">
-            Inga filer hittades som matchar dina kriterier.
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-blue-600">
+                  {files.filter(f => f.type === 'inspection').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Inspektioner</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-red-600">
+                  {files.filter(f => f.type === 'pdf').length}
+                </div>
+                <div className="text-sm text-muted-foreground">PDF-dokument</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-foreground">
+                  {files.length}
+                </div>
+                <div className="text-sm text-muted-foreground">Totalt filer</div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      )}
 
-      <FilePreviewModal
-        file={selectedFile}
-        isOpen={isPreviewOpen}
-        onClose={() => {
-          setIsPreviewOpen(false);
-          setSelectedFile(null);
-        }}
-      />
+          {/* Files Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredFiles.map(file => {
+              const FileIcon = getFileIcon(file.type);
+              return (
+                <Card key={file.id} className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg flex items-start gap-2 flex-1 min-w-0">
+                        <FileIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <span className="break-words leading-tight">{file.name}</span>
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={`${getFileTypeColor(file.type)} text-white flex-shrink-0`}>
+                          {file.type}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteFile(file.id)}
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-foreground">Projekt</div>
+                      <div className="text-sm text-muted-foreground break-words">{getProjectName(file.projectId)}</div>
+                    </div>
+                    
+                    {file.description && (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-foreground">Beskrivning</div>
+                        <div className="text-sm text-muted-foreground break-words">{file.description}</div>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-foreground">Taggar</div>
+                      <div className="flex flex-wrap gap-1">
+                        {file.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground break-words">
+                      Uppladdad: {new Date(file.uploadedAt).toLocaleDateString()} av {file.uploadedBy}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedFile(file);
+                          setIsPreviewOpen(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Visa
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Download className="w-4 h-4 mr-1" />
+                        Ladda ner
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {filteredFiles.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">
+                Inga filer hittades som matchar dina kriterier.
+              </div>
+            </div>
+          )}
+
+          <FilePreviewModal
+            file={selectedFile}
+            isOpen={isPreviewOpen}
+            onClose={() => {
+              setIsPreviewOpen(false);
+              setSelectedFile(null);
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="order-history" className="space-y-6">
+          <OrderHistoryView projects={projects} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
