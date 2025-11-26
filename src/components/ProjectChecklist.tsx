@@ -1525,8 +1525,23 @@ Tack!`);
                                          }).join('\n');
                                          const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
                                          const subject = `Materialbeställning - ${project.name}`;
-                                         const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-                                         window.location.href = mailtoLink;
+                                         
+                                         // Try Outlook-specific protocol first (works on Windows with Outlook installed)
+                                         const outlookUrl = `outlook:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+                                         
+                                         // Try to open Outlook directly
+                                         const outlookWindow = window.open(outlookUrl, '_self');
+                                         
+                                         // If that doesn't work (non-Windows or Outlook not default), fall back to mailto
+                                         setTimeout(() => {
+                                           const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+                                           window.location.href = mailtoLink;
+                                         }, 500);
+                                         
+                                         toast({
+                                           title: "Öppnar mejlklient",
+                                           description: "Om Outlook inte öppnas automatiskt, använd 'Kopiera text' istället"
+                                         });
                                        }}
                                      >
                                        <Mail className="w-4 h-4 mr-1" />
