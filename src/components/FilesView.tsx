@@ -98,27 +98,6 @@ export function FilesView({ files, projects, onUploadFile, onDeleteFile }: Files
 
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="shadow-primary">
-                  <Upload className="w-4 h-4" />
-                  Ladda upp fil
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Ladda upp ny fil</DialogTitle>
-                </DialogHeader>
-                <FileUploadForm
-                  projects={projects}
-                  onUpload={onUploadFile}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
