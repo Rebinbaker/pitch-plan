@@ -322,14 +322,13 @@ const Index = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-10 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+            <TabsList className="grid w-full grid-cols-9 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
               <TabsTrigger value="projects">Projekt</TabsTrigger>
               <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
               <TabsTrigger value="teams">Team</TabsTrigger>
               <TabsTrigger value="files">Filer</TabsTrigger>
               <TabsTrigger value="planning">Planering</TabsTrigger>
               <TabsTrigger value="timetracking">Tidsrapporter</TabsTrigger>
-              <TabsTrigger value="order-history">Beställningshistorik</TabsTrigger>
               <TabsTrigger value="material">Avvarat Material</TabsTrigger>
               <TabsTrigger value="security">Säkerhet</TabsTrigger>
               <TabsTrigger value="notifications">
@@ -439,10 +438,6 @@ const Index = () => {
               ) : (
                 <TimeTrackingView />
               )}
-            </TabsContent>
-
-            <TabsContent value="order-history" className="space-y-6">
-              <OrderHistoryView projects={projects} />
             </TabsContent>
 
             <TabsContent value="material" className="space-y-6">
