@@ -330,6 +330,7 @@ export type Database = {
           deadline: string | null
           estimated_work_days: number | null
           id: string
+          material_order: Json | null
           name: string
           notes: string | null
           organization_id: string
@@ -359,6 +360,7 @@ export type Database = {
           deadline?: string | null
           estimated_work_days?: number | null
           id?: string
+          material_order?: Json | null
           name: string
           notes?: string | null
           organization_id: string
@@ -388,6 +390,7 @@ export type Database = {
           deadline?: string | null
           estimated_work_days?: number | null
           id?: string
+          material_order?: Json | null
           name?: string
           notes?: string | null
           organization_id?: string
