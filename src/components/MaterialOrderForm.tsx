@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MaterialOrder, MaterialOrderItem, MaterialType, Project, getMaterialUnit, MaterialItem } from '@/types/project';
 import { Plus, Trash2, Package, Copy, Mail, Save, Send, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { MaterialOrderTemplates } from './MaterialOrderTemplates';
 import { MaterialCostCalculator } from './MaterialCostCalculator';
 import { MaterialOrderAnalytics } from './MaterialOrderAnalytics';
 
@@ -256,9 +255,8 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="order" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="order">Beställning</TabsTrigger>
-              <TabsTrigger value="templates">Mallar</TabsTrigger>
               <TabsTrigger value="calculator">Kalkyl</TabsTrigger>
               <TabsTrigger value="analytics">Statistik</TabsTrigger>
             </TabsList>
@@ -456,13 +454,6 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
               Öppna i Outlook
             </Button>
           </div>
-            </TabsContent>
-
-            <TabsContent value="templates">
-              <MaterialOrderTemplates 
-                onApplyTemplate={applyTemplate}
-                onSaveTemplate={saveTemplate}
-              />
             </TabsContent>
 
             <TabsContent value="calculator">
