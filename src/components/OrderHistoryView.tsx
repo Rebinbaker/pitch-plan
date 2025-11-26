@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Project, MaterialOrderStatus } from '@/types/project';
-import { History, Search, Calendar, MapPin, Package, Copy, Mail, FileText } from 'lucide-react';
+import { Project, MaterialOrderStatus, getMaterialUnit } from '@/types/project';
+import { History, Search, Calendar, MapPin, Package, Copy, Mail, FileText, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -26,6 +27,19 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<MaterialOrderStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (projectId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
 
   // Filter to only show projects with completed orders
   const projectsWithOrders = projects.filter(project => {
@@ -139,10 +153,10 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
             </div>
             
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as MaterialOrderStatus | 'all')}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-background z-50">
                 <SelectValue placeholder="Filtrera status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">Alla status</SelectItem>
                 <SelectItem value="ordered">Beställda</SelectItem>
                 <SelectItem value="delivered">Levererade</SelectItem>
@@ -150,10 +164,10 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
             </Select>
 
             <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48 bg-background z-50">
                 <SelectValue placeholder="Filtrera region" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">Alla regioner</SelectItem>
                 <SelectItem value="Stockholm">Stockholm</SelectItem>
                 <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
@@ -178,110 +192,173 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
               <TableBody>
                 {sortedOrders.map(project => {
                   const order = project.materialOrder!;
+                  const isExpanded = expandedRows.has(project.id);
                   
                   return (
-                    <TableRow key={project.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {project.name}
-                          <Badge variant="outline" className="text-xs">
-                            {project.region}
+                    <>
+                      <TableRow key={project.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(project.id)}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            {project.name}
+                            <Badge variant="outline" className="text-xs">
+                              {project.region}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <MapPin className="w-3 h-3 text-muted-foreground" />
+                            {project.address || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>{project.customerName || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusBadgeVariant(order.status)}>
+                            {getStatusText(order.status)}
                           </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="w-3 h-3 text-muted-foreground" />
-                          {project.address || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{project.customerName || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(order.status)}>
-                          {getStatusText(order.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="w-3 h-3 text-muted-foreground" />
-                          {new Date(order.createdAt).toLocaleDateString('sv-SE')}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">{order.items.length} material(s)</div>
-                          {order.appliedSalvagedMaterial && order.appliedSalvagedMaterial.length > 0 && (
-                            <div className="text-xs text-green-600">
-                              + {order.appliedSalvagedMaterial.length} från lager
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {order.orderText && (
-                            <>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <FileText className="w-4 h-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Beställningstext - {project.name}</DialogTitle>
-                                    <DialogDescription>
-                                      Beställd {new Date(order.createdAt).toLocaleDateString('sv-SE')}
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="bg-muted p-4 rounded-lg">
-                                      <pre className="whitespace-pre-wrap text-sm font-mono">
-                                        {order.orderText}
-                                      </pre>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button
-                                        variant="outline"
-                                        onClick={() => copyOrderText(order.orderText!)}
-                                        className="flex-1"
-                                      >
-                                        <Copy className="w-4 h-4 mr-2" />
-                                        Kopiera
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        onClick={() => openInOutlook(order.orderText!, project.address || project.name)}
-                                        className="flex-1"
-                                      >
-                                        <Mail className="w-4 h-4 mr-2" />
-                                        Öppna i Outlook
-                                      </Button>
-                                    </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="w-3 h-3 text-muted-foreground" />
+                            {new Date(order.createdAt).toLocaleDateString('sv-SE')}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">{order.items.length} material(s)</div>
+                            {order.appliedSalvagedMaterial && order.appliedSalvagedMaterial.length > 0 && (
+                              <div className="text-xs text-green-600">
+                                + {order.appliedSalvagedMaterial.length} från lager
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-2">
+                            {order.orderText && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyOrderText(order.orderText!)}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                                
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openInOutlook(order.orderText!, project.address || project.name)}
+                                >
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {isExpanded && (
+                        <TableRow key={`${project.id}-expanded`}>
+                          <TableCell colSpan={7} className="bg-muted/30 p-6">
+                            <div className="space-y-6">
+                              {/* Order Info */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <div className="text-sm font-medium text-muted-foreground mb-1">Beställd av</div>
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4 text-muted-foreground" />
+                                    <span className="font-medium">{order.createdByName || 'Okänd'}</span>
                                   </div>
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => copyOrderText(order.orderText!)}
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                              
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openInOutlook(order.orderText!, project.address || project.name)}
-                              >
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-muted-foreground mb-1">Beställningsdatum</div>
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                    <span>{new Date(order.createdAt).toLocaleDateString('sv-SE')} {new Date(order.createdAt).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Ordered Materials */}
+                              <div>
+                                <h4 className="text-sm font-semibold mb-3">Beställda material</h4>
+                                <div className="border rounded-lg overflow-hidden">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Material</TableHead>
+                                        <TableHead>Antal</TableHead>
+                                        <TableHead>Enhet</TableHead>
+                                        <TableHead>Färg</TableHead>
+                                        <TableHead>Anteckningar</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {order.items.map((item, idx) => (
+                                        <TableRow key={item.id || idx}>
+                                          <TableCell className="font-medium">
+                                            {item.customMaterialType || item.materialType}
+                                          </TableCell>
+                                          <TableCell>{item.quantity}</TableCell>
+                                          <TableCell>{item.unit || (typeof item.materialType === 'string' && ['Takpannor', 'Papp', 'Täckbräda', 'Vindskiva', 'Puts', 'Masonit'].includes(item.materialType) ? getMaterialUnit(item.materialType as any) : 'st')}</TableCell>
+                                          <TableCell>
+                                            {item.color ? (
+                                              <Badge variant="outline">{item.color}</Badge>
+                                            ) : (
+                                              '-'
+                                            )}
+                                          </TableCell>
+                                          <TableCell className="text-sm text-muted-foreground">
+                                            {item.notes || '-'}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+
+                              {/* Salvaged Materials from Storage */}
+                              {order.appliedSalvagedMaterial && order.appliedSalvagedMaterial.length > 0 && (
+                                <div>
+                                  <h4 className="text-sm font-semibold mb-3 text-green-700">Material från lager (avvarat)</h4>
+                                  <div className="border rounded-lg overflow-hidden border-green-200">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Material</TableHead>
+                                          <TableHead>Antal</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {order.appliedSalvagedMaterial.map((item, idx) => (
+                                          <TableRow key={idx}>
+                                            <TableCell className="font-medium">{item.materialType}</TableCell>
+                                            <TableCell>{item.squareMeters} {getMaterialUnit(item.materialType)}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Order Notes */}
+                              {order.notes && (
+                                <div>
+                                  <h4 className="text-sm font-semibold mb-2">Anteckningar</h4>
+                                  <div className="bg-background border rounded-lg p-3 text-sm">
+                                    {order.notes}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
                   );
                 })}
               </TableBody>
