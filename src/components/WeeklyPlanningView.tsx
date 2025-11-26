@@ -16,6 +16,7 @@ import { ProjectDetailModal } from './ProjectDetailModal';
 import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, PointerSensor, useDroppable, useDraggable } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
+import { useToast } from '@/hooks/use-toast';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
@@ -849,6 +850,7 @@ interface MonthlyViewProps {
 }
 
 const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilter, onUpdateProject, onViewDetails, trailers = [], onAddNotifications }: MonthlyViewProps & { onUpdateProject?: (projectId: string, updates: Partial<Project>) => void; trailers?: any[]; onAddNotifications?: (notifications: any[]) => void }) {
+  const { toast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, any>>(new Map());
   const [frozenProjects, setFrozenProjects] = useState<Project[]>([]);
@@ -918,6 +920,9 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     console.log('Active:', active?.id, 'Over:', over?.id);
     if (!over || active.id === over.id || !onUpdateProject) {
       console.log('Early return - no over, same id, or no onUpdateProject');
+      setActiveId(null);
+      setIsTransitioning(false);
+      setFrozenProjects([]);
       return;
     }
     
@@ -933,7 +938,12 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     const targetWeek = weeks.find(w => w.weekNumber === weekNumber);
     
     console.log('Target week found:', !!targetWeek);
-    if (!targetWeek || !project) return;
+    if (!targetWeek || !project) {
+      setActiveId(null);
+      setIsTransitioning(false);
+      setFrozenProjects([]);
+      return;
+    }
     
     const oldStartDate = new Date(project.planerad_start_datum || project.startDate);
     const oldDeadline = new Date(project.beräknat_slut_datum || project.deadline);
@@ -953,7 +963,7 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
       timestamp: new Date().toISOString(),
       user: 'System',
       action: 'Projekt omplanerat',
-      description: `Projekt prioriterades om från vecka ${dateToWeekString(oldStartDate)} till vecka ${newWeekString}`,
+      description: `Projekt flyttades från vecka ${dateToWeekString(oldStartDate)} till vecka ${newWeekString}`,
       category: 'general' as const,
       oldValue: `${dateToWeekString(oldStartDate)} (${format(oldStartDate, 'yyyy-MM-dd')})`,
       newValue: `${newWeekString} (${format(newStartDate, 'yyyy-MM-dd')})`
@@ -971,18 +981,29 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     
     console.log(`MONTHLY: Moved project ${project.name} to week ${newWeekString}, planerad_start_datum: ${calculatePlannedStartDate(newWeekString)}`);
 
+    // Show success toast
+    toast({
+      title: "Projekt omplanerat",
+      description: `"${project.name}" flyttades till vecka ${weekNumber} (${format(newStartDate, 'd MMM yyyy')})`,
+      duration: 3000,
+    });
+
     // Create and add notification for project rescheduling
     const notification = {
       id: `reschedule-${projectId}-${Date.now()}`,
       type: 'project_rescheduled' as const,
       priority: 'medium' as const,
       title: 'Projekt omplanerat',
-      message: `"${project.name}" flyttades till vecka ${weekNumber}`,
+      message: `"${project.name}" flyttades från vecka ${dateToWeekString(oldStartDate)} till vecka ${weekNumber}`,
       projectId: project.id,
       projectName: project.name,
       createdAt: new Date().toISOString(),
       isRead: false,
-      actionRequired: false
+      actionRequired: false,
+      fieldName: 'bygg_start_vecka',
+      oldValue: dateToWeekString(oldStartDate),
+      newValue: newWeekString,
+      changedByUser: 'System'
     };
 
     // Add notification using the React state function
@@ -990,14 +1011,6 @@ const MonthlyView = memo(function MonthlyView({ projects, dateRange, regionFilte
     if (onAddNotifications) {
       onAddNotifications([notification]);
       console.log('Notification added via React state');
-    } else {
-      // Fallback to localStorage if function not available
-      console.log('Fallback: Adding notification to localStorage');
-      const existingNotifications = JSON.parse(localStorage.getItem('lovable_notifications') || '[]');
-      console.log('Existing notifications count:', existingNotifications.length);
-      const updatedNotifications = [...existingNotifications, notification];
-      localStorage.setItem('lovable_notifications', JSON.stringify(updatedNotifications));
-      console.log('Updated notifications count:', updatedNotifications.length);
     }
   };
 
@@ -1060,8 +1073,8 @@ const MonthlyWeekCard = memo(function MonthlyWeekCard({ week, onViewDetails, tra
     <Card 
       ref={setNodeRef}
       className={cn(
-        "shadow-card transition-colors duration-200",
-        isOver && "ring-2 ring-primary/50 bg-primary/5"
+        "shadow-card transition-all duration-300",
+        isOver && "ring-4 ring-primary bg-primary/10 scale-105 shadow-2xl"
       )}
     >
       <CardHeader>
@@ -1073,14 +1086,17 @@ const MonthlyWeekCard = memo(function MonthlyWeekCard({ week, onViewDetails, tra
           {format(week.startDate, "d MMM")} - {format(week.endDate, "d MMM")}
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 min-h-[100px]">
         {week.projects.length > 0 ? (
           week.projects.map(project => (
             <MonthlyProjectCard key={project.id} project={project} onViewDetails={onViewDetails} trailers={trailers} />
           ))
         ) : (
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            Inga projekt denna vecka
+          <div className={cn(
+            "text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg transition-all duration-200",
+            isOver && "border-primary bg-primary/5 text-primary"
+          )}>
+            {isOver ? "Släpp projektet här" : "Inga projekt denna vecka"}
           </div>
         )}
       </CardContent>
@@ -1129,15 +1145,22 @@ const MonthlyProjectCard = memo(function MonthlyProjectCard({ project, onViewDet
         ref={setNodeRef}
         style={style}
         {...attributes}
-        className="border rounded p-3 space-y-2 relative"
+        className={cn(
+          "border rounded-lg p-3 space-y-2 relative transition-all duration-200 group",
+          isDragging ? "shadow-2xl ring-2 ring-primary scale-105" : "hover:shadow-md"
+        )}
       >
         {/* Drag handle - larger and more visible */}
         <div 
           {...listeners}
-          className="absolute top-1 right-1 w-8 h-8 bg-muted/30 hover:bg-muted/60 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-sm opacity-60 hover:opacity-100 transition-all border border-muted"
-          title="Drag to move project"
+          className={cn(
+            "absolute top-2 right-2 w-10 h-10 bg-primary/10 hover:bg-primary/20 rounded-md cursor-grab active:cursor-grabbing z-30 flex items-center justify-center text-lg font-bold transition-all border-2 border-primary/30",
+            "opacity-40 group-hover:opacity-100",
+            isDragging && "cursor-grabbing"
+          )}
+          title="Dra för att flytta projekt"
         >
-          ⋮⋮
+          <span className="text-primary">⋮⋮</span>
         </div>
         
         {/* Click area - everywhere else */}
