@@ -13,7 +13,7 @@ import { Project, MaterialOrder, MaterialOrderItem } from "@/types/project";
 interface MaterialOrderWithTemplateProps {
   project: Project;
   allProjects: Project[];
-  onOrderSaved: (order: MaterialOrder) => void;
+  onOrderSaved: (order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'>, existingOrderId?: string) => void;
   existingOrder?: MaterialOrder;
 }
 
@@ -224,21 +224,22 @@ export function MaterialOrderWithTemplate({
       }))
     ];
 
-    const order: MaterialOrder = {
-      id: existingOrder?.id || `order-${Date.now()}`,
+    // Get user's display name or username
+    const userName = (window as any).__currentUserName || 'Okänd användare';
+
+    const order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'> = {
       projectId: project.id,
       items,
       notes,
-      status: 'ready_to_order',
+      status: existingOrder ? existingOrder.status : 'pending_review',
       projectAddress: project.address || '',
       createdBy: 'current-user',
-      updatedAt: new Date().toISOString(),
-      createdAt: existingOrder?.createdAt || new Date().toISOString()
+      createdByName: existingOrder ? existingOrder.createdByName : userName
     };
 
-    onOrderSaved(order);
+    onOrderSaved(order, existingOrder?.id);
     setIsOpen(false);
-    toast.success(existingOrder ? "Beställning uppdaterad" : "Beställning sparad");
+    toast.success(existingOrder ? "Beställning uppdaterad" : "Beställning sparad - COO kommer att få notis");
   };
 
   const hasColor = (materialName: string) => {
@@ -393,12 +394,6 @@ export function MaterialOrderWithTemplate({
           <div className="flex gap-2">
             <Button onClick={saveOrder} className="flex-1">
               Spara beställning
-            </Button>
-            <Button onClick={copyOrderText} variant="outline">
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button onClick={openInOutlook} variant="outline">
-              <Mail className="w-4 h-4" />
             </Button>
           </div>
         </div>

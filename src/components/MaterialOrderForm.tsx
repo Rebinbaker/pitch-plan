@@ -215,6 +215,7 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
       projectId: project.id,
       projectAddress: project.address,
       createdBy: 'current-user', // TODO: Get from auth context
+      createdByName: (window as any).__currentUserName || 'Okänd användare',
       createdAt: project.materialOrder?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       status: newStatus || status,

@@ -675,34 +675,67 @@ Tack!`);
     onUpdateProject(updatedProject);
   };
 
-  const handleMaterialOrderSave = (materialOrder: MaterialOrder) => {
+  const handleMaterialOrderSave = async (order: Omit<MaterialOrder, 'id' | 'createdAt' | 'updatedAt'>, existingOrderId?: string) => {
     if (!project || !onUpdateProject) return;
-    
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: orgMembers } = await supabase
+      .from('organization_members')
+      .select('organization_id')
+      .eq('user_id', user?.id || '')
+      .limit(1)
+      .single();
+
+    const now = new Date().toISOString();
+    const newOrder: MaterialOrder = existingOrderId 
+      ? {
+          ...order,
+          id: existingOrderId,
+          createdAt: project.materialOrder?.createdAt || now,
+          updatedAt: now
+        }
+      : {
+          ...order,
+          id: `order-${Date.now()}`,
+          createdAt: now,
+          updatedAt: now
+        };
+
+    // Update project with the material order
     const updatedProject = {
       ...project,
-      materialOrder
+      materialOrder: newOrder
     };
     
-    onUpdateProject(updatedProject);
-    
-    // Auto-complete the material ordering checklist item if order is ready
-    if (materialOrder.status === 'ready_to_order' || materialOrder.status === 'ordered') {
-      const updatedChecklist = project.checklist.map(item => 
-        item.label === 'Materialbeställning' 
-          ? { 
-              ...item, 
-              completed: true, 
-              completedAt: new Date().toISOString().split('T')[0]
-            }
-          : item
-      );
-      
-      const finalProject = {
-        ...updatedProject,
-        checklist: updatedChecklist
-      };
-      
-      onUpdateProject(finalProject);
+    await onUpdateProject(updatedProject);
+
+    // Create notification for COO if this is pending review
+    if (newOrder.status === 'pending_review' && orgMembers?.organization_id) {
+      try {
+        await supabase.from('notifications').insert({
+          organization_id: orgMembers.organization_id,
+          user_id: user?.id || '',
+          type: 'material_order',
+          category: 'general',
+          priority: 'medium',
+          title: 'Materialbeställning redo att skickas',
+          message: `Materialbeställning för ${project.name} skapad av ${newOrder.createdByName} - redo att granskas och skickas av COO.`,
+          project_id: project.id,
+          project_name: project.name,
+          action_required: true
+        });
+
+        toast({
+          title: "Beställning sparad",
+          description: "COO har fått en notis att beställningen är redo att granskas."
+        });
+      } catch (error) {
+        console.error('Error creating notification:', error);
+        toast({
+          title: "Beställning sparad",
+          description: "Kunde inte skicka notifikation, men beställningen är sparad."
+        });
+      }
     }
   };
 
@@ -1407,69 +1440,144 @@ Tack!`);
                              />
                            ) : (
                              <div className="space-y-2">
-                               {/* Show order summary */}
+                               {/* Show order summary with new statuses */}
                                <Card className="bg-muted/30">
                                  <CardContent className="pt-4 pb-3">
                                    <div className="space-y-2">
                                      <div className="flex items-center justify-between">
-                                       <span className="text-sm font-medium">Materialbeställning skapad</span>
+                                       <span className="text-sm font-medium">
+                                         {project.materialOrder.status === 'pending_review' && '📋 Material skapad av '}
+                                         {project.materialOrder.status === 'ordered' && '✓ Material beställd av '}
+                                         {project.materialOrder.status === 'delivered' && '✓ Material levererad'}
+                                         {project.materialOrder.status !== 'delivered' && project.materialOrder.createdByName}
+                                       </span>
                                        <Badge variant={
                                          project.materialOrder.status === 'ordered' ? 'default' : 
-                                         project.materialOrder.status === 'ready_to_order' ? 'secondary' : 
+                                         project.materialOrder.status === 'pending_review' ? 'secondary' : 
                                          'outline'
                                        }>
                                          {project.materialOrder.status === 'ordered' ? 'Beställd' :
-                                          project.materialOrder.status === 'ready_to_order' ? 'Klar att skicka' :
+                                          project.materialOrder.status === 'pending_review' ? 'Redo att skickas' :
                                           project.materialOrder.status === 'delivered' ? 'Levererad' :
                                           'Utkast'}
                                        </Badge>
                                      </div>
-                                     <div className="text-xs text-muted-foreground">
-                                       {project.materialOrder.items.length} material{project.materialOrder.items.length !== 1 ? 'typer' : 'typ'}
-                                     </div>
-                                     <div className="text-xs space-y-1 font-mono">
-                                       {project.materialOrder.items.map((item, idx) => {
-                                         const colorText = item.color ? ` ${item.color}` : '';
-                                         return (
-                                           <div key={idx}>
-                                             • {item.quantity} {item.unit} {item.materialType}{colorText}
-                                           </div>
-                                         );
-                                       })}
-                                     </div>
+                                     
+                                     {project.materialOrder.status === 'pending_review' && (
+                                       <div className="text-xs space-y-1 font-mono bg-background/50 p-2 rounded border">
+                                         {project.materialOrder.items.map((item, idx) => {
+                                           const colorText = item.color ? ` (${item.color})` : '';
+                                           return (
+                                             <div key={idx}>
+                                               • {item.materialType} {item.quantity}{item.unit}{colorText}
+                                             </div>
+                                           );
+                                         })}
+                                       </div>
+                                     )}
+                                     
+                                     {project.materialOrder.status === 'ordered' && (
+                                       <p className="text-xs text-muted-foreground">
+                                         Beställd {new Date(project.materialOrder.updatedAt).toLocaleDateString('sv-SE')}
+                                       </p>
+                                     )}
                                    </div>
                                  </CardContent>
                                </Card>
                                
-                               <div className="flex gap-2">
-                                 <MaterialOrderWithTemplate
-                                   project={project}
-                                   allProjects={allProjects}
-                                   onOrderSaved={handleMaterialOrderSave}
-                                   existingOrder={project.materialOrder}
-                                 />
-                                 
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm"
-                                   className="flex-1"
-                                   onClick={() => {
-                                     const address = project.address || 'Ej angiven adress';
-                                     const materialLines = project.materialOrder!.items.map(item => {
-                                       const colorText = item.color ? ` ${item.color}` : '';
-                                       return `${item.materialType} ${item.quantity}${item.unit}${colorText}`;
-                                     }).join('\n');
-                                     const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
-                                     navigator.clipboard.writeText(text);
-                                     toast({
-                                       title: "Kopierat",
-                                       description: "Beställningstexten har kopierats"
-                                     });
-                                   }}
-                                 >
-                                   <Copy className="w-4 h-4 mr-2" />
-                                   Kopiera text
-                                 </Button>
+                               <div className="flex gap-2 flex-wrap">
+                                 {project.materialOrder.status === 'pending_review' && (
+                                   <>
+                                     <MaterialOrderWithTemplate
+                                       project={project}
+                                       allProjects={allProjects}
+                                       onOrderSaved={handleMaterialOrderSave}
+                                       existingOrder={project.materialOrder}
+                                     />
+                                     <Button 
+                                       variant="outline" 
+                                       size="sm"
+                                       onClick={() => {
+                                         const address = project.address || 'Ej angiven adress';
+                                         const materialLines = project.materialOrder!.items.map(item => {
+                                           const colorText = item.color ? ` ${item.color}` : '';
+                                           return `${item.materialType} ${item.quantity}${item.unit}${colorText}`;
+                                         }).join('\n');
+                                         const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
+                                         navigator.clipboard.writeText(text);
+                                         toast({
+                                           title: "Kopierad",
+                                           description: "Beställningstexten har kopierats"
+                                         });
+                                       }}
+                                     >
+                                       <Copy className="w-4 h-4 mr-1" />
+                                       Kopiera text
+                                     </Button>
+                                     <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={() => {
+                                         const address = project.address || 'Ej angiven adress';
+                                         const materialLines = project.materialOrder!.items.map(item => {
+                                           const colorText = item.color ? ` ${item.color}` : '';
+                                           return `${item.materialType} ${item.quantity}${item.unit}${colorText}`;
+                                         }).join('\n');
+                                         const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
+                                         const subject = `Materialbeställning - ${project.name}`;
+                                         const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+                                         window.location.href = mailtoLink;
+                                       }}
+                                     >
+                                       <Mail className="w-4 h-4 mr-1" />
+                                       Öppna i Outlook
+                                     </Button>
+                                     <Button
+                                       size="sm"
+                                       className="bg-primary hover:bg-primary/90"
+                                       onClick={async () => {
+                                         if (!project.materialOrder) return;
+                                         
+                                         const updatedOrder: MaterialOrder = {
+                                           ...project.materialOrder,
+                                           status: 'ordered',
+                                           updatedAt: new Date().toISOString()
+                                         };
+                                         
+                                         const updatedProject = {
+                                           ...project,
+                                           materialOrder: updatedOrder
+                                         };
+                                         await onUpdateProject(updatedProject);
+
+                                         // Mark checklist item as complete
+                                         const updatedChecklist = project.checklist.map(checkItem => 
+                                           checkItem.label === 'Materialbeställning'
+                                             ? { 
+                                                 ...checkItem, 
+                                                 completed: true,
+                                                 completedAt: new Date().toISOString().split('T')[0]
+                                               }
+                                             : checkItem
+                                         );
+                                         
+                                         const finalProject = {
+                                           ...updatedProject,
+                                           checklist: updatedChecklist
+                                         };
+                                         await onUpdateProject(finalProject);
+
+                                         toast({
+                                           title: "Beställning skickad",
+                                           description: "Materialbeställningen är markerad som skickad"
+                                         });
+                                       }}
+                                     >
+                                       <Check className="w-3 h-3 mr-1" />
+                                       Markera som skickad
+                                     </Button>
+                                   </>
+                                 )}
                                </div>
                              </div>
                            )}

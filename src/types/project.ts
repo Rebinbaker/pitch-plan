@@ -164,13 +164,14 @@ export interface MaterialOrderItem {
   color?: string; // Color selection for materials
 }
 
-export type MaterialOrderStatus = 'draft' | 'ready_to_order' | 'ordered' | 'delivered';
+export type MaterialOrderStatus = 'draft' | 'pending_review' | 'ready_to_order' | 'ordered' | 'delivered';
 
 export interface MaterialOrder {
   id: string;
   projectId: string;
   projectAddress: string;
   createdBy: string; // Project manager who created the order
+  createdByName: string; // Display name of who created the order
   createdAt: string;
   updatedAt: string;
   status: MaterialOrderStatus;
