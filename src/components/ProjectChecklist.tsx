@@ -1526,19 +1526,18 @@ Tack!`);
                                          const text = `🏗️ ${address}\n${materialLines}${project.materialOrder!.notes ? `\n\n${project.materialOrder!.notes}` : ''}`;
                                          const subject = `Materialbeställning - ${project.name}`;
                                          
-                                         // Use mailto: which works on both Mac and Windows
-                                         // Opens default mail client (Outlook, Apple Mail, etc.)
+                                         // mailto: works on both Mac and Windows and opens default mail client (Outlook, Mail, etc.)
                                          const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-                                         window.location.href = mailtoLink;
+                                         window.open(mailtoLink, '_blank');
                                          
                                          toast({
-                                           title: "Öppnar mejlklient",
-                                           description: "Din standardmejlklient öppnas (Outlook, Mail, etc.)"
+                                           title: "Öppnar Outlook/mejlklient",
+                                           description: "Din standardmejlklient (t.ex. Outlook) försöker nu öppnas."
                                          });
                                        }}
                                      >
                                        <Mail className="w-4 h-4 mr-1" />
-                                       Öppna i mejlklient
+                                       Öppna i Outlook
                                      </Button>
                                      <Button
                                        size="sm"
