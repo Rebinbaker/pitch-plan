@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { ProjectCard } from './ProjectCard';
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
+import { ProjectMapView } from './ProjectMapView';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, Map } from 'lucide-react';
 
 interface ProjectDashboardProps {
   projects: Project[];
@@ -52,6 +55,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   // Auto-open project detail modal when selectedProjectId changes
   useEffect(() => {
@@ -173,29 +177,64 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         </div>
       </div>
 
-      {/* Projects Grid - No drag functionality */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredProjects.map(project => (
-          <SimpleProjectCard
-            key={project.id}
-            project={project}
-            onViewDetails={handleViewDetails}
-            onUpdateProject={handleUpdateProjectFromCard}
-            trailers={trailers}
-            teams={teams}
-            onUpdateTeam={onUpdateTeam}
-            onUpdateTrailer={onUpdateTrailer}
-            onAddNotifications={onAddNotifications}
-          />
-        ))}
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border bg-card p-1 shadow-sm">
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            className="gap-1.5"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Lista
+          </Button>
+          <Button
+            variant={viewMode === 'map' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('map')}
+            className="gap-1.5"
+          >
+            <Map className="h-4 w-4" />
+            Karta
+          </Button>
+        </div>
       </div>
 
-      {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground">
-            Inga projekt hittades som matchar dina kriterier.
+      {/* View Content */}
+      {viewMode === 'map' ? (
+        <ProjectMapView
+          projects={filteredProjects}
+          trailers={trailers}
+          teams={teams}
+          onViewDetails={handleViewDetails}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredProjects.map(project => (
+              <SimpleProjectCard
+                key={project.id}
+                project={project}
+                onViewDetails={handleViewDetails}
+                onUpdateProject={handleUpdateProjectFromCard}
+                trailers={trailers}
+                teams={teams}
+                onUpdateTeam={onUpdateTeam}
+                onUpdateTrailer={onUpdateTrailer}
+                onAddNotifications={onAddNotifications}
+              />
+            ))}
           </div>
-        </div>
+
+          {filteredProjects.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">
+                Inga projekt hittades som matchar dina kriterier.
+              </div>
+            </div>
+          )}
+        </>
       )}
 
         <ProjectDetailModal
