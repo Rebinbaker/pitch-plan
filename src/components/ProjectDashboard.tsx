@@ -201,29 +201,40 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         </div>
       </div>
 
-      {/* Projects Grid - No drag functionality */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredProjects.map(project => (
-          <SimpleProjectCard
-            key={project.id}
-            project={project}
-            onViewDetails={handleViewDetails}
-            onUpdateProject={handleUpdateProjectFromCard}
-            trailers={trailers}
-            teams={teams}
-            onUpdateTeam={onUpdateTeam}
-            onUpdateTrailer={onUpdateTrailer}
-            onAddNotifications={onAddNotifications}
-          />
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-muted-foreground">
-            Inga projekt hittades som matchar dina kriterier.
+      {/* View Content */}
+      {viewMode === 'map' ? (
+        <ProjectMapView
+          projects={filteredProjects}
+          trailers={trailers}
+          teams={teams}
+          onViewDetails={handleViewDetails}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredProjects.map(project => (
+              <SimpleProjectCard
+                key={project.id}
+                project={project}
+                onViewDetails={handleViewDetails}
+                onUpdateProject={handleUpdateProjectFromCard}
+                trailers={trailers}
+                teams={teams}
+                onUpdateTeam={onUpdateTeam}
+                onUpdateTrailer={onUpdateTrailer}
+                onAddNotifications={onAddNotifications}
+              />
+            ))}
           </div>
-        </div>
+
+          {filteredProjects.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-muted-foreground">
+                Inga projekt hittades som matchar dina kriterier.
+              </div>
+            </div>
+          )}
+        </>
       )}
 
         <ProjectDetailModal
