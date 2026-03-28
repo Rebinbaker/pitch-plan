@@ -28,6 +28,7 @@ import { WeeklyPlanningView } from '@/components/WeeklyPlanningView';
 import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { SecurityStatus } from '@/components/SecurityStatus';
+import { CustomersView } from '@/components/CustomersView';
 import { DataMigrationModal } from '@/components/DataMigrationModal';
 import { DataExportModal } from '@/components/DataExportModal';
 import TimeTrackingView from '@/components/TimeTrackingView';
@@ -319,10 +320,11 @@ const Index = () => {
               </div>
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-9 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+                <TabsList className="grid w-full grid-cols-10 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
                   <TabsTrigger value="projects">Projekt</TabsTrigger>
                   <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
                   <TabsTrigger value="teams">Team</TabsTrigger>
+                  <TabsTrigger value="customers">Kunder</TabsTrigger>
                   <TabsTrigger value="files">Filer</TabsTrigger>
                   <TabsTrigger value="planning">Planering</TabsTrigger>
                   <TabsTrigger value="timetracking">Tidsrapporter</TabsTrigger>
@@ -373,6 +375,10 @@ const Index = () => {
                     onDeleteTeam={handleDeleteTeam}
                     projects={projects}
                   />
+                </TabsContent>
+
+                <TabsContent value="customers" className="space-y-6">
+                  <CustomersView projects={projects} />
                 </TabsContent>
 
                 <TabsContent value="files" className="space-y-6">
