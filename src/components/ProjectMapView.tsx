@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Project, ProjectStatus } from '@/types/project';
@@ -11,6 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, ExternalLink, Filter } from 'lucide-react';
+
+// Fix default marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 interface ProjectMapViewProps {
   projects: Project[];
@@ -40,7 +47,6 @@ const STATUS_LABELS: Record<ProjectStatus, string> = {
   ånger: 'Ånger',
 };
 
-// Create a custom pin icon with progress ring
 function createPinIcon(status: ProjectStatus, progress: number): L.DivIcon {
   const color = STATUS_COLORS[status] || STATUS_COLORS.planned;
   const circumference = 2 * Math.PI * 14;
@@ -51,15 +57,11 @@ function createPinIcon(status: ProjectStatus, progress: number): L.DivIcon {
     html: `
       <div style="position:relative;width:40px;height:48px;display:flex;align-items:flex-start;justify-content:center;">
         <svg width="40" height="48" viewBox="0 0 40 48">
-          <!-- Pin shape -->
           <path d="M20 46 C20 46, 38 28, 38 18 C38 8.06 29.94 0 20 0 C10.06 0 2 8.06 2 18 C2 28 20 46 20 46Z" fill="${color}" stroke="white" stroke-width="2"/>
-          <!-- Progress ring background -->
           <circle cx="20" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-          <!-- Progress ring -->
           <circle cx="20" cy="18" r="14" fill="none" stroke="white" stroke-width="3"
             stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
             stroke-linecap="round" transform="rotate(-90 20 18)"/>
-          <!-- Progress text -->
           <text x="20" y="22" text-anchor="middle" fill="white" font-size="10" font-weight="bold">${progress}%</text>
         </svg>
       </div>
@@ -70,17 +72,14 @@ function createPinIcon(status: ProjectStatus, progress: number): L.DivIcon {
   });
 }
 
-// Component to fit map bounds to markers
 function FitBounds({ positions }: { positions: [number, number][] }) {
   const map = useMap();
-
   useEffect(() => {
     if (positions.length > 0) {
       const bounds = L.latLngBounds(positions.map(p => L.latLng(p[0], p[1])));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
     }
   }, [positions, map]);
-
   return null;
 }
 
@@ -89,42 +88,31 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
-  // Geocode all project addresses
   useEffect(() => {
     let cancelled = false;
-
     async function geocodeAll() {
       setLoading(true);
       const results: GeocodedProject[] = [];
-
       for (const project of projects) {
         if (cancelled) break;
         if (!project.address) continue;
-
         const coords = await geocodeAddress(project.address);
         if (coords && !cancelled) {
           results.push({ ...project, lat: coords.lat, lng: coords.lng });
-          // Update incrementally so pins appear as they're geocoded
           setGeocodedProjects([...results]);
         }
       }
-
-      if (!cancelled) {
-        setLoading(false);
-      }
+      if (!cancelled) setLoading(false);
     }
-
     geocodeAll();
     return () => { cancelled = true; };
   }, [projects]);
 
-  // Apply status filter
   const filteredProjects = useMemo(() => {
     if (statusFilter === 'all') return geocodedProjects;
     return geocodedProjects.filter(p => p.status === statusFilter);
   }, [geocodedProjects, statusFilter]);
 
-  // Calculate work phase progress
   const getWorkPhaseProgress = (project: Project): number => {
     if (!project.workPhases || project.workPhases.length === 0) return 0;
     const completed = project.workPhases.filter(p => p.completed).length;
@@ -135,7 +123,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
 
   const getTeamName = (project: Project) => {
     if (!project.constructionTeam) return null;
-    const team = teams.find(t => t.id === project.constructionTeam || t.name === project.constructionTeam);
+    const team = teams.find((t: any) => t.id === project.constructionTeam || t.name === project.constructionTeam);
     return team?.name || project.constructionTeam;
   };
 
@@ -147,7 +135,6 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
 
   return (
     <div className="space-y-4">
-      {/* Filter bar */}
       <div className="flex items-center gap-3">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | 'all')}>
@@ -168,10 +155,9 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
         </div>
       </div>
 
-      {/* Map */}
       <div className="rounded-lg border overflow-hidden shadow-card" style={{ height: '600px' }}>
         <MapContainer
-          center={[62.0, 15.0]} // Center of Sweden
+          center={[62.0, 15.0]}
           zoom={5}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
@@ -180,83 +166,64 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-
           {positions.length > 0 && <FitBounds positions={positions} />}
+          {filteredProjects.map(project => {
+            const progress = getWorkPhaseProgress(project);
+            const teamName = getTeamName(project);
+            const trailerName = getTrailerName(project);
 
-          <MarkerClusterGroup
-            chunkedLoading
-            maxClusterRadius={60}
-            spiderfyOnMaxZoom
-            showCoverageOnHover={false}
-          >
-            {filteredProjects.map(project => {
-              const progress = getWorkPhaseProgress(project);
-              const teamName = getTeamName(project);
-              const trailerName = getTrailerName(project);
-
-              return (
-                <Marker
-                  key={project.id}
-                  position={[project.lat, project.lng]}
-                  icon={createPinIcon(project.status, progress)}
-                >
-                  <Popup className="project-map-popup" minWidth={280} maxWidth={320}>
-                    <div className="p-1 space-y-3">
-                      {/* Header */}
-                      <div>
-                        <h3 className="font-semibold text-sm text-foreground">{project.customerName}</h3>
-                        <p className="text-xs text-muted-foreground">{project.address}</p>
-                      </div>
-
-                      {/* Status + Progress */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Badge
-                            className="text-xs"
-                            style={{
-                              backgroundColor: STATUS_COLORS[project.status],
-                              color: 'white',
-                              border: 'none',
-                            }}
-                          >
-                            {STATUS_LABELS[project.status]}
-                          </Badge>
-                          <span className="text-xs font-medium text-muted-foreground">{progress}%</span>
-                        </div>
-                        <Progress value={progress} className="h-2" />
-                      </div>
-
-                      {/* Details */}
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        {teamName && (
-                          <div className="flex justify-between">
-                            <span>Team:</span>
-                            <span className="font-medium text-foreground">{teamName}</span>
-                          </div>
-                        )}
-                        {trailerName && (
-                          <div className="flex justify-between">
-                            <span>Ställningsvagn:</span>
-                            <span className="font-medium text-foreground">{trailerName}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action */}
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => onViewDetails(project)}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Öppna projekt
-                      </Button>
+            return (
+              <Marker
+                key={project.id}
+                position={[project.lat, project.lng]}
+                icon={createPinIcon(project.status, progress)}
+              >
+                <Popup minWidth={280} maxWidth={320}>
+                  <div className="p-1 space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: 'hsl(215, 25%, 15%)' }}>{project.customerName}</h3>
+                      <p className="text-xs" style={{ color: 'hsl(215, 13%, 45%)' }}>{project.address}</p>
                     </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-          </MarkerClusterGroup>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          style={{ backgroundColor: STATUS_COLORS[project.status], color: 'white' }}
+                        >
+                          {STATUS_LABELS[project.status]}
+                        </span>
+                        <span className="text-xs font-medium" style={{ color: 'hsl(215, 13%, 45%)' }}>{progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="h-2 rounded-full" style={{ width: `${progress}%`, backgroundColor: STATUS_COLORS[project.status] }} />
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-xs" style={{ color: 'hsl(215, 13%, 45%)' }}>
+                      {teamName && (
+                        <div className="flex justify-between">
+                          <span>Team:</span>
+                          <span className="font-medium" style={{ color: 'hsl(215, 25%, 15%)' }}>{teamName}</span>
+                        </div>
+                      )}
+                      {trailerName && (
+                        <div className="flex justify-between">
+                          <span>Ställningsvagn:</span>
+                          <span className="font-medium" style={{ color: 'hsl(215, 25%, 15%)' }}>{trailerName}</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => onViewDetails(project)}
+                      className="w-full text-center text-xs font-medium py-1.5 px-3 rounded-md text-white"
+                      style={{ backgroundColor: 'hsl(217, 91%, 35%)' }}
+                    >
+                      Öppna projekt
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
       </div>
     </div>
