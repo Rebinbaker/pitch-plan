@@ -42,16 +42,18 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
       project={project}
       onViewDetails={onViewDetails}
       onUpdateProject={onUpdateProject}
+      onDeleteProject={onDeleteProject}
       trailers={trailers}
       teams={teams}
       onUpdateTeam={onUpdateTeam}
       onUpdateTrailer={onUpdateTrailer}
       onAddNotifications={onAddNotifications}
+      isAdmin={isAdmin}
     />
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
