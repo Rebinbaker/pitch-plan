@@ -224,11 +224,13 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
                 project={project}
                 onViewDetails={handleViewDetails}
                 onUpdateProject={handleUpdateProjectFromCard}
+                onDeleteProject={onDeleteProject}
                 trailers={trailers}
                 teams={teams}
                 onUpdateTeam={onUpdateTeam}
                 onUpdateTrailer={onUpdateTrailer}
                 onAddNotifications={onAddNotifications}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

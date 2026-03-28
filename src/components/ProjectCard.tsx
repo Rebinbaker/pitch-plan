@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2 } from 'lucide-react';
 import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
-// import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Not needed anymore
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
@@ -18,14 +18,16 @@ interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
   onAddNotifications?: (notifications: any[]) => void;
+  isAdmin?: boolean;
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications, isAdmin }: ProjectCardProps) {
   const { toast } = useToast();
 
   // Auto-complete project if it's 100% but still showing as ongoing
