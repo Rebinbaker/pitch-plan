@@ -1,15 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Project, ProjectStatus } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { geocodeAddress } from '@/utils/geocoding';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, ExternalLink, Filter } from 'lucide-react';
+import { MapPin, ExternalLink } from 'lucide-react';
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -86,8 +82,8 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
 export function ProjectMapView({ projects, trailers = [], teams = [], onViewDetails }: ProjectMapViewProps) {
   const [geocodedProjects, setGeocodedProjects] = useState<GeocodedProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
+  // Geocode projects - use project IDs to track which are geocoded
   useEffect(() => {
     let cancelled = false;
     async function geocodeAll() {
@@ -108,18 +104,13 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
     return () => { cancelled = true; };
   }, [projects]);
 
-  const filteredProjects = useMemo(() => {
-    if (statusFilter === 'all') return geocodedProjects;
-    return geocodedProjects.filter(p => p.status === statusFilter);
-  }, [geocodedProjects, statusFilter]);
-
   const getWorkPhaseProgress = (project: Project): number => {
     if (!project.workPhases || project.workPhases.length === 0) return 0;
     const completed = project.workPhases.filter(p => p.completed).length;
     return Math.round((completed / project.workPhases.length) * 100);
   };
 
-  const positions: [number, number][] = filteredProjects.map(p => [p.lat, p.lng]);
+  const positions: [number, number][] = geocodedProjects.map(p => [p.lat, p.lng]);
 
   const getTeamName = (project: Project) => {
     if (!project.constructionTeam) return null;
@@ -135,24 +126,9 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | 'all')}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filtrera status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alla projekt</SelectItem>
-            <SelectItem value="planned">Planerade</SelectItem>
-            <SelectItem value="ongoing">Pågående</SelectItem>
-            <SelectItem value="completed">Slutförda</SelectItem>
-            <SelectItem value="invoiced">Fakturerade</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground ml-auto">
-          <MapPin className="h-4 w-4" />
-          {loading ? 'Laddar positioner...' : `${filteredProjects.length} projekt på kartan`}
-        </div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <MapPin className="h-4 w-4" />
+        {loading ? 'Laddar positioner...' : `${geocodedProjects.length} projekt på kartan`}
       </div>
 
       <div className="rounded-lg border overflow-hidden shadow-card" style={{ height: '600px' }}>
@@ -167,7 +143,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {positions.length > 0 && <FitBounds positions={positions} />}
-          {filteredProjects.map(project => {
+          {geocodedProjects.map(project => {
             const progress = getWorkPhaseProgress(project);
             const teamName = getTeamName(project);
             const trailerName = getTrailerName(project);
