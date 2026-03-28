@@ -55,6 +55,7 @@ const Index = () => {
     loading,
     updateProject,
     addProject,
+    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,
@@ -344,6 +345,7 @@ const Index = () => {
                   <ProjectDashboard 
                     projects={projects}
                     onUpdateProject={updateProject}
+                    onDeleteProject={isAdmin ? deleteProject : undefined}
                     onAddProject={handleAddProject}
                     trailers={scaffolding}
                     teams={teams}
@@ -353,6 +355,7 @@ const Index = () => {
                     onClearSelection={() => setSelectedProjectId(null)}
                     onAddNotifications={addNotifications}
                     onFileUploaded={uploadFile}
+                    isAdmin={isAdmin}
                   />
                 </TabsContent>
 
