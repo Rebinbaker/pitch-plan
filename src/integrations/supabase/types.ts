@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_interactions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          description: string | null
+          id: string
+          interaction_type: string
+          organization_id: string
+          related_project_id: string | null
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          id?: string
+          interaction_type?: string
+          organization_id: string
+          related_project_id?: string | null
+          subject: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          id?: string
+          interaction_type?: string
+          organization_id?: string
+          related_project_id?: string | null
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_interactions_related_project_id_fkey"
+            columns: ["related_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       files: {
         Row: {
           id: string
@@ -325,6 +436,7 @@ export type Database = {
           construction_start_week: string | null
           construction_team: string | null
           created_at: string
+          customer_id: string | null
           customer_name: string | null
           customer_phone: string | null
           deadline: string | null
@@ -355,6 +467,7 @@ export type Database = {
           construction_start_week?: string | null
           construction_team?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deadline?: string | null
@@ -385,6 +498,7 @@ export type Database = {
           construction_start_week?: string | null
           construction_team?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           deadline?: string | null
@@ -405,6 +519,13 @@ export type Database = {
           work_phases?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_organization_id_fkey"
             columns: ["organization_id"]
