@@ -373,6 +373,40 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
             <Download className="w-3 h-3" />
             📄
           </Button>
+          {isAdmin && onDeleteProject && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Radera projekt</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Är du säker på att du vill radera <strong>{project.name}</strong>? Denna åtgärd kan inte ångras och all projektdata kommer att försvinna permanent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteProject(project.id);
+                    }}
+                  >
+                    Radera permanent
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </CardContent>
     </Card>
