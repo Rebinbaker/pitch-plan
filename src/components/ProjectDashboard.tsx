@@ -11,6 +11,7 @@ import { LayoutGrid, Map } from 'lucide-react';
 interface ProjectDashboardProps {
   projects: Project[];
   onUpdateProject: (updatedProject: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   onAddProject: () => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
@@ -20,34 +21,39 @@ interface ProjectDashboardProps {
   onClearSelection?: () => void;
   onAddNotifications?: (notifications: any[]) => void;
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
+  isAdmin?: boolean;
 }
 
 // Simple Project Card Component (no drag functionality)
-function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
+function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications, isAdmin }: {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers: ScaffoldingTrailer[];
   teams: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
   onAddNotifications?: (notifications: any[]) => void;
+  isAdmin?: boolean;
 }) {
   return (
     <ProjectCard
       project={project}
       onViewDetails={onViewDetails}
       onUpdateProject={onUpdateProject}
+      onDeleteProject={onDeleteProject}
       trailers={trailers}
       teams={teams}
       onUpdateTeam={onUpdateTeam}
       onUpdateTrailer={onUpdateTrailer}
       onAddNotifications={onAddNotifications}
+      isAdmin={isAdmin}
     />
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -218,11 +224,13 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
                 project={project}
                 onViewDetails={handleViewDetails}
                 onUpdateProject={handleUpdateProjectFromCard}
+                onDeleteProject={onDeleteProject}
                 trailers={trailers}
                 teams={teams}
                 onUpdateTeam={onUpdateTeam}
                 onUpdateTrailer={onUpdateTrailer}
                 onAddNotifications={onAddNotifications}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

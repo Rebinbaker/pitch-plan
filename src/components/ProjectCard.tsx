@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2 } from 'lucide-react';
 import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
-// import { AvvaratMaterialSection } from './AvvaratMaterialSection'; // Not needed anymore
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
@@ -18,14 +18,16 @@ interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
   onAddNotifications?: (notifications: any[]) => void;
+  isAdmin?: boolean;
 }
 
-export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications }: ProjectCardProps) {
+export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications, isAdmin }: ProjectCardProps) {
   const { toast } = useToast();
 
   // Auto-complete project if it's 100% but still showing as ongoing
@@ -371,6 +373,40 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, trailers 
             <Download className="w-3 h-3" />
             📄
           </Button>
+          {isAdmin && onDeleteProject && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Radera projekt</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Är du säker på att du vill radera <strong>{project.name}</strong>? Denna åtgärd kan inte ångras och all projektdata kommer att försvinna permanent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteProject(project.id);
+                    }}
+                  >
+                    Radera permanent
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </CardContent>
     </Card>
