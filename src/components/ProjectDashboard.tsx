@@ -177,6 +177,30 @@ export function ProjectDashboard({ projects, onUpdateProject, onAddProject, trai
         </div>
       </div>
 
+      {/* View Mode Toggle */}
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border bg-card p-1 shadow-sm">
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            className="gap-1.5"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Lista
+          </Button>
+          <Button
+            variant={viewMode === 'map' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('map')}
+            className="gap-1.5"
+          >
+            <Map className="h-4 w-4" />
+            Karta
+          </Button>
+        </div>
+      </div>
+
       {/* Projects Grid - No drag functionality */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredProjects.map(project => (
