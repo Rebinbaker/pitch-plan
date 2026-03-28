@@ -286,7 +286,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
                             </span>
                             <span className="text-xs font-medium" style={{ color: 'hsl(215, 13%, 45%)' }}>{progress}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div className="h-2 rounded-full transition-all" style={{ width: `${progress}%`, backgroundColor: STATUS_COLORS[project.status] }} />
                           </div>
                         </div>
