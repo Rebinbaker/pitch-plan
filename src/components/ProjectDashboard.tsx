@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { ProjectCard } from './ProjectCard';
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
+import { ProjectMapView } from './ProjectMapView';
 import { Project, ProjectStatus, Region } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, Map } from 'lucide-react';
 
 interface ProjectDashboardProps {
   projects: Project[];
