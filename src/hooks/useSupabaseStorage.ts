@@ -731,6 +731,35 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  const deleteProject = async (projectId: string) => {
+    if (!user || !organizationId) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects' as any)
+        .delete()
+        .eq('id', projectId)
+        .eq('organization_id', organizationId);
+
+      if (error) throw error;
+
+      setSupabaseProjects(prev => prev.filter(p => p.id !== projectId));
+
+      toast({
+        title: "Projekt raderat",
+        description: "Projektet har tagits bort permanent.",
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: "Fel vid radering",
+        description: "Kunde inte radera projektet. Försök igen.",
+        variant: "destructive" as const,
+      });
+      throw error;
+    }
+  };
+
   return {
     ...localStorageHook,
     projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
@@ -740,6 +769,7 @@ export const useSupabaseStorage = () => {
     migrationStatus,
     updateProject,
     addProject,
+    deleteProject,
     updateScaffolding,
     addScaffolding,
     deleteScaffolding,

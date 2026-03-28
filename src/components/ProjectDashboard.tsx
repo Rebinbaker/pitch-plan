@@ -11,6 +11,7 @@ import { LayoutGrid, Map } from 'lucide-react';
 interface ProjectDashboardProps {
   projects: Project[];
   onUpdateProject: (updatedProject: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   onAddProject: () => void;
   trailers?: ScaffoldingTrailer[];
   teams?: any[];
@@ -20,18 +21,21 @@ interface ProjectDashboardProps {
   onClearSelection?: () => void;
   onAddNotifications?: (notifications: any[]) => void;
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
+  isAdmin?: boolean;
 }
 
 // Simple Project Card Component (no drag functionality)
-function SimpleProjectCard({ project, onViewDetails, onUpdateProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications }: {
+function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers, teams, onUpdateTeam, onUpdateTrailer, onAddNotifications, isAdmin }: {
   project: Project;
   onViewDetails: (project: Project) => void;
   onUpdateProject?: (project: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   trailers: ScaffoldingTrailer[];
   teams: any[];
   onUpdateTeam?: (team: any) => void;
   onUpdateTrailer?: (trailer: any) => void;
   onAddNotifications?: (notifications: any[]) => void;
+  isAdmin?: boolean;
 }) {
   return (
     <ProjectCard
