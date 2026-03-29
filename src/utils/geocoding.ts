@@ -1,27 +1,46 @@
-// Geocoding cache to avoid repeated API calls
-const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
+// Geocoding with persistent localStorage cache
+
+const CACHE_KEY = 'geocode_cache_v1';
+
+function loadCache(): Map<string, { lat: number; lng: number } | null> {
+  try {
+    const stored = localStorage.getItem(CACHE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return new Map(Object.entries(parsed));
+    }
+  } catch {}
+  return new Map();
+}
+
+function saveCache(cache: Map<string, { lat: number; lng: number } | null>) {
+  try {
+    const obj: Record<string, { lat: number; lng: number } | null> = {};
+    cache.forEach((v, k) => { obj[k] = v; });
+    localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+  } catch {}
+}
+
+const geocodeCache = loadCache();
 
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address || address.trim() === '') return null;
 
-  // Check cache first
   const cacheKey = address.toLowerCase().trim();
   if (geocodeCache.has(cacheKey)) {
     return geocodeCache.get(cacheKey) ?? null;
   }
 
   try {
-    // Use Nominatim (OpenStreetMap) free geocoding - add Sweden bias
-    // NOTE: Avoid custom headers like User-Agent in browser fetch (can trigger CORS failures)
     const query = encodeURIComponent(`${address}, Sverige`);
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${query}&limit=1&countrycodes=se`
     );
 
     if (!response.ok) {
-      // Don't cache transient API failures (429/5xx/network gateways) so we can retry later
       if (response.status >= 400 && response.status < 500 && response.status !== 429) {
         geocodeCache.set(cacheKey, null);
+        saveCache(geocodeCache);
       }
       return null;
     }
@@ -30,13 +49,14 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
     if (data && data.length > 0) {
       const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       geocodeCache.set(cacheKey, result);
+      saveCache(geocodeCache);
       return result;
     }
 
     geocodeCache.set(cacheKey, null);
+    saveCache(geocodeCache);
     return null;
   } catch (error) {
-    // Network/CORS issues should be retried on next attempt (no null-cache)
     console.error('Geocoding error for address:', address, error);
     return null;
   }
@@ -57,7 +77,7 @@ export async function batchGeocodeAddresses(
       results.set(id, coords);
     }
 
-    // Rate limit only for fresh lookups to avoid Nominatim throttling
+    // Rate limit only for fresh lookups
     if (!wasCached) {
       await new Promise(resolve => setTimeout(resolve, 1100));
     }
