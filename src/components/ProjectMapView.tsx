@@ -169,14 +169,17 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
   const [geocodedProjects, setGeocodedProjects] = useState<GeocodedProject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const getFallbackCoordinates = (project: Project): { lat: number; lng: number } | null => {
+  const getFallbackCoordinates = (project: Project): { lat: number; lng: number } => {
     const regionCenters: Partial<Record<Project['region'], [number, number]>> = {
       Stockholm: [59.3293, 18.0686],
       'Västra Götaland': [57.7089, 11.9746],
+      Skåne: [55.9903, 13.5958],
+      Östergötland: [58.4108, 15.6214],
+      Halland: [56.6745, 12.8578],
     };
 
-    const center = regionCenters[project.region];
-    if (!center) return null;
+    const swedenDefaultCenter: [number, number] = [62.0, 15.0];
+    const center = project.region ? regionCenters[project.region] ?? swedenDefaultCenter : swedenDefaultCenter;
 
     const hash = project.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const latOffset = ((hash % 21) - 10) * 0.01;
@@ -207,12 +210,11 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
 
         if (cancelled) return;
 
-        const positionedProjects = projects.flatMap(project => {
+        const positionedProjects = projects.map(project => {
           const geocodedCoords = geocodedMap.get(project.id);
-          const fallbackCoords = geocodedCoords ? null : getFallbackCoordinates(project);
-          const coords = geocodedCoords ?? fallbackCoords;
+          const coords = geocodedCoords ?? getFallbackCoordinates(project);
 
-          return coords ? [{ ...project, lat: coords.lat, lng: coords.lng }] : [];
+          return { ...project, lat: coords.lat, lng: coords.lng };
         });
 
         setGeocodedProjects(positionedProjects);
