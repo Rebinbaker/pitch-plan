@@ -37,7 +37,6 @@ import {
 } from 'lucide-react';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
-import { calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface ProjectDetailModalProps {
@@ -71,6 +70,16 @@ export function ProjectDetailModal({
 
   if (!project) return null;
 
+  const formatDisplayDate = (dateValue?: string): string => {
+    if (!dateValue) return '-';
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? dateValue : parsed.toLocaleDateString('sv-SE');
+  };
+
+  const plannedWeek = project.bygg_start_vecka || project.constructionStartWeek || '';
+  const plannedStartDate = project.planerad_start_datum || project.startDate;
+  const projectedDeadline = project.beräknat_slut_datum || project.deadline;
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
@@ -81,384 +90,14 @@ export function ProjectDetailModal({
       default: return 'default';
     }
   };
-
-  const createActivityLogEntry = (
-    action: string,
-    description: string,
-    category: ActivityLogEntry['category'],
-    oldValue?: string,
-    newValue?: string
-  ): ActivityLogEntry => ({
-    id: `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    timestamp: new Date().toISOString(),
-    user: 'Aktuell Användare', // TODO: Replace with actual user
-    action,
-    description,
-    category,
-    oldValue,
-    newValue,
-  });
-
-  const handleChecklistUpdate = (updatedChecklist: any[]) => {
-    // Calculate combined weighted completion percentage
-    const checklistWeight = updatedChecklist
-      .filter(item => item.completed)
-      .reduce((sum, item) => sum + (item.weight || 0), 0);
-    const workPhasesWeight = (project?.workPhases || [])
-      .filter(phase => phase.completed)
-      .reduce((sum, phase) => sum + (phase.weight || 0), 0);
-    const totalCompletedWeight = checklistWeight + workPhasesWeight;
-    
-    const checklistTotalWeight = updatedChecklist.reduce((sum, item) => sum + (item.weight || 0), 0);
-    const workPhasesTotalWeight = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
-    const totalWeight = checklistTotalWeight + workPhasesTotalWeight;
-    
-    const completionPercentage = totalWeight > 0 ? 
-      (totalCompletedWeight === totalWeight ? 100 : Math.round((totalCompletedWeight / totalWeight) * 100)) : 0;
-
-    // Find differences for activity log
-    const activityEntries: ActivityLogEntry[] = [];
-    updatedChecklist.forEach((newItem, index) => {
-      const oldItem = project.checklist[index];
-      if (oldItem && oldItem.completed !== newItem.completed) {
-        activityEntries.push(createActivityLogEntry(
-          newItem.completed ? 'Checklistepunkt markerad som klar' : 'Checklistepunkt markerad som ej klar',
-          `"${newItem.label}" ${newItem.completed ? 'slutförd' : 'återställd'}`,
-          'checklist',
-          oldItem.completed ? 'Klar' : 'Ej klar',
-          newItem.completed ? 'Klar' : 'Ej klar'
-        ));
-      }
-    });
-    
-    const updatedProject = {
-      ...project,
-      checklist: updatedChecklist,
-      completionPercentage,
-      activityLog: [...(project.activityLog || []), ...activityEntries],
-    };
-    
-    onUpdateProject(updatedProject);
-  };
-
-  const handleAddActivityLogEntry = (entryData: Omit<ActivityLogEntry, 'id' | 'timestamp'>) => {
-    const newEntry = createActivityLogEntry(
-      entryData.action,
-      entryData.description,
-      entryData.category,
-      entryData.oldValue,
-      entryData.newValue
-    );
-
-    const updatedProject = {
-      ...project,
-      activityLog: [...(project.activityLog || []), newEntry],
-    };
-
-    onUpdateProject(updatedProject);
-  };
-
-  const handleExportReport = async () => {
-    try {
-      const result = await downloadProjectReport(project, []);
-      if (result.success) {
-        toast({
-          title: "Report Generated",
-          description: `PDF report downloaded: ${result.fileName}`,
-        });
-      } else {
-        toast({
-          title: "Export Failed",
-          description: result.error || "Failed to generate PDF report",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const copyReminderText = async (phaseLabel: string, phaseId: string) => {
-    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
-📍 ${project.address}
-
-Pågående: ${phaseLabel}
-
-⚠️ VIKTIGT: Skicka minst 20 bilder idag!
-📸 Fotografera arbetsområdet, säkerhet och kvalitet
-📱 Skicka bilderna direkt till projektledaren
-
-Tack! 👷‍♂️`;
-
-    try {
-      await navigator.clipboard.writeText(reminderText);
-      setCopiedPhases(prev => new Set([...prev, phaseId]));
-      
-      toast({
-        title: "Kopierat!",
-        description: "Påminnelsetexten har kopierats till urklipp",
-        duration: 2000,
-      });
-      
-      // Reset button after 3 seconds
-      setTimeout(() => {
-        setCopiedPhases(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(phaseId);
-          return newSet;
-        });
-      }, 3000);
-    } catch (err) {
-      toast({
-        title: "Fel",
-        description: "Kunde inte kopiera till urklipp",
-        variant: "destructive",
-        duration: 2000,
-      });
-    }
-  };
-
-  const openWhatsApp = (phaseLabel: string) => {
-    const reminderText = `🏗️ Daglig egenkontroll - ${project.name}
-📍 ${project.address}
-
-Pågående: ${phaseLabel}
-
-⚠️ VIKTIGT: Skicka minst 20 bilder idag!
-📸 Fotografera arbetsområdet, säkerhet och kvalitet
-📱 Skicka bilderna direkt till projektledaren
-
-Tack! 👷‍♂️`;
-    
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(reminderText)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleImagesReceived = (phaseId: string) => {
-    const updatedPhases = project.workPhases?.map(phase => {
-      if (phase.id === phaseId) {
-        return {
-          ...phase,
-          imagesReceived: true,
-          inspectionConfirmed: phase.completed && true
-        };
-      }
-      return phase;
-    });
-
-    const updatedProject = {
-      ...project,
-      workPhases: updatedPhases,
-      activityLog: [
-        ...(project.activityLog || []),
-        createActivityLogEntry(
-          'Bilder mottagna',
-          `Projektledaren bekräftade bilder för "${project.workPhases?.find(p => p.id === phaseId)?.label}"`,
-          'workphase'
-        )
-      ]
-    };
-
-    onUpdateProject(updatedProject);
-    
-    toast({
-      title: "Bilder bekräftade",
-      description: "Arbetsmoment kan nu markeras som klart",
-    });
-  };
-
-  const getPhaseStatusIcon = (phase: any) => {
-    if (!phase.requiresDailyInspection) return null;
-    
-    if (phase.completed && phase.inspectionConfirmed) {
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <CheckCircle className="w-3 h-3 text-success" />
-          </TooltipTrigger>
-          <TooltipContent>Klart och bekräftat</TooltipContent>
-        </Tooltip>
-      );
-    }
-    
-    if (phase.completed && !phase.imagesReceived) {
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <AlertTriangle className="w-3 h-3 text-destructive" />
-          </TooltipTrigger>
-          <TooltipContent>Klart men saknar bildbekräftelse</TooltipContent>
-        </Tooltip>
-      );
-    }
-    
-    if (!phase.completed && phase.imagesReceived) {
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <CheckCircle className="w-3 h-3 text-success" />
-          </TooltipTrigger>
-          <TooltipContent>Bilder mottagna</TooltipContent>
-        </Tooltip>
-      );
-    }
-    
-    if (phase.lastReminderSent) {
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <Mail className="w-3 h-3 text-muted-foreground" />
-          </TooltipTrigger>
-          <TooltipContent>Påminnelse skickad</TooltipContent>
-        </Tooltip>
-      );
-    }
-    
-    return (
-      <Tooltip>
-        <TooltipTrigger>
-          <Camera className="w-3 h-3 text-warning" />
-        </TooltipTrigger>
-        <TooltipContent>Väntar på bilder</TooltipContent>
-      </Tooltip>
-    );
-  };
-
-  const handleRefreshProject = async () => {
-    if (project && projects.length > 0) {
-      setIsRefreshing(true);
-      setRefreshSuccess(false);
-      
-      // Simulate a brief delay for loading effect
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const freshProject = projects.find(p => p.id === project.id);
-      if (freshProject) {
-        onUpdateProject(freshProject);
-        setRefreshSuccess(true);
-        
-        toast({
-          title: "Projekt uppdaterat",
-          description: "Projektinformation har hämtats från den senaste datan",
-        });
-        
-        // Reset success state after 2 seconds
-        setTimeout(() => {
-          setRefreshSuccess(false);
-        }, 2000);
-      }
-      
-      setIsRefreshing(false);
-    }
-  };
-
-  return (
-    <TooltipProvider>
-      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <DialogTitle className="text-2xl font-bold">
-                  {project.name}
-                </DialogTitle>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRefreshProject}
-                      disabled={isRefreshing}
-                      className={`h-8 w-8 p-0 transition-all duration-300 ${
-                        refreshSuccess 
-                          ? 'text-green-600 hover:text-green-700' 
-                          : 'hover:bg-accent'
-                      }`}
-                    >
-                      <RefreshCw className={`w-4 h-4 transition-transform duration-500 ${
-                        isRefreshing ? 'animate-spin' : ''
-                      } ${
-                        refreshSuccess ? 'text-green-600' : ''
-                      }`} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {refreshSuccess ? 'Uppdaterat!' : 'Uppdatera projektdata'}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <DialogDescription className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>{project.address}</span>
-              </DialogDescription>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Badge variant={getStatusVariant(project.status)}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-              </Badge>
-              {project.rotStatus === 'Yes' && (
-                <Badge variant="rot">ROT</Badge>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
-
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Översikt</TabsTrigger>
-            <TabsTrigger value="checklist">Checklista</TabsTrigger>
-            <TabsTrigger value="workphases">Arbetsmoment</TabsTrigger>
-            <TabsTrigger value="files">Filer</TabsTrigger>
-            <TabsTrigger value="activity">Aktivitetslogg</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            {/* Project Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Projektdetaljer</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{project.customerName}</p>
-                      <p className="text-sm text-muted-foreground">Kund</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{project.customerPhone}</p>
-                      <p className="text-sm text-muted-foreground">Telefon</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{project.constructionTeam}</p>
-                      <p className="text-sm text-muted-foreground">Byggteam</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Tidslinje & Status</h3>
-                <div className="space-y-3">
+...
                   <div className="flex items-center gap-3">
                     <CalendarDays className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">
-                        {project.actualConstructionStart 
-                          ? new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')
-                          : `${project.constructionStartWeek || ''} (Planerad)`
+                        {project.actualConstructionStart
+                          ? formatDisplayDate(project.actualConstructionStart)
+                          : `${plannedWeek || '-'} (${formatDisplayDate(plannedStartDate)})`
                         }
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -471,10 +110,7 @@ Tack! 👷‍♂️`;
                     <CalendarDays className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">
-                        {project.actualConstructionStart 
-                          ? new Date(calculateDeadlineFromWorkDays(project.actualConstructionStart, project.estimatedWorkDays || 7)).toLocaleDateString('sv-SE')
-                          : new Date(project.deadline).toLocaleDateString('sv-SE')
-                        }
+                        {formatDisplayDate(projectedDeadline)}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {project.actualConstructionStart ? 'Beräknad deadline' : 'Planerad deadline'}
