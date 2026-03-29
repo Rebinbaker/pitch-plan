@@ -35,6 +35,102 @@ const generateDefaultWorkPhases = () => [
   { id: crypto.randomUUID(), label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
 ];
 
+const PDF_KEY_HINT = /(pdf|quote|offert|offer)/i;
+
+const getValueAtPath = (obj: Record<string, unknown>, path: string): unknown => {
+  return path
+    .split('.')
+    .reduce<unknown>((acc, key) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[key] : undefined), obj);
+};
+
+const resolvePdfPayload = (payload: Record<string, unknown>) => {
+  const base64Paths = [
+    'quote_pdf_base64',
+    'quotePdfBase64',
+    'quote_pdf',
+    'quote.base64',
+    'quote.pdf_base64',
+    'quote.pdfBase64',
+    'quote.content_base64',
+    'quoteFile.base64',
+    'quote_file.base64',
+    'files.quote.base64',
+    'documents.quote.base64',
+  ];
+
+  const urlPaths = [
+    'quote_pdf_url',
+    'quotePdfUrl',
+    'quote_url',
+    'quote.url',
+    'quote.pdf_url',
+    'quote.pdfUrl',
+    'quoteFile.url',
+    'quote_file.url',
+    'files.quote.url',
+    'documents.quote.url',
+  ];
+
+  const filenamePaths = [
+    'quote_pdf_filename',
+    'quotePdfFilename',
+    'quote_filename',
+    'quote.filename',
+    'quote.fileName',
+    'quote.name',
+    'quoteFile.filename',
+    'quote_file.filename',
+  ];
+
+  for (const path of base64Paths) {
+    const value = getValueAtPath(payload, path);
+    if (typeof value === 'string' && value.trim().length > 50) {
+      return { base64: value, url: null, filename: null, sourcePath: path };
+    }
+  }
+
+  for (const path of urlPaths) {
+    const value = getValueAtPath(payload, path);
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
+      return { base64: null, url: value, filename: null, sourcePath: path };
+    }
+  }
+
+  const stack: Array<{ path: string; value: unknown }> = [{ path: '', value: payload }];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || !current.value || typeof current.value !== 'object') continue;
+
+    for (const [key, value] of Object.entries(current.value as Record<string, unknown>)) {
+      const nextPath = current.path ? `${current.path}.${key}` : key;
+
+      if (typeof value === 'string' && PDF_KEY_HINT.test(nextPath)) {
+        const trimmed = value.trim();
+        if (trimmed.startsWith('data:application/pdf;base64,')) {
+          return { base64: trimmed, url: null, filename: null, sourcePath: nextPath };
+        }
+        if (trimmed.length > 200 && /^[A-Za-z0-9+/=\s]+$/.test(trimmed)) {
+          return { base64: trimmed, url: null, filename: null, sourcePath: nextPath };
+        }
+        if (/^https?:\/\//i.test(trimmed) && /\.pdf(\?|$)/i.test(trimmed)) {
+          return { base64: null, url: trimmed, filename: null, sourcePath: nextPath };
+        }
+      }
+
+      if (value && typeof value === 'object') {
+        stack.push({ path: nextPath, value });
+      }
+    }
+  }
+
+  const filenameFromPath = filenamePaths
+    .map((path) => getValueAtPath(payload, path))
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  return { base64: null, url: null, filename: filenameFromPath ?? null, sourcePath: null };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -73,12 +169,22 @@ Deno.serve(async (req) => {
       quote,
     } = body;
 
+    const topLevelKeys = Object.keys(body || {});
+    const quoteKeys = quote && typeof quote === 'object' ? Object.keys(quote as Record<string, unknown>) : [];
+    console.log('CRM payload keys:', topLevelKeys);
+    if (quoteKeys.length > 0) {
+      console.log('CRM quote payload keys:', quoteKeys);
+    }
+
+    const detectedPdfPayload = resolvePdfPayload(body as Record<string, unknown>);
+
     const incomingPdfBase64 =
       quote_pdf_base64 ||
       quotePdfBase64 ||
       quote_pdf ||
       quote?.pdf_base64 ||
       quote?.pdfBase64 ||
+      detectedPdfPayload.base64 ||
       null;
 
     const incomingPdfFilename =
@@ -87,13 +193,15 @@ Deno.serve(async (req) => {
       quote_filename ||
       quote?.filename ||
       quote?.fileName ||
-      `Offert_${customer_name}.pdf`;
+      detectedPdfPayload.filename ||
+      `Offert_${customer_name || 'projekt'}.pdf`;
 
     const incomingPdfUrl =
       quote_pdf_url ||
       quotePdfUrl ||
       quote?.pdf_url ||
       quote?.pdfUrl ||
+      detectedPdfPayload.url ||
       null;
 
     if (!customer_name || !organization_id) {
@@ -193,6 +301,8 @@ Deno.serve(async (req) => {
       console.log(
         "Quote PDF payload received for project:",
         project.id,
+        "sourcePath:",
+        detectedPdfPayload.sourcePath || 'legacy_field_mapping',
         "hasBase64:",
         Boolean(incomingPdfBase64),
         "hasUrl:",
@@ -206,8 +316,15 @@ Deno.serve(async (req) => {
 
         if (incomingPdfBase64) {
           let rawBase64 = incomingPdfBase64;
-          if (rawBase64.includes(',')) {
-            rawBase64 = rawBase64.split(',')[1];
+          const commaIndex = rawBase64.indexOf(',');
+          if (commaIndex !== -1 && rawBase64.slice(0, commaIndex).toLowerCase().includes('base64')) {
+            rawBase64 = rawBase64.slice(commaIndex + 1);
+          }
+
+          rawBase64 = rawBase64.replace(/\s/g, '');
+
+          if (!rawBase64) {
+            throw new Error('Incoming quote PDF base64 payload was empty after normalization');
           }
 
           pdfBytes = Uint8Array.from(atob(rawBase64), (c) => c.charCodeAt(0));
@@ -270,7 +387,11 @@ Deno.serve(async (req) => {
       console.log(
         "No quote PDF payload provided for project:",
         project.id,
-        "(checked keys: quote_pdf_base64, quotePdfBase64, quote_pdf, quote.pdf_base64, quote_pdf_url, quotePdfUrl)"
+        "(checked keys: quote_pdf_base64, quotePdfBase64, quote_pdf, quote.pdf_base64, quote_pdf_url, quotePdfUrl)",
+        "payload keys:",
+        topLevelKeys,
+        "quote keys:",
+        quoteKeys
       );
     }
 
