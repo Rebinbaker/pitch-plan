@@ -49,13 +49,16 @@ export async function batchGeocodeAddresses(
   const results = new Map<string, { lat: number; lng: number }>();
 
   for (const { id, address } of addresses) {
+    const cacheKey = address.toLowerCase().trim();
+    const wasCached = geocodeCache.has(cacheKey);
+
     const coords = await geocodeAddress(address);
     if (coords) {
       results.set(id, coords);
     }
-    // Rate limit: wait 1.1 seconds between requests (only for uncached)
-    const cacheKey = address.toLowerCase().trim();
-    if (!geocodeCache.has(cacheKey)) {
+
+    // Rate limit only for fresh lookups to avoid Nominatim throttling
+    if (!wasCached) {
       await new Promise(resolve => setTimeout(resolve, 1100));
     }
   }
