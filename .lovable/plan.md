@@ -1,65 +1,64 @@
 
 
-# CRM / Kundregister - Implementationsplan
+# Integration: CRM → Projekthantering (automatiskt projektkort vid stängd affär)
 
-## Vad vi bygger
-Ett kundregister (CRM) med kontaktinformation, kommunikationslogg och koppling till projekt. Kundtjänst ska kunna logga samtal, se kundhistorik och snabbt hitta information.
+## Sammanfattning
 
-## Databasändringar
+Eftersom båda apparna är byggda på Lovable behöver vi avgöra om de delar samma Supabase-projekt. Oavsett vilket är den bästa lösningen att skapa ett **API-endpoint (Edge Function)** i detta projekt som CRM-appen kan anropa när en affär stängs.
 
-### Ny tabell: `customers`
-- id, organization_id, user_id (skapare)
-- name, email, phone, address, city, postal_code
-- notes (fritext)
-- created_at, updated_at
-- RLS: organization_members kan CRUD
+## Steg 1: Kontrollera Supabase-koppling
 
-### Ny tabell: `customer_interactions`
-- id, customer_id (FK), organization_id, user_id (vem som loggade)
-- interaction_type: 'phone_call' | 'email' | 'meeting' | 'note' | 'complaint'
-- subject, description
-- related_project_id (optional FK till projects)
-- created_at
-- RLS: organization_members kan CRUD
+Gå till ditt CRM-projekt på Lovable och kolla i filen `src/integrations/supabase/client.ts` — om `SUPABASE_URL` innehåller **mskdohetwbbkuexcolcl** delar ni samma databas. Berätta gärna detta så att jag kan välja optimal lösning.
 
-### Ändring i `projects`
-- Ny kolumn: `customer_id` (uuid, nullable, FK till customers)
-- Kopplar projekt till kunder så man kan se alla projekt per kund
+## Steg 2a: Om SAMMA Supabase-projekt (enklaste vägen)
 
-## Nya komponenter
+- Skapa en **database trigger** på CRM:ets sälj-tabell som automatiskt skapar en rad i `projects`-tabellen när en affär markeras som stängd
+- Ingen extra kod behövs — allt sker i databasen
 
-### `src/components/CustomersView.tsx`
-Huvudvy med:
-- Sökbar kundlista (namn, telefon, e-post)
-- Lägg till ny kund-knapp
-- Klick på kund öppnar detaljvy
+## Steg 2b: Om OLIKA Supabase-projekt (mest troligt)
 
-### `src/components/CustomerDetailModal.tsx`
-- Kontaktinformation (redigerbar)
-- Lista på kopplade projekt (klickbara)
-- Kommunikationslogg med möjlighet att lägga till nya poster
-- Varje loggpost visar: datum, typ (samtal/mail/möte), vem som loggade, beskrivning
+### Skapa en Edge Function i detta projekt
 
-### `src/components/AddCustomerModal.tsx`
-- Formulär: namn, e-post, telefon, adress, stad, postnummer, anteckningar
+**Fil:** `supabase/functions/create-project-from-sale/index.ts`
 
-### `src/components/CustomerInteractionForm.tsx`
-- Typ-väljare (Telefonsamtal, E-post, Möte, Anteckning, Klagomål)
-- Ämne, beskrivning
-- Valfri projektkoppling (dropdown med befintliga projekt)
+- Tar emot ett POST-anrop med kunddata (namn, adress, telefon, etc.)
+- Validerar indata med Zod
+- Autentiserar anropet via en delad API-nyckel (secret)
+- Skapar ett nytt projekt i `projects`-tabellen med status `planned`
+- Returnerar det skapade projektets ID
 
-## Ändringar i befintliga filer
+### Anropa från CRM-appen
 
-### `src/pages/Index.tsx`
-- Ny flik "Kunder" i TabsList (desktop + mobil)
-- Import och rendering av CustomersView
+I CRM-projektet lägger vi till ett `fetch()`-anrop som triggas när säljaren stänger en affär. Anropet skickar kundinformation till Edge Function-URL:en.
 
-### `src/hooks/useSupabaseStorage.ts`
-- Lägg till CRUD-funktioner för customers och customer_interactions
+```text
+CRM-app (Lovable)                    Projekthantering (detta projekt)
+┌─────────────────┐                  ┌──────────────────────────┐
+│ Säljare stänger │  POST /create-   │ Edge Function            │
+│ affär           │ ──────────────── │ → Validerar              │
+│                 │  project-from-   │ → Skapar projekt i DB    │
+│                 │  sale            │ → Returnerar projekt-ID  │
+└─────────────────┘                  └──────────────────────────┘
+```
 
-## Flöde för kundtjänst
-1. Kund ringer in → kundtjänst söker på namn/telefon
-2. Hittar kunden → ser alla projekt och tidigare kontakter
-3. Loggar samtalet med ämne och beskrivning
-4. Kan koppla samtalet till specifikt projekt om relevant
+### Data som skickas från CRM
+
+| Fält | Mappas till |
+|------|------------|
+| Kundnamn | `customer_name` |
+| Adress | `address` |
+| Telefon | `customer_phone` |
+| Säljare | `responsible_seller` |
+| Region | `region` |
+| ROT-avdrag | `rot_status` |
+
+### Säkerhet
+
+- En delad API-nyckel (secret) lagras i båda projekten
+- Edge Function validerar nyckeln innan den skapar något
+
+## Vad jag behöver från dig
+
+1. **Kolla om samma Supabase**: Öppna CRM-projektets `client.ts` och berätta om projekt-ID:t är `mskdohetwbbkuexcolcl`
+2. **Vilka fält** skickas med när säljaren stänger en affär i CRM:et? (så att jag mappar rätt data)
 
