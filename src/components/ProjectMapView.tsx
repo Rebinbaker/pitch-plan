@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Project, ProjectStatus } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
-import { geocodeAddress } from '@/utils/geocoding';
+import { batchGeocodeAddresses } from '@/utils/geocoding';
 import { analyzeAllProjects, analyzeProjectRisk, RiskLevel } from '@/utils/riskAnalysis';
 import { ControlTowerPanel } from '@/components/map/ControlTowerPanel';
 import { MapLegend } from '@/components/map/MapLegend';
@@ -171,22 +171,41 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
 
   useEffect(() => {
     let cancelled = false;
+
     async function geocodeAll() {
       setLoading(true);
-      const results: GeocodedProject[] = [];
-      for (const project of projects) {
-        if (cancelled) break;
-        if (!project.address) continue;
-        const coords = await geocodeAddress(project.address);
-        if (coords && !cancelled) {
-          results.push({ ...project, lat: coords.lat, lng: coords.lng });
-          setGeocodedProjects([...results]);
+      try {
+        const addressableProjects = projects.filter(project => Boolean(project.address?.trim()));
+
+        if (addressableProjects.length === 0) {
+          if (!cancelled) setGeocodedProjects([]);
+          return;
         }
+
+        const geocodedMap = await batchGeocodeAddresses(
+          addressableProjects.map(project => ({
+            id: project.id,
+            address: project.address,
+          }))
+        );
+
+        if (cancelled) return;
+
+        const geocoded = addressableProjects.flatMap(project => {
+          const coords = geocodedMap.get(project.id);
+          return coords ? [{ ...project, lat: coords.lat, lng: coords.lng }] : [];
+        });
+
+        setGeocodedProjects(geocoded);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) setLoading(false);
     }
+
     geocodeAll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projects]);
 
   const analysis = useMemo(() => analyzeAllProjects(projects), [projects]);
