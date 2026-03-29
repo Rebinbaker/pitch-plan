@@ -274,15 +274,15 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
                           <p className="text-xs" style={{ color: 'hsl(215, 13%, 45%)' }}>{project.address}</p>
                         </div>
 
-                        {/* Risk banner */}
+                        {/* Risk/Delay banner */}
                         {risk.level !== 'normal' && (
                           <div
                             className="rounded-md px-2 py-1.5 text-xs font-medium text-white"
                             style={{
-                              backgroundColor: risk.level === 'high' ? 'hsl(0, 84%, 60%)' : 'hsl(43, 96%, 46%)',
+                              backgroundColor: risk.level === 'delayed' ? 'hsl(0, 84%, 50%)' : risk.level === 'high' ? 'hsl(0, 84%, 60%)' : 'hsl(43, 96%, 46%)',
                             }}
                           >
-                            {risk.level === 'high' ? '🔴 Hög risk' : '⚠️ Varning'}
+                            {risk.level === 'delayed' ? `🔴 Försenad — ${risk.daysDelayed} dag${risk.daysDelayed !== 1 ? 'ar' : ''}` : risk.level === 'high' ? '🔴 Hög risk' : '⚠️ Riskzon'}
                             {risk.reasons.map((r, i) => (
                               <div key={i} className="text-[10px] font-normal opacity-90 mt-0.5">• {r}</div>
                             ))}
