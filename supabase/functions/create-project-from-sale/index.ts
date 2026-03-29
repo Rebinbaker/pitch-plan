@@ -37,6 +37,39 @@ const generateDefaultWorkPhases = () => [
 
 const PDF_KEY_HINT = /(pdf|quote|offert|offer)/i;
 
+const toUint8Array = (value: unknown): Uint8Array | null => {
+  if (!value) return null;
+
+  if (Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === 'number')) {
+    return Uint8Array.from(value as number[]);
+  }
+
+  if (typeof value === 'object') {
+    const candidate = value as Record<string, unknown>;
+
+    // Node.js Buffer JSON format: { type: "Buffer", data: [37, 80, 68, 70, ...] }
+    if (
+      candidate.type === 'Buffer' &&
+      Array.isArray(candidate.data) &&
+      candidate.data.length > 0 &&
+      candidate.data.every((item) => typeof item === 'number')
+    ) {
+      return Uint8Array.from(candidate.data as number[]);
+    }
+
+    // Uint8Array serialized as object with numeric keys: {"0":37,"1":80,...}
+    const numericEntries = Object.entries(candidate)
+      .filter(([key, val]) => /^\d+$/.test(key) && typeof val === 'number')
+      .sort((a, b) => Number(a[0]) - Number(b[0]));
+
+    if (numericEntries.length > 0) {
+      return Uint8Array.from(numericEntries.map(([, val]) => Number(val)));
+    }
+  }
+
+  return null;
+};
+
 const getValueAtPath = (obj: Record<string, unknown>, path: string): unknown => {
   return path
     .split('.')
@@ -85,14 +118,19 @@ const resolvePdfPayload = (payload: Record<string, unknown>) => {
   for (const path of base64Paths) {
     const value = getValueAtPath(payload, path);
     if (typeof value === 'string' && value.trim().length > 50) {
-      return { base64: value, url: null, filename: null, sourcePath: path };
+      return { base64: value, binary: null, url: null, filename: null, sourcePath: path };
+    }
+
+    const binaryValue = toUint8Array(value);
+    if (binaryValue && binaryValue.length > 0) {
+      return { base64: null, binary: binaryValue, url: null, filename: null, sourcePath: path };
     }
   }
 
   for (const path of urlPaths) {
     const value = getValueAtPath(payload, path);
     if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
-      return { base64: null, url: value, filename: null, sourcePath: path };
+      return { base64: null, binary: null, url: value, filename: null, sourcePath: path };
     }
   }
 
@@ -108,13 +146,20 @@ const resolvePdfPayload = (payload: Record<string, unknown>) => {
       if (typeof value === 'string' && PDF_KEY_HINT.test(nextPath)) {
         const trimmed = value.trim();
         if (trimmed.startsWith('data:application/pdf;base64,')) {
-          return { base64: trimmed, url: null, filename: null, sourcePath: nextPath };
+          return { base64: trimmed, binary: null, url: null, filename: null, sourcePath: nextPath };
         }
         if (trimmed.length > 200 && /^[A-Za-z0-9+/=\s]+$/.test(trimmed)) {
-          return { base64: trimmed, url: null, filename: null, sourcePath: nextPath };
+          return { base64: trimmed, binary: null, url: null, filename: null, sourcePath: nextPath };
         }
         if (/^https?:\/\//i.test(trimmed) && /\.pdf(\?|$)/i.test(trimmed)) {
-          return { base64: null, url: trimmed, filename: null, sourcePath: nextPath };
+          return { base64: null, binary: null, url: trimmed, filename: null, sourcePath: nextPath };
+        }
+      }
+
+      if (PDF_KEY_HINT.test(nextPath)) {
+        const binaryValue = toUint8Array(value);
+        if (binaryValue && binaryValue.length > 0) {
+          return { base64: null, binary: binaryValue, url: null, filename: null, sourcePath: nextPath };
         }
       }
 
@@ -128,7 +173,7 @@ const resolvePdfPayload = (payload: Record<string, unknown>) => {
     .map((path) => getValueAtPath(payload, path))
     .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
 
-  return { base64: null, url: null, filename: filenameFromPath ?? null, sourcePath: null };
+  return { base64: null, binary: null, url: null, filename: filenameFromPath ?? null, sourcePath: null };
 };
 
 Deno.serve(async (req) => {
@@ -177,6 +222,20 @@ Deno.serve(async (req) => {
     }
 
     const detectedPdfPayload = resolvePdfPayload(body as Record<string, unknown>);
+    console.log('Quote payload diagnostics:', {
+      quote_pdf_base64_type: typeof quote_pdf_base64,
+      quote_pdf_base64_length: typeof quote_pdf_base64 === 'string' ? quote_pdf_base64.length : null,
+      quote_pdf_base64_is_array: Array.isArray(quote_pdf_base64),
+      quote_pdf_base64_object_keys:
+        quote_pdf_base64 && typeof quote_pdf_base64 === 'object'
+          ? Object.keys(quote_pdf_base64 as Record<string, unknown>).slice(0, 10)
+          : [],
+      quote_pdf_url_type: typeof quote_pdf_url,
+      detected_source_path: detectedPdfPayload.sourcePath,
+      detected_has_binary: Boolean(detectedPdfPayload.binary),
+      detected_has_base64: Boolean(detectedPdfPayload.base64),
+      detected_has_url: Boolean(detectedPdfPayload.url),
+    });
 
     const incomingPdfBase64 =
       quote_pdf_base64 ||
@@ -203,6 +262,8 @@ Deno.serve(async (req) => {
       quote?.pdfUrl ||
       detectedPdfPayload.url ||
       null;
+
+    const incomingPdfBinary = detectedPdfPayload.binary || null;
 
     if (!customer_name || !organization_id) {
       return new Response(
@@ -296,7 +357,7 @@ Deno.serve(async (req) => {
     let quotePdfReceived = false;
     let quotePdfStored = false;
 
-    if (incomingPdfBase64 || incomingPdfUrl) {
+    if (incomingPdfBase64 || incomingPdfUrl || incomingPdfBinary) {
       quotePdfReceived = true;
       console.log(
         "Quote PDF payload received for project:",
@@ -305,6 +366,8 @@ Deno.serve(async (req) => {
         detectedPdfPayload.sourcePath || 'legacy_field_mapping',
         "hasBase64:",
         Boolean(incomingPdfBase64),
+        "hasBinary:",
+        Boolean(incomingPdfBinary),
         "hasUrl:",
         Boolean(incomingPdfUrl),
         "filename:",
@@ -314,7 +377,9 @@ Deno.serve(async (req) => {
       try {
         let pdfBytes: Uint8Array;
 
-        if (incomingPdfBase64) {
+        if (incomingPdfBinary) {
+          pdfBytes = incomingPdfBinary;
+        } else if (incomingPdfBase64) {
           let rawBase64 = incomingPdfBase64;
           const commaIndex = rawBase64.indexOf(',');
           if (commaIndex !== -1 && rawBase64.slice(0, commaIndex).toLowerCase().includes('base64')) {
