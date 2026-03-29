@@ -14,8 +14,8 @@ import logo from '../assets/logo.png';
 interface ProjectHeaderProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  statusFilter: ProjectStatus | 'all';
-  onStatusFilterChange: (status: ProjectStatus | 'all') => void;
+  statusFilter: ProjectStatus | 'all' | 'delayed' | 'riskzon';
+  onStatusFilterChange: (status: ProjectStatus | 'all' | 'delayed' | 'riskzon') => void;
   regionFilter: Region | 'all';
   onRegionFilterChange: (region: Region | 'all') => void;
   onAddProject: () => void;
