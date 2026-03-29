@@ -170,7 +170,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
   const [loading, setLoading] = useState(true);
 
   const getFallbackCoordinates = (project: Project): { lat: number; lng: number } => {
-    const regionCenters: Partial<Record<Project['region'], [number, number]>> = {
+    const regionCenters: Record<string, [number, number]> = {
       Stockholm: [59.3293, 18.0686],
       'Västra Götaland': [57.7089, 11.9746],
       Skåne: [55.9903, 13.5958],
