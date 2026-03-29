@@ -387,7 +387,7 @@ Deno.serve(async (req) => {
       console.log(
         "No quote PDF payload provided for project:",
         project.id,
-        "(checked keys: quote_pdf_base64, quotePdfBase64, quote_pdf, quote.pdf_base64, quote_pdf_url, quotePdfUrl)",",
+        "(checked keys: quote_pdf_base64, quotePdfBase64, quote_pdf, quote.pdf_base64, quote_pdf_url, quotePdfUrl)",
         "payload keys:",
         topLevelKeys,
         "quote keys:",
