@@ -1,19 +1,21 @@
 import { Project } from '@/types/project';
 import { ProjectRisk } from '@/utils/riskAnalysis';
-import { AlertTriangle, Activity, TrendingUp, Target, Brain, MapPin, Users } from 'lucide-react';
+import { AlertTriangle, Activity, TrendingUp, Target, Brain, MapPin, Users, Clock } from 'lucide-react';
 
 interface ControlTowerPanelProps {
   projects: Project[];
   risks: ProjectRisk[];
   highRiskCount: number;
   warningCount: number;
+  delayedCount?: number;
   avgProgress: number;
 }
 
-export function ControlTowerPanel({ projects, risks, highRiskCount, warningCount, avgProgress }: ControlTowerPanelProps) {
+export function ControlTowerPanel({ projects, risks, highRiskCount, warningCount, delayedCount = 0, avgProgress }: ControlTowerPanelProps) {
   const activeProjects = projects.filter(p => p.status === 'ongoing').length;
   const totalProjects = projects.length;
 
+  const delayedProjects = risks.filter(r => r.level === 'delayed');
   const highRiskProjects = risks.filter(r => r.level === 'high');
   const warningProjects = risks.filter(r => r.level === 'warning');
 
@@ -24,16 +26,28 @@ export function ControlTowerPanel({ projects, risks, highRiskCount, warningCount
         <StatCard icon={<MapPin className="h-4 w-4" />} label="Totalt" value={totalProjects} color="text-primary" />
         <StatCard icon={<Activity className="h-4 w-4" />} label="Aktiva" value={activeProjects} color="text-ongoing" />
         <StatCard
-          icon={<AlertTriangle className="h-4 w-4" />}
-          label="Hög risk"
-          value={highRiskCount}
+          icon={<Clock className="h-4 w-4" />}
+          label="Försenade"
+          value={delayedProjects.length}
           color="text-destructive"
-          pulse={highRiskCount > 0}
+          pulse={delayedProjects.length > 0}
         />
         <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Snitt progress" value={`${avgProgress}%`} color="text-completed" />
       </div>
 
-      {/* Risk Projects */}
+      {/* Delayed Projects */}
+      {delayedProjects.length > 0 && (
+        <div className="space-y-1.5">
+          <h4 className="text-xs font-semibold text-destructive flex items-center gap-1">
+            <Clock className="h-3 w-3" /> Försenade projekt
+          </h4>
+          {delayedProjects.map(r => (
+            <RiskItem key={r.project.id} risk={r} />
+          ))}
+        </div>
+      )}
+
+      {/* High Risk Projects */}
       {highRiskProjects.length > 0 && (
         <div className="space-y-1.5">
           <h4 className="text-xs font-semibold text-destructive flex items-center gap-1">
@@ -48,7 +62,7 @@ export function ControlTowerPanel({ projects, risks, highRiskCount, warningCount
       {warningProjects.length > 0 && (
         <div className="space-y-1.5">
           <h4 className="text-xs font-semibold text-warning flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" /> Varningar
+            <AlertTriangle className="h-3 w-3" /> Riskzon
           </h4>
           {warningProjects.slice(0, 3).map(r => (
             <RiskItem key={r.project.id} risk={r} />
@@ -62,16 +76,19 @@ export function ControlTowerPanel({ projects, risks, highRiskCount, warningCount
           <Brain className="h-3.5 w-3.5" /> Smarta insikter
         </h4>
         <div className="space-y-1.5">
+          {delayedProjects.length > 0 && (
+            <InsightRow text={`${delayedProjects.length} projekt är försenade — åtgärd krävs`} type="risk" />
+          )}
           {highRiskCount > 0 && (
             <InsightRow text={`${highRiskCount} projekt har hög risk`} type="risk" />
           )}
-          {warningCount > 0 && (
-            <InsightRow text={`${warningCount} projekt har varningar`} type="warning" />
+          {warningProjects.length > 0 && (
+            <InsightRow text={`${warningProjects.length} projekt i riskzon`} type="warning" />
           )}
           {avgProgress > 0 && avgProgress < 40 && (
             <InsightRow text="Generellt låg progress — överväg resursökning" type="info" />
           )}
-          {highRiskCount === 0 && warningCount === 0 && (
+          {delayedProjects.length === 0 && highRiskCount === 0 && warningProjects.length === 0 && (
             <InsightRow text="Alla projekt på rätt spår ✓" type="success" />
           )}
         </div>
@@ -93,10 +110,14 @@ function StatCard({ icon, label, value, color, pulse }: { icon: React.ReactNode;
 }
 
 function RiskItem({ risk }: { risk: ProjectRisk }) {
+  const bgColor = risk.level === 'delayed' ? 'hsl(var(--destructive))' : risk.level === 'high' ? 'hsl(var(--destructive))' : 'hsl(var(--warning))';
   return (
     <div className="rounded-md border bg-card/80 p-2 text-xs">
       <div className="font-medium text-foreground truncate">{risk.project.customerName}</div>
       <div className="text-muted-foreground truncate">{risk.project.address}</div>
+      {risk.level === 'delayed' && risk.daysDelayed > 0 && (
+        <div className="text-destructive font-semibold mt-0.5">{risk.daysDelayed} dag{risk.daysDelayed !== 1 ? 'ar' : ''} försenad</div>
+      )}
       <div className="mt-1 flex items-center gap-2">
         <span className="text-muted-foreground">{risk.progress}%</span>
         <div className="flex-1 bg-muted rounded-full h-1.5">
@@ -104,7 +125,7 @@ function RiskItem({ risk }: { risk: ProjectRisk }) {
             className="h-1.5 rounded-full transition-all"
             style={{
               width: `${risk.progress}%`,
-              backgroundColor: risk.level === 'high' ? 'hsl(var(--destructive))' : 'hsl(var(--warning))',
+              backgroundColor: bgColor,
             }}
           />
         </div>

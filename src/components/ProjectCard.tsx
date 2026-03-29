@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2 } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { analyzeProjectRisk } from '@/utils/riskAnalysis';
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
@@ -29,6 +30,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, onAddNotifications, isAdmin }: ProjectCardProps) {
   const { toast } = useToast();
+  const risk = useMemo(() => analyzeProjectRisk(project), [project]);
 
   // Auto-complete project if it's 100% but still showing as ongoing
   React.useEffect(() => {
@@ -113,7 +115,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
   };
 
   return (
-    <Card className="hover:shadow-hover hover:bg-background/90 hover:scale-[1.02] transition-all duration-300 cursor-pointer group" onClick={(e) => { console.log('ProjectCard clicked:', project.name); onViewDetails(project); }}>
+    <Card className={`hover:shadow-hover hover:bg-background/90 hover:scale-[1.02] transition-all duration-300 cursor-pointer group ${risk.level === 'delayed' ? 'ring-2 ring-destructive/50 shadow-[0_0_15px_-3px_hsl(var(--destructive)/0.3)]' : risk.level === 'high' ? 'ring-2 ring-destructive/30' : risk.level === 'warning' ? 'ring-1 ring-yellow-500/30' : ''}`} onClick={(e) => { console.log('ProjectCard clicked:', project.name); onViewDetails(project); }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -137,7 +139,25 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
               });
               return null;
             })()}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {risk.level === 'delayed' && (
+                <Badge variant="destructive" className="animate-pulse gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Försenad {risk.daysDelayed > 0 && `(${risk.daysDelayed} dagar)`}
+                </Badge>
+              )}
+              {risk.level === 'high' && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Hög risk
+                </Badge>
+              )}
+              {risk.level === 'warning' && (
+                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white gap-1 border-0">
+                  <AlertTriangle className="w-3 h-3" />
+                  Riskzon
+                </Badge>
+              )}
               <Badge variant={getStatusVariant(project.status)}>
                 {project.status === 'completed' ? 'Avslutad' : 
                  project.status === 'ånger' ? 'Ånger' :

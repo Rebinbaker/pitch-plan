@@ -49,8 +49,13 @@ const STATUS_LABELS: Record<ProjectStatus, string> = {
 function createPinIcon(status: ProjectStatus, progress: number, riskLevel: RiskLevel): L.DivIcon {
   let color = STATUS_COLORS[status] || STATUS_COLORS.planned;
   let glowStyle = '';
+  let pulseAnimation = '';
 
-  if (riskLevel === 'high') {
+  if (riskLevel === 'delayed') {
+    color = 'hsl(0, 84%, 50%)';
+    glowStyle = 'filter: drop-shadow(0 0 10px hsl(0, 84%, 60%)) drop-shadow(0 0 20px hsl(0, 84%, 50%));';
+    pulseAnimation = 'animation: pin-pulse 1.5s ease-in-out infinite;';
+  } else if (riskLevel === 'high') {
     color = 'hsl(0, 84%, 60%)';
     glowStyle = 'filter: drop-shadow(0 0 8px hsl(0, 84%, 60%)) drop-shadow(0 0 16px hsl(0, 84%, 50%));';
   } else if (riskLevel === 'warning') {
@@ -61,7 +66,10 @@ function createPinIcon(status: ProjectStatus, progress: number, riskLevel: RiskL
   const circumference = 2 * Math.PI * 14;
   const offset = circumference - (progress / 100) * circumference;
 
-  const riskBadge = riskLevel === 'high'
+  const riskBadge = riskLevel === 'delayed'
+    ? `<circle cx="34" cy="6" r="7" fill="hsl(0,84%,50%)" stroke="white" stroke-width="1.5"/>
+       <text x="34" y="10" text-anchor="middle" fill="white" font-size="9" font-weight="bold">!</text>`
+    : riskLevel === 'high'
     ? `<circle cx="34" cy="6" r="6" fill="hsl(0,84%,60%)" stroke="white" stroke-width="1.5"/>
        <text x="34" y="9" text-anchor="middle" fill="white" font-size="8" font-weight="bold">!</text>`
     : riskLevel === 'warning'
@@ -72,7 +80,13 @@ function createPinIcon(status: ProjectStatus, progress: number, riskLevel: RiskL
   return L.divIcon({
     className: 'custom-map-pin',
     html: `
-      <div style="position:relative;width:44px;height:52px;display:flex;align-items:flex-start;justify-content:center;${glowStyle}">
+      <style>
+        @keyframes pin-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.12); opacity: 0.85; }
+        }
+      </style>
+      <div style="position:relative;width:44px;height:52px;display:flex;align-items:flex-start;justify-content:center;${glowStyle}${pulseAnimation}">
         <svg width="44" height="52" viewBox="-2 -4 44 56">
           <path d="M20 46 C20 46, 38 28, 38 18 C38 8.06 29.94 0 20 0 C10.06 0 2 8.06 2 18 C2 28 20 46 20 46Z" fill="${color}" stroke="white" stroke-width="2"/>
           <circle cx="20" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
@@ -216,6 +230,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
             risks={analysis.risks}
             highRiskCount={analysis.highRiskCount}
             warningCount={analysis.warningCount}
+            delayedCount={analysis.delayedCount}
             avgProgress={analysis.avgProgress}
           />
         </div>
@@ -260,15 +275,15 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
                           <p className="text-xs" style={{ color: 'hsl(215, 13%, 45%)' }}>{project.address}</p>
                         </div>
 
-                        {/* Risk banner */}
+                        {/* Risk/Delay banner */}
                         {risk.level !== 'normal' && (
                           <div
                             className="rounded-md px-2 py-1.5 text-xs font-medium text-white"
                             style={{
-                              backgroundColor: risk.level === 'high' ? 'hsl(0, 84%, 60%)' : 'hsl(43, 96%, 46%)',
+                              backgroundColor: risk.level === 'delayed' ? 'hsl(0, 84%, 50%)' : risk.level === 'high' ? 'hsl(0, 84%, 60%)' : 'hsl(43, 96%, 46%)',
                             }}
                           >
-                            {risk.level === 'high' ? '🔴 Hög risk' : '⚠️ Varning'}
+                            {risk.level === 'delayed' ? `🔴 Försenad — ${risk.daysDelayed} dag${risk.daysDelayed !== 1 ? 'ar' : ''}` : risk.level === 'high' ? '🔴 Hög risk' : '⚠️ Riskzon'}
                             {risk.reasons.map((r, i) => (
                               <div key={i} className="text-[10px] font-normal opacity-90 mt-0.5">• {r}</div>
                             ))}
