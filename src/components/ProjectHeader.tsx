@@ -14,8 +14,8 @@ import logo from '../assets/logo.png';
 interface ProjectHeaderProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  statusFilter: ProjectStatus | 'all';
-  onStatusFilterChange: (status: ProjectStatus | 'all') => void;
+  statusFilter: ProjectStatus | 'all' | 'delayed' | 'riskzon';
+  onStatusFilterChange: (status: ProjectStatus | 'all' | 'delayed' | 'riskzon') => void;
   regionFilter: Region | 'all';
   onRegionFilterChange: (region: Region | 'all') => void;
   onAddProject: () => void;
@@ -80,6 +80,8 @@ export function ProjectHeader({
               <SelectItem value="completed">Slutförd</SelectItem>
               <SelectItem value="invoiced">Fakturerad</SelectItem>
               <SelectItem value="ånger">Ånger</SelectItem>
+              <SelectItem value="delayed">🔴 Försenad</SelectItem>
+              <SelectItem value="riskzon">🟡 Riskzon</SelectItem>
             </SelectContent>
           </Select>
 
