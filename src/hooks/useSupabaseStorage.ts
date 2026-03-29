@@ -73,8 +73,17 @@ export const useSupabaseStorage = () => {
           avvaratMaterial: project.avvarat_material || undefined,
           materialOrder: project.material_order || undefined,
         };
-        // Apply migration to compute bygg_start_vecka, planerad_start_datum, beräknat_slut_datum
-        return migrateProjectToNewPlanning(baseProject);
+
+        const migratedProject = migrateProjectToNewPlanning(baseProject);
+
+        // Keep legacy fields in sync so all existing views show corrected dates
+        return {
+          ...migratedProject,
+          constructionStartWeek: migratedProject.bygg_start_vecka || migratedProject.constructionStartWeek,
+          estimatedWorkDays: migratedProject.ungefärlig_arbetstid_dagar || migratedProject.estimatedWorkDays,
+          startDate: migratedProject.planerad_start_datum || migratedProject.startDate,
+          deadline: migratedProject.beräknat_slut_datum || migratedProject.deadline,
+        };
       });
       
       setSupabaseProjects(mappedProjects);
