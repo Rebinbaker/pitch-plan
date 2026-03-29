@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { addDays, addWeeks, format, startOfWeek } from "https://esm.sh/date-fns@3.6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id } = body;
+    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id, construction_start_week, estimated_work_days } = body;
 
     if (!customer_name || !organization_id) {
       return new Response(
