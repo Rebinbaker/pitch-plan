@@ -52,7 +52,49 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id, construction_start_week, estimated_work_days, quote_pdf_base64, quote_pdf_filename } = body;
+    const {
+      customer_name,
+      address,
+      customer_phone,
+      responsible_seller,
+      region,
+      rot_status,
+      organization_id,
+      construction_start_week,
+      estimated_work_days,
+      quote_pdf_base64,
+      quote_pdf_filename,
+      quotePdfBase64,
+      quotePdfFilename,
+      quote_pdf,
+      quote_filename,
+      quote_pdf_url,
+      quotePdfUrl,
+      quote,
+    } = body;
+
+    const incomingPdfBase64 =
+      quote_pdf_base64 ||
+      quotePdfBase64 ||
+      quote_pdf ||
+      quote?.pdf_base64 ||
+      quote?.pdfBase64 ||
+      null;
+
+    const incomingPdfFilename =
+      quote_pdf_filename ||
+      quotePdfFilename ||
+      quote_filename ||
+      quote?.filename ||
+      quote?.fileName ||
+      `Offert_${customer_name}.pdf`;
+
+    const incomingPdfUrl =
+      quote_pdf_url ||
+      quotePdfUrl ||
+      quote?.pdf_url ||
+      quote?.pdfUrl ||
+      null;
 
     if (!customer_name || !organization_id) {
       return new Response(
