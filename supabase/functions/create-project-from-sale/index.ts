@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { addDays, addWeeks, format, startOfWeek } from "https://esm.sh/date-fns@3.6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id } = body;
+    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id, construction_start_week, estimated_work_days } = body;
 
     if (!customer_name || !organization_id) {
       return new Response(
@@ -80,6 +81,31 @@ Deno.serve(async (req) => {
 
     const projectName = `${customer_name} - ${address || "Nytt projekt"}`;
 
+    // Calculate start_date and deadline from construction_start_week and estimated_work_days
+    let startDate = null;
+    let deadline = null;
+    if (construction_start_week) {
+      // Parse ISO week format "2025-W33" or just week number "33" / "v33"
+      let weekNumber: number;
+      let year = new Date().getFullYear();
+      if (construction_start_week.includes('-W')) {
+        const parts = construction_start_week.split('-W');
+        year = parseInt(parts[0], 10);
+        weekNumber = parseInt(parts[1], 10);
+      } else {
+        weekNumber = parseInt(construction_start_week.replace(/[^0-9]/g, ''), 10);
+      }
+      if (!isNaN(weekNumber) && weekNumber >= 1 && weekNumber <= 53) {
+        const jan4 = new Date(year, 0, 4);
+        const mondayOfWeek1 = startOfWeek(jan4, { weekStartsOn: 1 });
+        const targetDate = addWeeks(mondayOfWeek1, weekNumber - 1);
+        startDate = format(targetDate, 'yyyy-MM-dd');
+        if (estimated_work_days && estimated_work_days > 0) {
+          deadline = format(addDays(targetDate, estimated_work_days - 1), 'yyyy-MM-dd');
+        }
+      }
+    }
+
     const { data: project, error } = await supabase
       .from("projects")
       .insert({
@@ -97,6 +123,10 @@ Deno.serve(async (req) => {
         checklist: generateDefaultChecklist(),
         work_phases: generateDefaultWorkPhases(),
         activity_log: [],
+        construction_start_week: construction_start_week || null,
+        estimated_work_days: estimated_work_days || null,
+        start_date: startDate,
+        deadline: deadline,
       })
       .select()
       .single();
