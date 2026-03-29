@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ProjectCard } from './ProjectCard';
-import { ProjectHeader } from './ProjectHeader';
+import { ProjectHeader, StatusFilterValue } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
 import { ProjectMapView } from './ProjectMapView';
 import { Project, ProjectStatus, Region } from '@/types/project';
@@ -56,7 +56,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
 
 export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all' | 'delayed' | 'riskzon'>('all');
+  const [statusFilters, setStatusFilters] = useState<StatusFilterValue[]>([]);
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
@@ -82,10 +82,14 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
       project.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.address.toLowerCase().includes(searchTerm.toLowerCase());
     
-    let matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    if (statusFilter === 'delayed' || statusFilter === 'riskzon') {
+    let matchesStatus = true;
+    if (statusFilters.length > 0) {
       const risk = analyzeProjectRisk(project);
-      matchesStatus = statusFilter === 'delayed' ? risk.level === 'delayed' : (risk.level === 'warning' || risk.level === 'high');
+      matchesStatus = statusFilters.some(f => {
+        if (f === 'delayed') return risk.level === 'delayed';
+        if (f === 'riskzon') return risk.level === 'warning' || risk.level === 'high';
+        return project.status === f;
+      });
     }
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
     
@@ -153,8 +157,8 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
       <ProjectHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        statusFilters={statusFilters}
+        onStatusFiltersChange={setStatusFilters}
         regionFilter={regionFilter}
         onRegionFilterChange={setRegionFilter}
         onAddProject={onAddProject}
