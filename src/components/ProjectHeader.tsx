@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, Filter, CalendarIcon, X } from 'lucide-react';
 import { ProjectStatus, Region } from '@/types/project';
 import { format } from 'date-fns';
@@ -11,11 +12,13 @@ import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import logo from '../assets/logo.png';
 
+export type StatusFilterValue = ProjectStatus | 'delayed' | 'riskzon';
+
 interface ProjectHeaderProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  statusFilter: ProjectStatus | 'all' | 'delayed' | 'riskzon';
-  onStatusFilterChange: (status: ProjectStatus | 'all' | 'delayed' | 'riskzon') => void;
+  statusFilters: StatusFilterValue[];
+  onStatusFiltersChange: (statuses: StatusFilterValue[]) => void;
   regionFilter: Region | 'all';
   onRegionFilterChange: (region: Region | 'all') => void;
   onAddProject: () => void;
@@ -25,11 +28,21 @@ interface ProjectHeaderProps {
   onDateToChange?: (date: Date | null) => void;
 }
 
+const STATUS_OPTIONS: { value: StatusFilterValue; label: string }[] = [
+  { value: 'planned', label: 'Planerad' },
+  { value: 'ongoing', label: 'Pågående' },
+  { value: 'completed', label: 'Slutförd' },
+  { value: 'invoiced', label: 'Fakturerad' },
+  { value: 'ånger', label: 'Ånger' },
+  { value: 'delayed', label: '🔴 Försenad' },
+  { value: 'riskzon', label: '🟡 Riskzon' },
+];
+
 export function ProjectHeader({
   searchTerm,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
+  statusFilters,
+  onStatusFiltersChange,
   regionFilter,
   onRegionFilterChange,
   onAddProject,
@@ -38,6 +51,22 @@ export function ProjectHeader({
   onDateFromChange,
   onDateToChange,
 }: ProjectHeaderProps) {
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+
+  const toggleStatus = (value: StatusFilterValue) => {
+    if (statusFilters.includes(value)) {
+      onStatusFiltersChange(statusFilters.filter(s => s !== value));
+    } else {
+      onStatusFiltersChange([...statusFilters, value]);
+    }
+  };
+
+  const statusLabel = statusFilters.length === 0
+    ? 'Alla statusar'
+    : statusFilters.length <= 2
+      ? STATUS_OPTIONS.filter(o => statusFilters.includes(o.value)).map(o => o.label).join(', ')
+      : `${statusFilters.length} valda`;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -68,22 +97,39 @@ export function ProjectHeader({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="w-4 h-4" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla statusar</SelectItem>
-              <SelectItem value="planned">Planerad</SelectItem>
-              <SelectItem value="ongoing">Pågående</SelectItem>
-              <SelectItem value="completed">Slutförd</SelectItem>
-              <SelectItem value="invoiced">Fakturerad</SelectItem>
-              <SelectItem value="ånger">Ånger</SelectItem>
-              <SelectItem value="delayed">🔴 Försenad</SelectItem>
-              <SelectItem value="riskzon">🟡 Riskzon</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-auto min-w-[140px] justify-start gap-2 font-normal", statusFilters.length > 0 && "text-foreground")}>
+                <Filter className="w-4 h-4 shrink-0" />
+                <span className="truncate">{statusLabel}</span>
+                {statusFilters.length > 0 && (
+                  <X
+                    className="w-3.5 h-3.5 shrink-0 ml-1 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStatusFiltersChange([]);
+                    }}
+                  />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2" align="start">
+              <div className="space-y-1">
+                {STATUS_OPTIONS.map(option => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <Checkbox
+                      checked={statusFilters.includes(option.value)}
+                      onCheckedChange={() => toggleStatus(option.value)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Select value={regionFilter} onValueChange={onRegionFilterChange}>
             <SelectTrigger className="w-[160px]">
