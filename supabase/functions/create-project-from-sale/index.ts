@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const projectName = `${customer_name} - ${address || "Nytt projekt"}`;
+    const projectName = address || "Nytt projekt";
 
     // Calculate start_date and deadline from construction_start_week and estimated_work_days
     let startDate = null;
