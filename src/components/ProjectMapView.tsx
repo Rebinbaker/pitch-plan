@@ -230,6 +230,7 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
             risks={analysis.risks}
             highRiskCount={analysis.highRiskCount}
             warningCount={analysis.warningCount}
+            delayedCount={analysis.delayedCount}
             avgProgress={analysis.avgProgress}
           />
         </div>
