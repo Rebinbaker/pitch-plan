@@ -458,7 +458,7 @@ Tack! 👷‍♂️`;
                       <p className="font-medium">
                         {project.actualConstructionStart 
                           ? new Date(project.actualConstructionStart).toLocaleDateString('sv-SE')
-                          : `${project.constructionStartWeek || ''} (Planerad)`
+                          : `${project.bygg_start_vecka || project.constructionStartWeek || '-'} (${project.planerad_start_datum || project.startDate ? new Date(project.planerad_start_datum || project.startDate).toLocaleDateString('sv-SE') : '-'})`
                         }
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -473,7 +473,7 @@ Tack! 👷‍♂️`;
                       <p className="font-medium">
                         {project.actualConstructionStart 
                           ? new Date(calculateDeadlineFromWorkDays(project.actualConstructionStart, project.estimatedWorkDays || 7)).toLocaleDateString('sv-SE')
-                          : new Date(project.deadline).toLocaleDateString('sv-SE')
+                          : project.beräknat_slut_datum || project.deadline ? new Date(project.beräknat_slut_datum || project.deadline).toLocaleDateString('sv-SE') : '-'
                         }
                       </p>
                       <p className="text-sm text-muted-foreground">
