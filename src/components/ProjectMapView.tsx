@@ -354,6 +354,14 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
                             <span>Beräknad tid:</span>
                             <span className="font-medium" style={{ color: 'hsl(215, 25%, 15%)' }}>{estDays} dagar</span>
                           </div>
+                          {project.status === 'ongoing' && (
+                            <div className="flex justify-between">
+                              <span>Kvar:</span>
+                              <span className="font-medium" style={{ color: risk.level === 'delayed' ? 'hsl(0, 84%, 50%)' : 'hsl(215, 25%, 15%)' }}>
+                                {risk.remainingDays === 0 ? 'Klar' : `${risk.remainingDays.toString().replace('.', ',')} dag${risk.remainingDays !== 1 ? 'ar' : ''} kvar`}
+                              </span>
+                            </div>
+                          )}
                           {teamName && (
                             <div className="flex justify-between">
                               <span>Team:</span>
