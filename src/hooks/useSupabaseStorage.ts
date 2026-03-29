@@ -96,7 +96,36 @@ export const useSupabaseStorage = () => {
     }
   };
 
-  // Set up real-time subscriptions for projects
+  const loadSupabaseFiles = async () => {
+    if (!user || !organizationId) return;
+    try {
+      const { data, error } = await supabase
+        .from('files' as any)
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('uploaded_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedFiles: ProjectFile[] = (data || []).map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type as any,
+        url: f.url,
+        projectId: f.project_id || '',
+        uploadedAt: f.uploaded_at,
+        uploadedBy: f.user_id,
+        description: '',
+        tags: [],
+      }));
+      
+      setSupabaseFiles(mappedFiles);
+    } catch (error) {
+      console.error('Error loading files from Supabase:', error);
+    }
+  };
+
+
   useEffect(() => {
     if (!user || !organizationId) return;
 
