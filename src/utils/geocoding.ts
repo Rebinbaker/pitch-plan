@@ -3,7 +3,7 @@ const geocodeCache = new Map<string, { lat: number; lng: number } | null>();
 
 export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address || address.trim() === '') return null;
-  
+
   // Check cache first
   const cacheKey = address.toLowerCase().trim();
   if (geocodeCache.has(cacheKey)) {
@@ -12,19 +12,17 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
 
   try {
     // Use Nominatim (OpenStreetMap) free geocoding - add Sweden bias
+    // NOTE: Avoid custom headers like User-Agent in browser fetch (can trigger CORS failures)
     const query = encodeURIComponent(`${address}, Sverige`);
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&countrycodes=se`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'PitchPlan/1.0'
-        }
-      }
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${query}&limit=1&countrycodes=se`
     );
 
     if (!response.ok) {
-      geocodeCache.set(cacheKey, null);
+      // Don't cache transient API failures (429/5xx/network gateways) so we can retry later
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        geocodeCache.set(cacheKey, null);
+      }
       return null;
     }
 
@@ -38,8 +36,8 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
     geocodeCache.set(cacheKey, null);
     return null;
   } catch (error) {
+    // Network/CORS issues should be retried on next attempt (no null-cache)
     console.error('Geocoding error for address:', address, error);
-    geocodeCache.set(cacheKey, null);
     return null;
   }
 }

@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Project, ProjectStatus } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
-import { geocodeAddress } from '@/utils/geocoding';
+import { batchGeocodeAddresses } from '@/utils/geocoding';
 import { analyzeAllProjects, analyzeProjectRisk, RiskLevel } from '@/utils/riskAnalysis';
 import { ControlTowerPanel } from '@/components/map/ControlTowerPanel';
 import { MapLegend } from '@/components/map/MapLegend';
