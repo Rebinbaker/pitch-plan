@@ -1,20 +1,17 @@
 
 
-# Fix: CRM-skapade projekt saknar checklista och arbetsmoment
+# Två ändringar: Edge Function + prompt till CRM
 
-## Problem
-Edge Function `create-project-from-sale` skapar projekt utan `checklist` och `work_phases`, så korten blir tomma jämfört med manuellt skapade projekt.
-
-## Lösning
-Uppdatera Edge Function att inkludera standardchecklistan (12 poster) och standardarbetsmomenten (11 poster) vid insert, samma som används i `AddProjectModal`.
-
-## Teknisk ändring
+## 1. Uppdatera Edge Function (detta projekt)
 
 **Fil:** `supabase/functions/create-project-from-sale/index.ts`
 
-- Lägga till `defaultChecklist` och `defaultWorkPhases` som JSON-arrayer direkt i Edge Function (samma data som i `src/types/project.ts`)
-- Inkludera `checklist` och `work_phases` i `.insert()`-anropet med genererade ID:n
-- Sätta `activity_log` till en tom array `[]`
+- Lägg till `construction_start_week` och `estimated_work_days` i destructuring av request body (rad 54)
+- Inkludera dessa i `.insert()` (rad 85-101): `construction_start_week`, `estimated_work_days`, samt beräkna `start_date` och `deadline` från dessa värden så att väder och planering fungerar
 
-Inga databasändringar behövs -- kolumnerna finns redan.
+## 2. Prompt att klistra in i Saleschamp CRM
+
+Efter implementationen ger jag dig en färdig prompt att ge till CRM-projektet som instruerar det att:
+- Visa en dialog/modal med två fält när säljaren trycker "Stäng affär": **Byggstartvecka** (veckonummer-väljare) och **Ungefärlig arbetstid i dagar** (nummer-input)
+- Skicka med `construction_start_week` (format "2025-W33") och `estimated_work_days` (heltal) i fetch-anropet till edge function
 
