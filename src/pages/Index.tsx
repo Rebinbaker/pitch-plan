@@ -403,6 +403,7 @@ const Index = () => {
                     onUpdateTrailer={updateScaffolding}
                     onAddNotifications={addNotifications}
                     onFileUploaded={uploadFile}
+                    files={files}
                   />
                 </TabsContent>
 
