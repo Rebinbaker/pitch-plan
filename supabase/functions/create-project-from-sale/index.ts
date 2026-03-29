@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id, construction_start_week, estimated_work_days } = body;
+    const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id, construction_start_week, estimated_work_days, quote_pdf_base64, quote_pdf_filename } = body;
 
     if (!customer_name || !organization_id) {
       return new Response(
@@ -141,11 +141,60 @@ Deno.serve(async (req) => {
 
     console.log("Project created from CRM sale:", project.id);
 
+    // If quote PDF was provided, store it in Supabase Storage and create a file record
+    let fileUrl = null;
+    if (quote_pdf_base64) {
+      try {
+        const pdfBytes = Uint8Array.from(atob(quote_pdf_base64), c => c.charCodeAt(0));
+        const fileName = quote_pdf_filename || `Offert_${customer_name}.pdf`;
+        const storagePath = `${project.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('project-files')
+          .upload(storagePath, pdfBytes, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error("Error uploading PDF:", uploadError);
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from('project-files')
+            .getPublicUrl(storagePath);
+          
+          fileUrl = publicUrlData.publicUrl;
+
+          // Insert file record into files table
+          const { error: fileError } = await supabase
+            .from('files')
+            .insert({
+              name: fileName,
+              type: 'pdf',
+              url: fileUrl,
+              size: pdfBytes.length,
+              project_id: project.id,
+              user_id: adminRole.user_id,
+              organization_id,
+            });
+
+          if (fileError) {
+            console.error("Error creating file record:", fileError);
+          } else {
+            console.log("Quote PDF stored for project:", project.id);
+          }
+        }
+      } catch (pdfError) {
+        console.error("Error processing PDF:", pdfError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         project_id: project.id,
         project_name: project.name,
+        quote_pdf_url: fileUrl,
         message: "Projekt skapat från Saleschamp CRM" 
       }),
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -21,6 +21,7 @@ export const useSupabaseStorage = () => {
   const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
   const [supabaseScaffolding, setSupabaseScaffolding] = useState<ScaffoldingTrailer[]>([]);
   const [supabaseTeams, setSupabaseTeams] = useState<ConstructionTeam[]>([]);
+  const [supabaseFiles, setSupabaseFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load projects and scaffolding from Supabase immediately when user is logged in
@@ -29,6 +30,7 @@ export const useSupabaseStorage = () => {
       loadSupabaseProjects();
       loadSupabaseScaffolding();
       loadSupabaseTeams();
+      loadSupabaseFiles();
       setMigrationStatus('completed');
     }
   }, [user, organizationId]);
@@ -94,7 +96,36 @@ export const useSupabaseStorage = () => {
     }
   };
 
-  // Set up real-time subscriptions for projects
+  const loadSupabaseFiles = async () => {
+    if (!user || !organizationId) return;
+    try {
+      const { data, error } = await supabase
+        .from('files' as any)
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('uploaded_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedFiles: ProjectFile[] = (data || []).map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type as any,
+        url: f.url,
+        projectId: f.project_id || '',
+        uploadedAt: f.uploaded_at,
+        uploadedBy: f.user_id,
+        description: '',
+        tags: [],
+      }));
+      
+      setSupabaseFiles(mappedFiles);
+    } catch (error) {
+      console.error('Error loading files from Supabase:', error);
+    }
+  };
+
+
   useEffect(() => {
     if (!user || !organizationId) return;
 
@@ -683,8 +714,26 @@ export const useSupabaseStorage = () => {
   };
 
   const uploadFile = async (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
-    try {
+    if (!user || !organizationId) {
       await localStorageHook.uploadFile(file);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('files' as any)
+        .insert({
+          name: file.name,
+          type: file.type,
+          url: file.url,
+          size: 0,
+          project_id: file.projectId || null,
+          user_id: user.id,
+          organization_id: organizationId,
+        });
+      
+      if (error) throw error;
+      
+      await loadSupabaseFiles();
       toast({
         title: "Fil uppladdad",
         description: `${file.name} har laddats upp framgångsrikt.`,
@@ -701,8 +750,20 @@ export const useSupabaseStorage = () => {
   };
 
   const deleteFile = async (fileId: string) => {
-    try {
+    if (!user || !organizationId) {
       await localStorageHook.deleteFile(fileId);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('files' as any)
+        .delete()
+        .eq('id', fileId)
+        .eq('organization_id', organizationId);
+      
+      if (error) throw error;
+      
+      setSupabaseFiles(prev => prev.filter(f => f.id !== fileId));
       toast({
         title: "Fil borttagen",
         description: "Filen har tagits bort framgångsrikt.",
@@ -779,6 +840,7 @@ export const useSupabaseStorage = () => {
     projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
     scaffolding: migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding,
     teams: migrationStatus === 'completed' ? supabaseTeams : localStorageHook.teams,
+    files: migrationStatus === 'completed' ? supabaseFiles : localStorageHook.files,
     loading: loading || localStorageHook.loading,
     migrationStatus,
     updateProject,
