@@ -35,6 +35,7 @@ interface MobileProjectDetailModalProps {
   teams?: any[];
   projects?: Project[];
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
 export function MobileProjectDetailModal({ 
@@ -45,7 +46,8 @@ export function MobileProjectDetailModal({
   trailers = [],
   teams = [],
   projects = [],
-  onFileUploaded
+  onFileUploaded,
+  files = []
 }: MobileProjectDetailModalProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -303,16 +305,42 @@ export function MobileProjectDetailModal({
             </TabsContent>
 
             <TabsContent value="files" className="flex-1 overflow-y-auto px-6 pb-6 mt-4">
-              <div className="text-center py-8">
-                <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-base font-semibold">Filhantering</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Filuppladdning och hanteringsfunktionalitet kommer att finnas tillgänglig här.
-                </p>
-                <Button variant="outline" size="sm">
-                  Ladda upp filer
-                </Button>
-              </div>
+              {(() => {
+                const projectFiles = files.filter(f => f.projectId === project.id);
+                if (projectFiles.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                      <h3 className="text-base font-semibold">Inga filer</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Det finns inga filer kopplade till detta projekt ännu.
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-3">
+                    {projectFiles.map(file => (
+                      <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-destructive" />
+                          <div>
+                            <p className="font-medium text-sm">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(file.uploadedAt).toLocaleDateString('sv-SE')}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={file.url} target="_blank" rel="noopener noreferrer">
+                            Öppna
+                          </a>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="activity" className="flex-1 overflow-y-auto px-6 pb-6 mt-4">

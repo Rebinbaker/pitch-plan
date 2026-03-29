@@ -143,9 +143,20 @@ Deno.serve(async (req) => {
 
     // If quote PDF was provided, store it in Supabase Storage and create a file record
     let fileUrl = null;
+    let quotePdfReceived = false;
+    let quotePdfStored = false;
+
     if (quote_pdf_base64) {
+      quotePdfReceived = true;
+      console.log("Quote PDF received for project:", project.id, "filename:", quote_pdf_filename || "(default)");
       try {
-        const pdfBytes = Uint8Array.from(atob(quote_pdf_base64), c => c.charCodeAt(0));
+        // Strip Data URL prefix if present (e.g. "data:application/pdf;base64,...")
+        let rawBase64 = quote_pdf_base64;
+        if (rawBase64.includes(',')) {
+          rawBase64 = rawBase64.split(',')[1];
+        }
+
+        const pdfBytes = Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0));
         const fileName = quote_pdf_filename || `Offert_${customer_name}.pdf`;
         const storagePath = `${project.id}/${fileName}`;
 
@@ -157,7 +168,7 @@ Deno.serve(async (req) => {
           });
 
         if (uploadError) {
-          console.error("Error uploading PDF:", uploadError);
+          console.error("Error uploading PDF to storage:", uploadError);
         } else {
           const { data: publicUrlData } = supabase.storage
             .from('project-files')
@@ -165,7 +176,6 @@ Deno.serve(async (req) => {
           
           fileUrl = publicUrlData.publicUrl;
 
-          // Insert file record into files table
           const { error: fileError } = await supabase
             .from('files')
             .insert({
@@ -179,14 +189,17 @@ Deno.serve(async (req) => {
             });
 
           if (fileError) {
-            console.error("Error creating file record:", fileError);
+            console.error("Error creating file record in DB:", fileError);
           } else {
-            console.log("Quote PDF stored for project:", project.id);
+            quotePdfStored = true;
+            console.log("Quote PDF stored for project:", project.id, "file:", fileName);
           }
         }
       } catch (pdfError) {
-        console.error("Error processing PDF:", pdfError);
+        console.error("Error decoding/processing PDF:", pdfError);
       }
+    } else {
+      console.log("No quote_pdf_base64 provided for project:", project.id);
     }
 
     return new Response(
@@ -195,6 +208,8 @@ Deno.serve(async (req) => {
         project_id: project.id,
         project_name: project.name,
         quote_pdf_url: fileUrl,
+        quote_pdf_received: quotePdfReceived,
+        quote_pdf_stored: quotePdfStored,
         message: "Projekt skapat från Saleschamp CRM" 
       }),
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }

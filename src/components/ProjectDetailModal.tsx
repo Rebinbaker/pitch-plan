@@ -48,8 +48,9 @@ interface ProjectDetailModalProps {
   trailers?: any[];
   teams?: any[];
   onUpdateTrailer?: (trailer: any) => void;
-  projects?: Project[]; // Add projects array to get fresh data
+  projects?: Project[];
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
 export function ProjectDetailModal({ 
@@ -61,7 +62,8 @@ export function ProjectDetailModal({
   teams = [],
   onUpdateTrailer,
   projects = [],
-  onFileUploaded
+  onFileUploaded,
+  files = []
 }: ProjectDetailModalProps) {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -775,16 +777,51 @@ Tack! 👷‍♂️`;
           </TabsContent>
 
           <TabsContent value="files" className="space-y-4">
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold">Filhantering</h3>
-              <p className="text-muted-foreground">
-                Filuppladdning och hanteringsfunktionalitet kommer att finnas tillgänglig här.
-              </p>
-              <Button variant="outline" className="mt-4">
-                Ladda upp filer
-              </Button>
-            </div>
+            {(() => {
+              const projectFiles = files.filter(f => f.projectId === project.id);
+              if (projectFiles.length === 0) {
+                return (
+                  <div className="text-center py-12">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold">Inga filer</h3>
+                    <p className="text-muted-foreground">
+                      Det finns inga filer kopplade till detta projekt ännu.
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-3">
+                  {projectFiles.map(file => (
+                    <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-destructive" />
+                        <div>
+                          <p className="font-medium text-sm">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(file.uploadedAt).toLocaleDateString('sv-SE')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={file.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Öppna
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={file.url} download={file.name}>
+                            <Download className="h-3 w-3 mr-1" />
+                            Ladda ner
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="activity">
