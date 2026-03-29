@@ -56,7 +56,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
 
 export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all' | 'delayed' | 'riskzon'>('all');
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
