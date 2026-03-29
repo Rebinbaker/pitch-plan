@@ -62,7 +62,13 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
+    return (localStorage.getItem('projectViewMode') as 'list' | 'map') || 'list';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('projectViewMode', viewMode);
+  }, [viewMode]);
 
   // Auto-open project detail modal when selectedProjectId changes
   useEffect(() => {
