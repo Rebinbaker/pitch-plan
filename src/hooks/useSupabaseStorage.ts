@@ -840,6 +840,7 @@ export const useSupabaseStorage = () => {
     projects: migrationStatus === 'completed' ? supabaseProjects : localStorageHook.projects,
     scaffolding: migrationStatus === 'completed' ? supabaseScaffolding : localStorageHook.scaffolding,
     teams: migrationStatus === 'completed' ? supabaseTeams : localStorageHook.teams,
+    files: migrationStatus === 'completed' ? supabaseFiles : localStorageHook.files,
     loading: loading || localStorageHook.loading,
     migrationStatus,
     updateProject,
