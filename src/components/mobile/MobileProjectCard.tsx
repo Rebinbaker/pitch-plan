@@ -13,9 +13,10 @@ interface MobileProjectCardProps {
   onUpdate: (project: Project) => void;
   trailers?: any[];
   teams?: any[];
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
-export function MobileProjectCard({ project, onUpdate, trailers = [], teams = [] }: MobileProjectCardProps) {
+export function MobileProjectCard({ project, onUpdate, trailers = [], teams = [], files = [] }: MobileProjectCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -166,6 +167,7 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
         trailers={trailers}
         teams={teams}
         projects={[]}
+        files={files}
       />
 
       <MobileEditProjectModal

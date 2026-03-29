@@ -215,6 +215,7 @@ const Index = () => {
                     onAddProject={addProject}
                     trailers={scaffolding}
                     teams={teams}
+                    files={files}
                   />
                 )}
                 {activeTab === 'scaffolding' && (
@@ -356,6 +357,7 @@ const Index = () => {
                     onAddNotifications={addNotifications}
                     onFileUploaded={uploadFile}
                     isAdmin={isAdmin}
+                    files={files}
                   />
                 </TabsContent>
 

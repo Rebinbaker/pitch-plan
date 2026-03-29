@@ -25,9 +25,10 @@ interface WeeklyPlanningViewProps {
   onUpdateTrailer?: (trailer: any) => void;
   onAddNotifications?: (notifications: any[]) => void;
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
-export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer, onAddNotifications, onFileUploaded }: WeeklyPlanningViewProps) {
+export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], onUpdateTrailer, onAddNotifications, onFileUploaded, files = [] }: WeeklyPlanningViewProps) {
   console.log('WeeklyPlanningView re-rendered with projects:', projects.length);
   
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -543,6 +544,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
         teams={[]}
         onUpdateTrailer={onUpdateTrailer}
         onFileUploaded={onFileUploaded}
+        files={files}
       />
     </div>
   );

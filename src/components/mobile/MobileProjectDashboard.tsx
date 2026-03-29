@@ -15,6 +15,7 @@ interface MobileProjectDashboardProps {
   onAddProject: (project: Project) => void;
   trailers?: any[];
   teams?: any[];
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
 export function MobileProjectDashboard({ 
@@ -22,7 +23,8 @@ export function MobileProjectDashboard({
   onUpdateProject, 
   onAddProject,
   trailers = [],
-  teams = []
+  teams = [],
+  files = []
 }: MobileProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
@@ -144,6 +146,7 @@ export function MobileProjectDashboard({
               onUpdate={onUpdateProject}
               trailers={trailers}
               teams={teams}
+              files={files}
             />
           ))
         )}
