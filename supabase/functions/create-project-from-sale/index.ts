@@ -188,19 +188,45 @@ Deno.serve(async (req) => {
     let quotePdfReceived = false;
     let quotePdfStored = false;
 
-    if (quote_pdf_base64) {
+    if (incomingPdfBase64 || incomingPdfUrl) {
       quotePdfReceived = true;
-      console.log("Quote PDF received for project:", project.id, "filename:", quote_pdf_filename || "(default)");
+      console.log(
+        "Quote PDF payload received for project:",
+        project.id,
+        "hasBase64:",
+        Boolean(incomingPdfBase64),
+        "hasUrl:",
+        Boolean(incomingPdfUrl),
+        "filename:",
+        incomingPdfFilename
+      );
+
       try {
-        // Strip Data URL prefix if present (e.g. "data:application/pdf;base64,...")
-        let rawBase64 = quote_pdf_base64;
-        if (rawBase64.includes(',')) {
-          rawBase64 = rawBase64.split(',')[1];
+        let pdfBytes: Uint8Array;
+
+        if (incomingPdfBase64) {
+          let rawBase64 = incomingPdfBase64;
+          if (rawBase64.includes(',')) {
+            rawBase64 = rawBase64.split(',')[1];
+          }
+
+          pdfBytes = Uint8Array.from(atob(rawBase64), (c) => c.charCodeAt(0));
+        } else {
+          const pdfResponse = await fetch(incomingPdfUrl as string);
+          if (!pdfResponse.ok) {
+            throw new Error(`Failed to download quote PDF from URL (${pdfResponse.status})`);
+          }
+
+          const downloadedBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+          if (downloadedBytes.length === 0) {
+            throw new Error("Downloaded quote PDF was empty");
+          }
+
+          pdfBytes = downloadedBytes;
         }
 
-        const pdfBytes = Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0));
-        const fileName = quote_pdf_filename || `Offert_${customer_name}.pdf`;
-        const storagePath = `${project.id}/${fileName}`;
+        const safeFileName = incomingPdfFilename.replace(/[\\/]/g, '-');
+        const storagePath = `${project.id}/${safeFileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('project-files')
@@ -215,13 +241,13 @@ Deno.serve(async (req) => {
           const { data: publicUrlData } = supabase.storage
             .from('project-files')
             .getPublicUrl(storagePath);
-          
+
           fileUrl = publicUrlData.publicUrl;
 
           const { error: fileError } = await supabase
             .from('files')
             .insert({
-              name: fileName,
+              name: safeFileName,
               type: 'pdf',
               url: fileUrl,
               size: pdfBytes.length,
@@ -234,14 +260,18 @@ Deno.serve(async (req) => {
             console.error("Error creating file record in DB:", fileError);
           } else {
             quotePdfStored = true;
-            console.log("Quote PDF stored for project:", project.id, "file:", fileName);
+            console.log("Quote PDF stored for project:", project.id, "file:", safeFileName);
           }
         }
       } catch (pdfError) {
-        console.error("Error decoding/processing PDF:", pdfError);
+        console.error("Error decoding/downloading/processing PDF:", pdfError);
       }
     } else {
-      console.log("No quote_pdf_base64 provided for project:", project.id);
+      console.log(
+        "No quote PDF payload provided for project:",
+        project.id,
+        "(checked keys: quote_pdf_base64, quotePdfBase64, quote_pdf, quote.pdf_base64, quote_pdf_url, quotePdfUrl)"
+      );
     }
 
     return new Response(
