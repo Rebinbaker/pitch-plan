@@ -5,13 +5,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
 
+const generateDefaultChecklist = () => [
+  { id: crypto.randomUUID(), label: 'Containerbeställning', completed: false, weight: 5 },
+  { id: crypto.randomUUID(), label: 'Ställningshantering', completed: false, weight: 5 },
+  { id: crypto.randomUUID(), label: 'Schedule construction team', completed: false, weight: 2 },
+  { id: crypto.randomUUID(), label: 'Skapa WhatsApp grupp', completed: false, weight: 1 },
+  { id: crypto.randomUUID(), label: 'Materialbeställning', completed: false, weight: 5 },
+  { id: crypto.randomUUID(), label: 'Dagliga egenkontroller', completed: false, weight: 5 },
+  { id: crypto.randomUUID(), label: 'Boka hemtag av container', completed: false, weight: 3 },
+  { id: crypto.randomUUID(), label: 'Nedmontering av ställningar', completed: false, weight: 4 },
+  { id: crypto.randomUUID(), label: 'Slutsynbesiktning', completed: false, weight: 3 },
+  { id: crypto.randomUUID(), label: 'Avvarat material?', completed: false, weight: 2 },
+  { id: crypto.randomUUID(), label: 'Generera garantibevis', completed: false, weight: 3 },
+  { id: crypto.randomUUID(), label: 'Mark ready for invoice', completed: false, weight: 5 },
+];
+
+const generateDefaultWorkPhases = () => [
+  { id: crypto.randomUUID(), label: 'Rivning av pannor, läkt, nockregel', completed: false, weight: 10, estimatedDays: 1, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av ny råspont', completed: false, weight: 10, estimatedDays: 1, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av nockregel + trekantslist', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av underlagsduk', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av strö- & bärläkt', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av nockband, fotplåt', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av nya pannor', completed: false, weight: 15, estimatedDays: 1.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Skrapa & måla plåt, nya beslag', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Montering av snörasskydd', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Hängrännor & stuprör', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+  { id: crypto.randomUUID(), label: 'Bortforsling och städning', completed: false, weight: 5, estimatedDays: 0.5, requiresDailyInspection: true, imagesReceived: false, inspectionConfirmed: false },
+];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Validate API key
     const apiKey = req.headers.get("x-api-key");
     const expectedKey = Deno.env.get("CRM_API_KEY");
 
@@ -23,8 +51,6 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-
-    // Validate required fields
     const { customer_name, address, customer_phone, responsible_seller, region, rot_status, organization_id } = body;
 
     if (!customer_name || !organization_id) {
@@ -34,12 +60,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase admin client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find an admin user to set as user_id (needed for the projects table)
     const { data: adminRole } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -54,7 +78,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create the project
     const projectName = `${customer_name} - ${address || "Nytt projekt"}`;
 
     const { data: project, error } = await supabase
@@ -71,6 +94,9 @@ Deno.serve(async (req) => {
         user_id: adminRole.user_id,
         status: "planned",
         completion_percentage: 0,
+        checklist: generateDefaultChecklist(),
+        work_phases: generateDefaultWorkPhases(),
+        activity_log: [],
       })
       .select()
       .single();
