@@ -8,6 +8,7 @@ import { ProjectFile } from '@/types/files';
 import { Notification } from '@/types/notification';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from '@/hooks/use-toast';
+import { migrateProjectToNewPlanning } from '@/utils/projectPlanning';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,32 +46,36 @@ export const useSupabaseStorage = () => {
       
       if (error) throw error;
       
-      const mappedProjects = data.map((project: any) => ({
-        id: project.id,
-        name: project.name,
-        address: project.address || '',
-        customerName: project.customer_name || '',
-        customerPhone: project.customer_phone || '',
-        responsibleSeller: project.responsible_seller || '',
-        constructionTeam: project.construction_team || '',
-        constructionStartWeek: project.construction_start_week || '',
-        rotStatus: project.rot_status as any || 'No',
-        status: project.status as any,
-        notes: project.notes || '',
-        assignedTrailer: project.assigned_trailer || '',
-        scaffoldingResponsible: project.scaffolding_responsible || '',
-        startDate: project.start_date || '',
-        deadline: project.deadline || '',
-        estimatedWorkDays: project.estimated_work_days || 0,
-        actualConstructionStart: project.actual_construction_start || '',
-        completionPercentage: project.completion_percentage || 0,
-        checklist: project.checklist || [],
-        workPhases: project.work_phases || [],
-        activityLog: project.activity_log || [],
-        region: project.region || 'Stockholm',
-        avvaratMaterial: project.avvarat_material || undefined,
-        materialOrder: project.material_order || undefined,
-      }));
+      const mappedProjects = data.map((project: any) => {
+        const baseProject: Project = {
+          id: project.id,
+          name: project.name,
+          address: project.address || '',
+          customerName: project.customer_name || '',
+          customerPhone: project.customer_phone || '',
+          responsibleSeller: project.responsible_seller || '',
+          constructionTeam: project.construction_team || '',
+          constructionStartWeek: project.construction_start_week || '',
+          rotStatus: project.rot_status as any || 'No',
+          status: project.status as any,
+          notes: project.notes || '',
+          assignedTrailer: project.assigned_trailer || '',
+          scaffoldingResponsible: project.scaffolding_responsible || '',
+          startDate: project.start_date || '',
+          deadline: project.deadline || '',
+          estimatedWorkDays: project.estimated_work_days || 0,
+          actualConstructionStart: project.actual_construction_start || '',
+          completionPercentage: project.completion_percentage || 0,
+          checklist: project.checklist || [],
+          workPhases: project.work_phases || [],
+          activityLog: project.activity_log || [],
+          region: project.region || 'Stockholm',
+          avvaratMaterial: project.avvarat_material || undefined,
+          materialOrder: project.material_order || undefined,
+        };
+        // Apply migration to compute bygg_start_vecka, planerad_start_datum, beräknat_slut_datum
+        return migrateProjectToNewPlanning(baseProject);
+      });
       
       setSupabaseProjects(mappedProjects);
     } catch (error) {
