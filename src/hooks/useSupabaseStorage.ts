@@ -211,6 +211,31 @@ export const useSupabaseStorage = () => {
     }
   };
 
+  // Set up real-time subscriptions for files
+  useEffect(() => {
+    if (!user || !organizationId) return;
+
+    const filesChannel = supabase
+      .channel('files-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'files',
+          filter: `organization_id=eq.${organizationId}`
+        },
+        () => {
+          loadSupabaseFiles();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(filesChannel);
+    };
+  }, [user, organizationId]);
+
   // Set up real-time subscriptions for scaffolding
   useEffect(() => {
     if (!user || !organizationId) return;

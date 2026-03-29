@@ -23,6 +23,7 @@ interface ProjectDashboardProps {
   onAddNotifications?: (notifications: any[]) => void;
   onFileUploaded?: (file: { name: string; url: string; type: 'warranty'; projectId: string; uploadedBy: string; description?: string; tags: string[] }) => void;
   isAdmin?: boolean;
+  files?: { id: string; name: string; type: string; url: string; projectId: string; uploadedAt: string }[];
 }
 
 // Simple Project Card Component (no drag functionality)
@@ -54,7 +55,7 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
   );
 }
 
-export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin }: ProjectDashboardProps) {
+export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin, files = [] }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilters, setStatusFilters] = useState<StatusFilterValue[]>([]);
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
@@ -264,6 +265,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
           onUpdateTrailer={onUpdateTrailer}
           projects={projects}
           onFileUploaded={onFileUploaded}
+          files={files}
         />
     </div>
   );
