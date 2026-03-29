@@ -80,6 +80,8 @@ export function ProjectHeader({
               <SelectItem value="completed">Slutförd</SelectItem>
               <SelectItem value="invoiced">Fakturerad</SelectItem>
               <SelectItem value="ånger">Ånger</SelectItem>
+              <SelectItem value="delayed">🔴 Försenad</SelectItem>
+              <SelectItem value="riskzon">🟡 Riskzon</SelectItem>
             </SelectContent>
           </Select>
 

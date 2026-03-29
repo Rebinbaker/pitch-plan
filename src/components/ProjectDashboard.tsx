@@ -4,6 +4,7 @@ import { ProjectHeader } from './ProjectHeader';
 import { ProjectDetailModal } from './ProjectDetailModal';
 import { ProjectMapView } from './ProjectMapView';
 import { Project, ProjectStatus, Region } from '@/types/project';
+import { analyzeProjectRisk } from '@/utils/riskAnalysis';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, Map } from 'lucide-react';
@@ -81,7 +82,11 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
       project.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.address.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    let matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    if (statusFilter === 'delayed' || statusFilter === 'riskzon') {
+      const risk = analyzeProjectRisk(project);
+      matchesStatus = statusFilter === 'delayed' ? risk.level === 'delayed' : (risk.level === 'warning' || risk.level === 'high');
+    }
     const matchesRegion = regionFilter === 'all' || project.region === regionFilter;
     
     // Date filtering - check if project's start date or deadline falls within selected range
