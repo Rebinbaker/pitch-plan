@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Project } from '@/types/project';
-import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2 } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, User, Users, FileText, Download, Truck, Calendar, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { WeatherDisplay } from './WeatherDisplay';
 import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { analyzeProjectRisk } from '@/utils/riskAnalysis';
 import { TrailerAssignmentSection } from './TrailerAssignmentSection';
 import { WorkPhasesSection } from './WorkPhasesSection';
 import { ScaffoldingTrailer } from '@/types/scaffolding';

@@ -1,7 +1,7 @@
 import { Project, WorkPhaseItem } from '@/types/project';
 import { calculateRemainingTime } from '@/utils/timeCalculations';
 
-export type RiskLevel = 'high' | 'warning' | 'normal';
+export type RiskLevel = 'delayed' | 'high' | 'warning' | 'normal';
 
 export interface ProjectRisk {
   project: Project;
@@ -10,8 +10,15 @@ export interface ProjectRisk {
   progress: number;
   remainingDays: number;
   totalDays: number;
+  daysDelayed: number; // How many days past the expected end date
 }
 
+/**
+ * Core delay logic:
+ * DELAYED if: current date > (planned start + expected duration) AND progress < 100%
+ * HIGH RISK if: progress < 50% AND less than 2 days remaining
+ * WARNING if: progress is unusually slow relative to elapsed time
+ */
 export function analyzeProjectRisk(project: Project): ProjectRisk {
   const workPhases = project.workPhases || [];
   const completedPhases = workPhases.filter(p => p.completed).length;
@@ -23,52 +30,105 @@ export function analyzeProjectRisk(project: Project): ProjectRisk {
 
   const reasons: string[] = [];
   let level: RiskLevel = 'normal';
+  let daysDelayed = 0;
 
-  // Only analyze ongoing projects
-  if (project.status !== 'ongoing') {
-    return { project, level: 'normal', reasons: [], progress, remainingDays, totalDays };
+  // Skip completed/invoiced/ånger projects
+  if (project.status === 'completed' || project.status === 'invoiced' || project.status === 'ånger') {
+    return { project, level: 'normal', reasons: [], progress, remainingDays, totalDays, daysDelayed: 0 };
   }
 
-  // HIGH RISK: Progress < 50% AND less than 2 days remaining
-  if (progress < 50 && remainingDays <= 2 && remainingDays > 0) {
-    level = 'high';
-    reasons.push('Låg progress + nära deadline');
-  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  // WARNING: Duration exceeds planned (estimated > 7 days and slow progress)
-  if (totalDays > 0) {
-    const expectedProgress = totalDays > 0 ? ((totalDays - remainingDays) / totalDays) * 100 : 0;
-    
-    if (totalDays > 7 && progress < expectedProgress * 0.6) {
-      if (level !== 'high') level = 'warning';
-      reasons.push('Ovanligt långsam progress');
+  // Calculate expected end date from planned start + estimated duration
+  const plannedStartStr = project.planerad_start_datum || project.startDate;
+  const estimatedDuration = project.ungefärlig_arbetstid_dagar || project.estimatedWorkDays || 7;
+
+  if (plannedStartStr) {
+    const plannedStart = new Date(plannedStartStr);
+    plannedStart.setHours(0, 0, 0, 0);
+
+    const expectedEnd = new Date(plannedStart);
+    expectedEnd.setDate(expectedEnd.getDate() + estimatedDuration - 1);
+
+    // DELAYED: current date > expected end AND not 100% done
+    if (today > expectedEnd && progress < 100) {
+      daysDelayed = Math.ceil((today.getTime() - expectedEnd.getTime()) / (1000 * 60 * 60 * 24));
+      level = 'delayed';
+      reasons.push(`${daysDelayed} dag${daysDelayed !== 1 ? 'ar' : ''} försenad`);
     }
+  }
 
-    // WARNING: Exceeded estimated duration
-    if (project.ungefärlig_arbetstid_dagar && project.första_moment_bockat_datum) {
-      const startDate = new Date(project.första_moment_bockat_datum);
-      const today = new Date();
-      const elapsedDays = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (elapsedDays > project.ungefärlig_arbetstid_dagar) {
-        if (level !== 'high') level = 'warning';
-        reasons.push(`Överskridna planerade dagar (${elapsedDays}/${project.ungefärlig_arbetstid_dagar})`);
+  // If already started (ongoing) — check progress vs elapsed time
+  if (project.status === 'ongoing' && level !== 'delayed') {
+    const actualStartStr = project.första_moment_bockat_datum || project.actualConstructionStart || plannedStartStr;
+    if (actualStartStr) {
+      const startDate = new Date(actualStartStr);
+      startDate.setHours(0, 0, 0, 0);
+      const elapsedDays = Math.max(1, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+      // Expected progress based on elapsed time
+      const expectedProgress = Math.min(100, Math.round((elapsedDays / estimatedDuration) * 100));
+
+      // HIGH RISK: Progress < 50% AND less than 2 days remaining on estimate
+      const daysLeft = Math.max(0, estimatedDuration - elapsedDays);
+      if (progress < 50 && daysLeft <= 2) {
+        level = 'high';
+        reasons.push('Låg progress + nära deadline');
+      }
+
+      // WARNING: Progress is < 60% of expected progress (significantly behind)
+      if (level === 'normal' && progress < expectedProgress * 0.6 && elapsedDays >= 2) {
+        level = 'warning';
+        reasons.push(`Ovanligt långsam progress (${progress}% vs förväntade ${expectedProgress}%)`);
+      }
+
+      // WARNING: Exceeded planned duration but some progress
+      if (level === 'normal' && elapsedDays > estimatedDuration && progress < 100) {
+        level = 'warning';
+        reasons.push(`Överskridna planerade dagar (${elapsedDays}/${estimatedDuration})`);
       }
     }
   }
 
-  return { project, level, reasons, progress, remainingDays, totalDays };
+  // For planned projects — check if planned start has passed without starting
+  if (project.status === 'planned' && plannedStartStr) {
+    const plannedStart = new Date(plannedStartStr);
+    plannedStart.setHours(0, 0, 0, 0);
+
+    if (today > plannedStart && level !== 'delayed') {
+      const daysPastStart = Math.ceil((today.getTime() - plannedStart.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysPastStart > 3) {
+        // Only flag as delayed if significantly past start, not just a few days
+        const expectedEnd = new Date(plannedStart);
+        expectedEnd.setDate(expectedEnd.getDate() + estimatedDuration - 1);
+        if (today > expectedEnd) {
+          daysDelayed = Math.ceil((today.getTime() - expectedEnd.getTime()) / (1000 * 60 * 60 * 24));
+          level = 'delayed';
+          reasons.push(`Ej påbörjad, ${daysDelayed} dag${daysDelayed !== 1 ? 'ar' : ''} efter planerat slut`);
+        } else {
+          level = 'warning';
+          reasons.push(`${daysPastStart} dagar sedan planerad start men ej påbörjad`);
+        }
+      }
+    }
+  }
+
+  return { project, level, reasons, progress, remainingDays, totalDays, daysDelayed };
 }
 
 export function analyzeAllProjects(projects: Project[]): {
   risks: ProjectRisk[];
   highRiskCount: number;
   warningCount: number;
+  delayedCount: number;
   avgProgress: number;
 } {
   const risks = projects.map(analyzeProjectRisk);
   const highRiskCount = risks.filter(r => r.level === 'high').length;
   const warningCount = risks.filter(r => r.level === 'warning').length;
-  
+  const delayedCount = risks.filter(r => r.level === 'delayed').length;
+
   const ongoingProjects = projects.filter(p => p.status === 'ongoing');
   const avgProgress = ongoingProjects.length > 0
     ? Math.round(ongoingProjects.reduce((sum, p) => {
@@ -78,5 +138,5 @@ export function analyzeAllProjects(projects: Project[]): {
       }, 0) / ongoingProjects.length)
     : 0;
 
-  return { risks, highRiskCount, warningCount, avgProgress };
+  return { risks, highRiskCount, warningCount, delayedCount, avgProgress };
 }
