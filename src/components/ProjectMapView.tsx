@@ -169,6 +169,25 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
   const [geocodedProjects, setGeocodedProjects] = useState<GeocodedProject[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getFallbackCoordinates = (project: Project): { lat: number; lng: number } | null => {
+    const regionCenters: Partial<Record<Project['region'], [number, number]>> = {
+      Stockholm: [59.3293, 18.0686],
+      'Västra Götaland': [57.7089, 11.9746],
+    };
+
+    const center = regionCenters[project.region];
+    if (!center) return null;
+
+    const hash = project.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const latOffset = ((hash % 21) - 10) * 0.01;
+    const lngOffset = ((((hash / 21) | 0) % 21) - 10) * 0.01;
+
+    return {
+      lat: center[0] + latOffset,
+      lng: center[1] + lngOffset,
+    };
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -177,26 +196,26 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
       try {
         const addressableProjects = projects.filter(project => Boolean(project.address?.trim()));
 
-        if (addressableProjects.length === 0) {
-          if (!cancelled) setGeocodedProjects([]);
-          return;
-        }
-
-        const geocodedMap = await batchGeocodeAddresses(
-          addressableProjects.map(project => ({
-            id: project.id,
-            address: project.address,
-          }))
-        );
+        const geocodedMap = addressableProjects.length > 0
+          ? await batchGeocodeAddresses(
+              addressableProjects.map(project => ({
+                id: project.id,
+                address: project.address,
+              }))
+            )
+          : new Map<string, { lat: number; lng: number }>();
 
         if (cancelled) return;
 
-        const geocoded = addressableProjects.flatMap(project => {
-          const coords = geocodedMap.get(project.id);
+        const positionedProjects = projects.flatMap(project => {
+          const geocodedCoords = geocodedMap.get(project.id);
+          const fallbackCoords = geocodedCoords ? null : getFallbackCoordinates(project);
+          const coords = geocodedCoords ?? fallbackCoords;
+
           return coords ? [{ ...project, lat: coords.lat, lng: coords.lng }] : [];
         });
 
-        setGeocodedProjects(geocoded);
+        setGeocodedProjects(positionedProjects);
       } finally {
         if (!cancelled) setLoading(false);
       }

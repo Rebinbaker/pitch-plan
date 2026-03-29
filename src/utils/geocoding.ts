@@ -1,34 +1,44 @@
-// Geocoding with persistent localStorage cache
+type GeocodeResult = { lat: number; lng: number };
 
 const CACHE_KEY = 'geocode_cache_v1';
 
-function loadCache(): Map<string, { lat: number; lng: number } | null> {
-  try {
-    const stored = localStorage.getItem(CACHE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return new Map(Object.entries(parsed));
-    }
-  } catch {}
-  return new Map();
+function isValidGeocodeResult(value: unknown): value is GeocodeResult {
+  if (!value || typeof value !== 'object') return false;
+  const maybeResult = value as { lat?: unknown; lng?: unknown };
+  return Number.isFinite(maybeResult.lat) && Number.isFinite(maybeResult.lng);
 }
 
-function saveCache(cache: Map<string, { lat: number; lng: number } | null>) {
+function loadCache(): Map<string, GeocodeResult> {
   try {
-    const obj: Record<string, { lat: number; lng: number } | null> = {};
-    cache.forEach((v, k) => { obj[k] = v; });
-    localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
-  } catch {}
+    const stored = localStorage.getItem(CACHE_KEY);
+    if (!stored) return new Map();
+
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    const entries = Object.entries(parsed).filter(([, value]) => isValidGeocodeResult(value));
+    return new Map(entries as [string, GeocodeResult][]);
+  } catch {
+    return new Map();
+  }
+}
+
+function saveCache(cache: Map<string, GeocodeResult>) {
+  try {
+    const serialized = Object.fromEntries(cache.entries());
+    localStorage.setItem(CACHE_KEY, JSON.stringify(serialized));
+  } catch {
+    // Ignore storage write failures (private mode/quota exceeded)
+  }
 }
 
 const geocodeCache = loadCache();
 
-export async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
   if (!address || address.trim() === '') return null;
 
   const cacheKey = address.toLowerCase().trim();
-  if (geocodeCache.has(cacheKey)) {
-    return geocodeCache.get(cacheKey) ?? null;
+  const cached = geocodeCache.get(cacheKey);
+  if (cached) {
+    return cached;
   }
 
   try {
@@ -38,23 +48,21 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
     );
 
     if (!response.ok) {
-      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-        geocodeCache.set(cacheKey, null);
-        saveCache(geocodeCache);
-      }
       return null;
     }
 
     const data = await response.json();
-    if (data && data.length > 0) {
-      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    const first = Array.isArray(data) ? data[0] : null;
+    const lat = Number(first?.lat);
+    const lng = Number(first?.lon);
+
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      const result = { lat, lng };
       geocodeCache.set(cacheKey, result);
       saveCache(geocodeCache);
       return result;
     }
 
-    geocodeCache.set(cacheKey, null);
-    saveCache(geocodeCache);
     return null;
   } catch (error) {
     console.error('Geocoding error for address:', address, error);
@@ -62,11 +70,11 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
   }
 }
 
-// Batch geocode with rate limiting (Nominatim allows 1 req/sec)
+// Batch geocode with rate limiting (Nominatim allows ~1 req/sec)
 export async function batchGeocodeAddresses(
   addresses: { id: string; address: string }[]
-): Promise<Map<string, { lat: number; lng: number }>> {
-  const results = new Map<string, { lat: number; lng: number }>();
+): Promise<Map<string, GeocodeResult>> {
+  const results = new Map<string, GeocodeResult>();
 
   for (const { id, address } of addresses) {
     const cacheKey = address.toLowerCase().trim();
@@ -77,7 +85,6 @@ export async function batchGeocodeAddresses(
       results.set(id, coords);
     }
 
-    // Rate limit only for fresh lookups
     if (!wasCached) {
       await new Promise(resolve => setTimeout(resolve, 1100));
     }
