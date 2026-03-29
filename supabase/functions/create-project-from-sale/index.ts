@@ -36,6 +36,53 @@ const generateDefaultWorkPhases = () => [
 ];
 
 const PDF_KEY_HINT = /(pdf|quote|offert|offer)/i;
+const BASE64_CHUNK_SIZE = 4 * 8192;
+
+const normalizeBase64Pdf = (value: string): string => {
+  let normalized = value.trim();
+
+  const commaIndex = normalized.indexOf(',');
+  if (commaIndex !== -1 && normalized.slice(0, commaIndex).toLowerCase().includes('base64')) {
+    normalized = normalized.slice(commaIndex + 1);
+  }
+
+  normalized = normalized.replace(/\s/g, '');
+
+  if (!normalized) {
+    throw new Error('Incoming quote PDF base64 payload was empty after normalization');
+  }
+
+  const remainder = normalized.length % 4;
+  if (remainder !== 0) {
+    normalized = normalized.padEnd(normalized.length + (4 - remainder), '=');
+  }
+
+  if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) {
+    throw new Error('Incoming quote PDF payload is not valid base64');
+  }
+
+  return normalized;
+};
+
+const decodeBase64PdfChunked = (base64Payload: string): Uint8Array => {
+  const normalized = normalizeBase64Pdf(base64Payload);
+  const padding = normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0;
+  const expectedLength = Math.floor((normalized.length * 3) / 4) - padding;
+  const bytes = new Uint8Array(expectedLength);
+
+  let offset = 0;
+
+  for (let i = 0; i < normalized.length; i += BASE64_CHUNK_SIZE) {
+    const chunk = normalized.slice(i, i + BASE64_CHUNK_SIZE);
+    const binaryChunk = atob(chunk);
+
+    for (let j = 0; j < binaryChunk.length; j++) {
+      bytes[offset++] = binaryChunk.charCodeAt(j);
+    }
+  }
+
+  return offset === expectedLength ? bytes : bytes.slice(0, offset);
+};
 
 const toUint8Array = (value: unknown): Uint8Array | null => {
   if (!value) return null;
@@ -237,7 +284,7 @@ Deno.serve(async (req) => {
       detected_has_url: Boolean(detectedPdfPayload.url),
     });
 
-    const incomingPdfBase64 =
+    const incomingPdfBase64Candidate =
       quote_pdf_base64 ||
       quotePdfBase64 ||
       quote_pdf ||
@@ -246,7 +293,12 @@ Deno.serve(async (req) => {
       detectedPdfPayload.base64 ||
       null;
 
-    const incomingPdfFilename =
+    let incomingPdfBase64 =
+      typeof incomingPdfBase64Candidate === 'string' && incomingPdfBase64Candidate.trim().length > 0
+        ? incomingPdfBase64Candidate
+        : null;
+
+    const incomingPdfFilenameCandidate =
       quote_pdf_filename ||
       quotePdfFilename ||
       quote_filename ||
@@ -255,13 +307,20 @@ Deno.serve(async (req) => {
       detectedPdfPayload.filename ||
       `Offert_${customer_name || 'projekt'}.pdf`;
 
-    const incomingPdfUrl =
+    const incomingPdfFilename =
+      typeof incomingPdfFilenameCandidate === 'string' && incomingPdfFilenameCandidate.trim().length > 0
+        ? incomingPdfFilenameCandidate
+        : `Offert_${customer_name || 'projekt'}.pdf`;
+
+    const incomingPdfUrlCandidate =
       quote_pdf_url ||
       quotePdfUrl ||
       quote?.pdf_url ||
       quote?.pdfUrl ||
       detectedPdfPayload.url ||
       null;
+
+    const incomingPdfUrl = typeof incomingPdfUrlCandidate === 'string' ? incomingPdfUrlCandidate : null;
 
     const incomingPdfBinary = detectedPdfPayload.binary || null;
 
@@ -380,19 +439,8 @@ Deno.serve(async (req) => {
         if (incomingPdfBinary) {
           pdfBytes = incomingPdfBinary;
         } else if (incomingPdfBase64) {
-          let rawBase64 = incomingPdfBase64;
-          const commaIndex = rawBase64.indexOf(',');
-          if (commaIndex !== -1 && rawBase64.slice(0, commaIndex).toLowerCase().includes('base64')) {
-            rawBase64 = rawBase64.slice(commaIndex + 1);
-          }
-
-          rawBase64 = rawBase64.replace(/\s/g, '');
-
-          if (!rawBase64) {
-            throw new Error('Incoming quote PDF base64 payload was empty after normalization');
-          }
-
-          pdfBytes = Uint8Array.from(atob(rawBase64), (c) => c.charCodeAt(0));
+          pdfBytes = decodeBase64PdfChunked(incomingPdfBase64);
+          incomingPdfBase64 = null;
         } else {
           const pdfResponse = await fetch(incomingPdfUrl as string);
           if (!pdfResponse.ok) {
