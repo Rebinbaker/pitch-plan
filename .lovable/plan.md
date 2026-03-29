@@ -1,65 +1,30 @@
 
 
-# CRM / Kundregister - Implementationsplan
+## Plan: Persist sub-view state (list/map) when switching tabs
 
-## Vad vi bygger
-Ett kundregister (CRM) med kontaktinformation, kommunikationslogg och koppling till projekt. Kundtjänst ska kunna logga samtal, se kundhistorik och snabbt hitta information.
+### Problem
+The `viewMode` state (`'list' | 'map'`) in `ProjectDashboard.tsx` is initialized to `'list'` every render. When the user switches to another tab and comes back, the component remounts and resets to list view.
 
-## Databasändringar
+### Solution
+Store `viewMode` in the parent (`Index.tsx`) or use `localStorage` so it persists across tab switches.
 
-### Ny tabell: `customers`
-- id, organization_id, user_id (skapare)
-- name, email, phone, address, city, postal_code
-- notes (fritext)
-- created_at, updated_at
-- RLS: organization_members kan CRUD
+**Simplest approach**: Use `localStorage` via a small hook or inline logic in `ProjectDashboard.tsx`.
 
-### Ny tabell: `customer_interactions`
-- id, customer_id (FK), organization_id, user_id (vem som loggade)
-- interaction_type: 'phone_call' | 'email' | 'meeting' | 'note' | 'complaint'
-- subject, description
-- related_project_id (optional FK till projects)
-- created_at
-- RLS: organization_members kan CRUD
+### Changes
 
-### Ändring i `projects`
-- Ny kolumn: `customer_id` (uuid, nullable, FK till customers)
-- Kopplar projekt till kunder så man kan se alla projekt per kund
+**`src/components/ProjectDashboard.tsx`** (1 file, ~3 lines changed):
+- Change `useState<'list' | 'map'>('list')` to read initial value from `localStorage`
+- Add a `useEffect` to persist `viewMode` changes to `localStorage`
 
-## Nya komponenter
+```tsx
+const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
+  return (localStorage.getItem('projectViewMode') as 'list' | 'map') || 'list';
+});
 
-### `src/components/CustomersView.tsx`
-Huvudvy med:
-- Sökbar kundlista (namn, telefon, e-post)
-- Lägg till ny kund-knapp
-- Klick på kund öppnar detaljvy
+useEffect(() => {
+  localStorage.setItem('projectViewMode', viewMode);
+}, [viewMode]);
+```
 
-### `src/components/CustomerDetailModal.tsx`
-- Kontaktinformation (redigerbar)
-- Lista på kopplade projekt (klickbara)
-- Kommunikationslogg med möjlighet att lägga till nya poster
-- Varje loggpost visar: datum, typ (samtal/mail/möte), vem som loggade, beskrivning
-
-### `src/components/AddCustomerModal.tsx`
-- Formulär: namn, e-post, telefon, adress, stad, postnummer, anteckningar
-
-### `src/components/CustomerInteractionForm.tsx`
-- Typ-väljare (Telefonsamtal, E-post, Möte, Anteckning, Klagomål)
-- Ämne, beskrivning
-- Valfri projektkoppling (dropdown med befintliga projekt)
-
-## Ändringar i befintliga filer
-
-### `src/pages/Index.tsx`
-- Ny flik "Kunder" i TabsList (desktop + mobil)
-- Import och rendering av CustomersView
-
-### `src/hooks/useSupabaseStorage.ts`
-- Lägg till CRUD-funktioner för customers och customer_interactions
-
-## Flöde för kundtjänst
-1. Kund ringer in → kundtjänst söker på namn/telefon
-2. Hittar kunden → ser alla projekt och tidigare kontakter
-3. Loggar samtalet med ämne och beskrivning
-4. Kan koppla samtalet till specifikt projekt om relevant
+This is a minimal, self-contained fix — no other files need changes.
 
