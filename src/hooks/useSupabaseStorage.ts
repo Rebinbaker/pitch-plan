@@ -21,6 +21,7 @@ export const useSupabaseStorage = () => {
   const [supabaseProjects, setSupabaseProjects] = useState<Project[]>([]);
   const [supabaseScaffolding, setSupabaseScaffolding] = useState<ScaffoldingTrailer[]>([]);
   const [supabaseTeams, setSupabaseTeams] = useState<ConstructionTeam[]>([]);
+  const [supabaseFiles, setSupabaseFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Load projects and scaffolding from Supabase immediately when user is logged in
@@ -29,6 +30,7 @@ export const useSupabaseStorage = () => {
       loadSupabaseProjects();
       loadSupabaseScaffolding();
       loadSupabaseTeams();
+      loadSupabaseFiles();
       setMigrationStatus('completed');
     }
   }, [user, organizationId]);
