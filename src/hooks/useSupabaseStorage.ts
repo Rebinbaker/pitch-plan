@@ -714,8 +714,26 @@ export const useSupabaseStorage = () => {
   };
 
   const uploadFile = async (file: Omit<ProjectFile, 'id' | 'uploadedAt'>) => {
-    try {
+    if (!user || !organizationId) {
       await localStorageHook.uploadFile(file);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('files' as any)
+        .insert({
+          name: file.name,
+          type: file.type,
+          url: file.url,
+          size: 0,
+          project_id: file.projectId || null,
+          user_id: user.id,
+          organization_id: organizationId,
+        });
+      
+      if (error) throw error;
+      
+      await loadSupabaseFiles();
       toast({
         title: "Fil uppladdad",
         description: `${file.name} har laddats upp framgångsrikt.`,
@@ -732,8 +750,20 @@ export const useSupabaseStorage = () => {
   };
 
   const deleteFile = async (fileId: string) => {
-    try {
+    if (!user || !organizationId) {
       await localStorageHook.deleteFile(fileId);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('files' as any)
+        .delete()
+        .eq('id', fileId)
+        .eq('organization_id', organizationId);
+      
+      if (error) throw error;
+      
+      setSupabaseFiles(prev => prev.filter(f => f.id !== fileId));
       toast({
         title: "Fil borttagen",
         description: "Filen har tagits bort framgångsrikt.",
