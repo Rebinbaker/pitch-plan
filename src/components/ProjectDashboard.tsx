@@ -57,13 +57,31 @@ function SimpleProjectCard({ project, onViewDetails, onUpdateProject, onDeletePr
 
 export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, onAddProject, trailers = [], teams = [], onUpdateTeam, onUpdateTrailer, selectedProjectId, onClearSelection, onAddNotifications, onFileUploaded, isAdmin, files = [] }: ProjectDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilters, setStatusFilters] = useState<StatusFilterValue[]>([]);
+  const [statusFilters, setStatusFilters] = useState<StatusFilterValue[]>(() => {
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const savedFilters = localStorage.getItem('projectDashboard.statusFilters');
+      if (!savedFilters) return [];
+
+      const parsedFilters = JSON.parse(savedFilters);
+      return Array.isArray(parsedFilters) ? parsedFilters : [];
+    } catch {
+      return [];
+    }
+  });
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
   const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('projectDashboard.statusFilters', JSON.stringify(statusFilters));
+    } catch {}
+  }, [statusFilters]);
 
   // Auto-open project detail modal when selectedProjectId changes
   useEffect(() => {
