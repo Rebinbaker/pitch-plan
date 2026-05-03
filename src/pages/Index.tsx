@@ -73,7 +73,16 @@ const Index = () => {
   } = useSupabaseStorage();
 
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('projects');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'projects';
+    return localStorage.getItem('activeTab') || 'projects';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('activeTab', activeTab);
+    } catch {}
+  }, [activeTab]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showDataExportModal, setShowDataExportModal] = useState(false);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
