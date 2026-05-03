@@ -145,11 +145,19 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
     setIsSubmitting(true);
     
     try {
-      // Calculate dates from week input - convert "v32" to "2025-W32" format  
-      const currentYear = new Date().getFullYear();
-      const weekNum = data.constructionStartWeek.replace(/[^0-9]/g, '');
-      const byggStartVecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
-      
+      // Calculate dates from week input — handle "v32", "32", or "2026-W32"
+      const isoMatch = data.constructionStartWeek.match(/^(\d{4})-W(\d+)$/i);
+      let yearForWeek = new Date().getFullYear();
+      let weekNum: string;
+      if (isoMatch) {
+        yearForWeek = parseInt(isoMatch[1], 10);
+        const raw = parseInt(isoMatch[2], 10);
+        weekNum = String(raw > 53 ? parseInt(isoMatch[2].slice(-2), 10) : raw);
+      } else {
+        weekNum = data.constructionStartWeek.replace(/[^0-9]/g, '');
+      }
+      const byggStartVecka = `${yearForWeek}-W${weekNum.padStart(2, '0')}`;
+
       const startDate = weekNumberToDate(data.constructionStartWeek);
       const deadline = calculateDeadlineFromWorkDays(startDate, data.estimatedWorkDays);
       const planeradStartDatum = calculatePlannedStartDate(byggStartVecka);
