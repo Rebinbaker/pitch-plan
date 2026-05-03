@@ -1,12 +1,30 @@
 import { addDays, addWeeks, format, getISOWeek, startOfWeek } from 'date-fns';
 
 export function weekNumberToDate(weekString: string, year: number = new Date().getFullYear()): string {
-  // Parse week string like "v31" or "31"
-  const weekNumber = parseInt(weekString.replace(/[^0-9]/g, ''), 10);
+  // Accept formats like "v31", "31", "W31", "2026-W31", "2026-W202611"
+  let parsedYear = year;
+  let weekPart = weekString;
+
+  // Match "YYYY-Wxx" or similar — extract trailing week number after last "W"
+  const isoMatch = weekString.match(/^(\d{4})-W(\d+)$/i);
+  if (isoMatch) {
+    parsedYear = parseInt(isoMatch[1], 10);
+    let weekNum = parseInt(isoMatch[2], 10);
+    // Handle malformed values like "202611" by taking the last 1-2 digits as week
+    if (weekNum > 53) {
+      const tail = isoMatch[2].slice(-2);
+      weekNum = parseInt(tail, 10);
+    }
+    weekPart = String(weekNum);
+  }
+
+  const weekNumber = parseInt(weekPart.replace(/[^0-9]/g, ''), 10);
 
   if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 53) {
     throw new Error('Invalid week number');
   }
+
+  year = parsedYear;
 
   // ISO week 1 is the week containing Jan 4th, starting on Monday
   const jan4 = new Date(year, 0, 4);
