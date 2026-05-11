@@ -1060,7 +1060,38 @@ Tack!`);
                         Completed: {new Date(item.completedAt).toLocaleDateString('sv-SE')}
                       </p>
                     )}
-                    
+
+                    {/* Accommodation booking */}
+                    {isAccommodation && project && onUpdateProject && (
+                      <AccommodationBookingItem
+                        project={project}
+                        item={item}
+                        isEditable={isEditable}
+                        onSave={(booking) => {
+                          const updatedProject: Project = {
+                            ...project,
+                            accommodationBooking: booking,
+                            checklist: project.checklist.map((c) =>
+                              c.id === item.id
+                                ? {
+                                    ...c,
+                                    completed: true,
+                                    completedAt: new Date().toISOString().split('T')[0],
+                                    accommodationConfirmed: true,
+                                  }
+                                : c
+                            ),
+                          };
+                          onUpdateProject(updatedProject);
+                          toast({
+                            title: 'Boende bokat',
+                            description: `${booking.name} · ${booking.nights} ${booking.nights === 1 ? 'natt' : 'nätter'}`,
+                            duration: 3000,
+                          });
+                        }}
+                      />
+                    )}
+
                      {/* Show trailer dropdown for Book scaffolding */}
                     {isBookScaffolding && trailers.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
