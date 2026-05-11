@@ -93,7 +93,22 @@ export interface Project {
   activityLog?: ActivityLogEntry[];
   allocatedMaterials?: AllocatedMaterial[]; // Materials allocated from other projects
   materialOrder?: MaterialOrder; // Material order created by project manager
+  accommodationBooking?: AccommodationBooking; // Hotel/lodging booking for the construction team
 }
+
+export interface AccommodationBooking {
+  name: string;
+  checkInDate: string; // ISO date (YYYY-MM-DD)
+  nights: number;
+  bookedAt?: string; // ISO timestamp
+}
+
+// Returns the calculated check-out date for an accommodation booking
+export const getAccommodationCheckOutDate = (booking: AccommodationBooking): Date => {
+  const d = new Date(booking.checkInDate);
+  d.setDate(d.getDate() + (booking.nights || 0));
+  return d;
+};
 
 export interface ChecklistItem {
   id: string;
