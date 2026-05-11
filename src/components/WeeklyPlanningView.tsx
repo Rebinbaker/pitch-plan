@@ -17,6 +17,7 @@ import { DndContext, DragEndEvent, DragStartEvent, useSensor, useSensors, Pointe
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '@/hooks/use-toast';
+import { useRegions } from '@/hooks/useRegions';
 
 interface WeeklyPlanningViewProps {
   projects: Project[];
@@ -297,8 +298,9 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alla regioner</SelectItem>
-                <SelectItem value="Stockholm">Stockholm</SelectItem>
-                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+                {regions.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
