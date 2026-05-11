@@ -11,6 +11,7 @@ import { Package, Search, Filter, Copy, Mail, Edit, Calendar, MapPin, User, Calc
 import { MaterialOrderModal } from './MaterialOrderModal';
 import { RoofMaterialCalculator } from './RoofMaterialCalculator';
 import { useToast } from '@/hooks/use-toast';
+import { useRegions } from '@/hooks/useRegions';
 
 interface MaterialOrdersDashboardProps {
   projects: Project[];
@@ -196,8 +197,9 @@ export function MaterialOrdersDashboard({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alla regioner</SelectItem>
-                  <SelectItem value="Stockholm">Stockholm</SelectItem>
-                  <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+                  {regions.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}

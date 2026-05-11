@@ -9,6 +9,7 @@ import { Project, MaterialOrderStatus, getMaterialUnit } from '@/types/project';
 import { History, Search, Calendar, MapPin, Package, Copy, Mail, FileText, User, ChevronDown, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
+import { useRegions } from '@/hooks/useRegions';
 import {
   Dialog,
   DialogContent,
@@ -169,8 +170,9 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
                 <SelectItem value="all">Alla regioner</SelectItem>
-                <SelectItem value="Stockholm">Stockholm</SelectItem>
-                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+                {regions.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
