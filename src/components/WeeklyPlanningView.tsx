@@ -33,6 +33,7 @@ export function WeeklyPlanningView({ projects, onUpdateProject, trailers = [], o
   console.log('WeeklyPlanningView re-rendered with projects:', projects.length);
   
   const [regionFilter, setRegionFilter] = useState<Region | 'all'>('all');
+  const { regions } = useRegions();
   const [viewMode, setViewMode] = useState<'calendar' | 'board' | 'monthly'>(() => {
     // Persist view mode in localStorage to prevent reset during re-renders
     const saved = localStorage.getItem('planningViewMode');
