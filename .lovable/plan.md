@@ -1,68 +1,61 @@
+## Mål
+Möjliggöra att lägga till nya regioner direkt från projektmodalen (AddProjectModal), så att alla i organisationen kan använda dem. Idag är `Region` hårdkodad till `'Stockholm' | 'Västra Götaland'`.
 
-# Lägesbild (vad som faktiskt gäller i koden nu)
+## Lösning i korthet
 
-- Påståendet från det andra programmet stämmer **inte** för detta repo:
-  - `src/pages/Index.tsx` → `handleCreateProject` gör bara `addProject(newProject)` och stänger modal.
-  - Ingen `generateQuotePdf` används i frontend.
-  - Ingen `quote_pdf_base64` finns i frontend-koden.
-- Edge function `supabase/functions/create-project-from-sale/index.ts` **kan** ta emot och spara PDF (`quote_pdf_base64`, `quote_pdf_filename`) och skriva till `files`.
-- `files`-tabellen är tom just nu (inga filer inskrivna), vilket betyder att PDF-data inte når fram eller inte kan processas.
-- I både desktop- och mobilens projektdetalj är fliken **Filer** fortfarande placeholder (visar inte verkliga filer), så även om fil finns i DB syns den inte där.
+### 1. Databas (Supabase)
+Ny tabell `regions`:
+- `name` (text, unik per organisation)
+- `organization_id` (kopplad till organisation)
+- `user_id` (vem som skapade)
+- standardfält (id, created_at)
 
-# Plan (för att göra detta robust end-to-end)
+RLS: organisationsmedlemmar kan läsa, skapa och ta bort regioner i sin organisation.
 
-## 1) Visa riktiga filer inne i projektkortets “Filer”-flik
-Uppdatera:
-- `src/components/ProjectDetailModal.tsx`
-- `src/components/mobile/MobileProjectDetailModal.tsx`
+Seed: lägg in `Stockholm` och `Västra Götaland` automatiskt för befintlig organisation så inget bryts.
 
-Så att de:
-- tar emot `files` som prop,
-- filtrerar på `file.projectId === project.id`,
-- visar lista/kort med namn, datum, typ,
-- öppnar `FilePreviewModal` och stödjer nedladdning.
+### 2. Typer
+- Ändra `Region` i `src/types/project.ts` från en hårdkodad union till `string`, så att vilka regioner som helst kan användas.
+- Ta bort fallande TypeScript-fel i komponenter som jämför mot literalvärden.
 
-## 2) Tråda igenom `files` från toppnivå till modalerna
-Uppdatera prop-kedjan:
-- `src/pages/Index.tsx` (skicka `files` vidare)
-- `src/components/ProjectDashboard.tsx`
-- `src/components/WeeklyPlanningView.tsx`
-- mobilkedjan via `MobileProjectCard` → `MobileProjectDetailModal`
+### 3. Hook
+Ny hook `useRegions()` som:
+- Hämtar regioner från Supabase för aktuell organisation
+- Exponerar `addRegion(name)` och `regions: string[]`
+- Cachar lokalt och invaliderar vid tillägg
 
-Mål: samma data i globala Filer-vyn och i projektets egen Filer-flik.
+### 4. UI – AddProjectModal (desktop + mobil)
+I region-dropdownen:
+- Lista regioner från `useRegions()` istället för hårdkodade värden
+- Längst ned i listan: en knapp **"+ Lägg till ny region"**
+- Klick öppnar en liten inline-dialog/popover med textfält + Spara-knapp
+- Vid spar: anropar `addRegion`, stänger dialogen och väljer den nya regionen automatiskt
 
-## 3) Lägg till realtidslyssning för `files` i `useSupabaseStorage`
-I `src/hooks/useSupabaseStorage.ts`:
-- skapa `supabase.channel(...).on('postgres_changes', table: 'files', filter org)` likt projects/scaffolding/teams,
-- anropa `loadSupabaseFiles()` vid insert/update/delete.
+Samma ändring i `src/components/mobile/MobileAddProjectModal.tsx`.
 
-Mål: fil dyker upp utan manuell refresh när CRM skapar projekt + PDF.
+### 5. Övriga ställen som listar regioner
+Filter-dropdowns (`ProjectHeader`, `WeeklyPlanningView`, `MobilePlanningView`, `TeamsView`, `ProjectMapView`, `MaterialOrdersDashboard`, `OrderHistoryView`, `DataExportModal`) byts till att läsa från `useRegions()` istället för hårdkodade `<SelectItem>`. Inget radering-UI där – bara läsning.
 
-## 4) Härda edge function för PDF-inmatning och felsökning
-I `supabase/functions/create-project-from-sale/index.ts`:
-- acceptera både rå base64 och Data URL-format (`data:application/pdf;base64,...`) genom att alltid strippa prefix defensivt,
-- logga tydligt:
-  - om `quote_pdf_base64` saknas,
-  - om decode misslyckas,
-  - om upload till `project-files` misslyckas,
-  - om insert i `files` misslyckas,
-  - samt success-logg med `project.id` och filnamn.
-- (valfritt men rekommenderat) returnera `quote_pdf_received: boolean` och `quote_pdf_stored: boolean` i responsen för enklare verifiering i CRM.
+## Tekniska detaljer
 
-## 5) Verifiering end-to-end
-Testflöde:
-1. Stäng en affär i CRM med offert-PDF.
-2. Kontrollera edge-loggar för “Quote PDF stored for project”.
-3. Verifiera ny rad i `files` med rätt `project_id`.
-4. Öppna projektkortet → flik “Filer” och kontrollera att PDF syns där.
-5. Kontrollera även globala “Filer”-vyn för samma fil.
+```text
+regions
+├── id (uuid, PK)
+├── organization_id (uuid)
+├── user_id (uuid)
+├── name (text)
+├── created_at (timestamptz)
+└── UNIQUE (organization_id, name)
+```
 
-# Tekniska detaljer (kort)
-- Ingen ny tabell krävs (tabell `files` och bucket `project-files` finns redan).
-- Fokus är:
-  - UI-bindning i projektdetalj,
-  - realtidssynk för `files`,
-  - robust payload-hantering + observability i edge function.
-- Detta angriper både sannolika felkällor:
-  1) CRM skickar inte/ skickar fel format på PDF,
-  2) filen finns men syns inte i projektkortets nuvarande placeholder-flik.
+RLS-policys speglar mönstret från `customers`/`projects` (`is_organization_member(auth.uid(), organization_id)`).
+
+Borttagning av regioner ingår **inte** i denna iteration – endast tillägg från modalen. Kan läggas till senare i Admin om du vill.
+
+## Filer som ändras
+- `supabase` migration (ny tabell + RLS + seed)
+- `src/types/project.ts` (Region → string)
+- `src/hooks/useRegions.ts` (ny)
+- `src/components/AddProjectModal.tsx` (dropdown + "Lägg till"-flöde)
+- `src/components/mobile/MobileAddProjectModal.tsx` (samma)
+- Övriga komponenter ovan: byt hårdkodade regionalternativ mot `useRegions()`
