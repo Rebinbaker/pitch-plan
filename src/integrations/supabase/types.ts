@@ -426,6 +426,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          accommodation_booking: Json | null
           activity_log: Json | null
           actual_construction_start: string | null
           address: string | null
@@ -457,6 +458,7 @@ export type Database = {
           work_phases: Json | null
         }
         Insert: {
+          accommodation_booking?: Json | null
           activity_log?: Json | null
           actual_construction_start?: string | null
           address?: string | null
@@ -488,6 +490,7 @@ export type Database = {
           work_phases?: Json | null
         }
         Update: {
+          accommodation_booking?: Json | null
           activity_log?: Json | null
           actual_construction_start?: string | null
           address?: string | null

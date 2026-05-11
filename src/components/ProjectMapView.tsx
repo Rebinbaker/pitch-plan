@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Project, ProjectStatus } from '@/types/project';
+import { Project, ProjectStatus, getAccommodationCheckOutDate } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { batchGeocodeAddresses } from '@/utils/geocoding';
 import { analyzeAllProjects, analyzeProjectRisk, RiskLevel } from '@/utils/riskAnalysis';
@@ -376,6 +376,35 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
                               <span className="font-medium" style={{ color: 'hsl(215, 25%, 15%)' }}>{trailerName}</span>
                             </div>
                           )}
+                          {project.accommodationBooking && (() => {
+                            const checkOut = getAccommodationCheckOutDate(project.accommodationBooking);
+                            const msPerDay = 1000 * 60 * 60 * 24;
+                            const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                            const daysLeft = Math.ceil((startOfDay(checkOut).getTime() - startOfDay(new Date()).getTime()) / msPerDay);
+                            const color =
+                              daysLeft < 0
+                                ? 'hsl(0, 84%, 50%)'
+                                : daysLeft <= 1
+                                ? 'hsl(0, 84%, 50%)'
+                                : daysLeft <= 3
+                                ? 'hsl(43, 96%, 46%)'
+                                : 'hsl(215, 25%, 15%)';
+                            const label =
+                              daysLeft < 0
+                                ? `${Math.abs(daysLeft)} dag${Math.abs(daysLeft) !== 1 ? 'ar' : ''} sedan utcheckning`
+                                : daysLeft === 0
+                                ? 'Checkar ut idag'
+                                : `${daysLeft} dag${daysLeft !== 1 ? 'ar' : ''} kvar till utcheckning`;
+                            return (
+                              <div className="flex justify-between">
+                                <span>Boende:</span>
+                                <span className="font-medium text-right" style={{ color }}>
+                                  {project.accommodationBooking.name}
+                                  <span className="block text-[10px] opacity-90">{label}</span>
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <button

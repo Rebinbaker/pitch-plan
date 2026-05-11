@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed, MaterialOrder } from '@/types/project';
+import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed, MaterialOrder, AccommodationBooking } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
+import { AccommodationBookingItem } from '@/components/AccommodationBookingItem';
 import { WarrantyGenerator } from '@/components/warranty/WarrantyGenerator';
 import { ProjectAllocationSelect } from '@/components/ProjectAllocationSelect';
 import { MaterialOrderWithTemplate } from "./MaterialOrderWithTemplate";
@@ -949,10 +950,12 @@ Tack!`);
             const isContainerBooking = isContainerBookingItem(item.label);
             const isContainerOrder = isContainerOrderItem(item.label);
             const isMaterialOrder = item.label === 'Materialbeställning';
+            const isAccommodation = item.label === 'Boka boende';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
             const itemLocked = isItemLocked(index);
+            const hasAccommodationBooking = !!project?.accommodationBooking;
             
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
@@ -963,6 +966,8 @@ Tack!`);
               isItemComplete = item.completed && hasTeamAssigned;
             } else if (isAvvaratMaterial) {
               isItemComplete = materialAnswer !== null;
+            } else if (isAccommodation) {
+              isItemComplete = hasAccommodationBooking;
             }
             
             return (
@@ -978,7 +983,7 @@ Tack!`);
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder || isAccommodation) return; // These items disabled for manual click
                     if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
@@ -991,12 +996,12 @@ Tack!`);
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding || isWhatsApp || isContainerBooking) return; // These items disabled for manual completion
+                          if (isBookScaffolding || isWhatsApp || isContainerBooking || isAccommodation) return; // These items disabled for manual completion
                           if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || isAccommodation || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
@@ -1055,7 +1060,38 @@ Tack!`);
                         Completed: {new Date(item.completedAt).toLocaleDateString('sv-SE')}
                       </p>
                     )}
-                    
+
+                    {/* Accommodation booking */}
+                    {isAccommodation && project && onUpdateProject && (
+                      <AccommodationBookingItem
+                        project={project}
+                        item={item}
+                        isEditable={isEditable}
+                        onSave={(booking) => {
+                          const updatedProject: Project = {
+                            ...project,
+                            accommodationBooking: booking,
+                            checklist: project.checklist.map((c) =>
+                              c.id === item.id
+                                ? {
+                                    ...c,
+                                    completed: true,
+                                    completedAt: new Date().toISOString().split('T')[0],
+                                    accommodationConfirmed: true,
+                                  }
+                                : c
+                            ),
+                          };
+                          onUpdateProject(updatedProject);
+                          toast({
+                            title: 'Boende bokat',
+                            description: `${booking.name} · ${booking.nights} ${booking.nights === 1 ? 'natt' : 'nätter'}`,
+                            duration: 3000,
+                          });
+                        }}
+                      />
+                    )}
+
                      {/* Show trailer dropdown for Book scaffolding */}
                     {isBookScaffolding && trailers.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">

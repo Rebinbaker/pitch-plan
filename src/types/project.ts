@@ -93,7 +93,22 @@ export interface Project {
   activityLog?: ActivityLogEntry[];
   allocatedMaterials?: AllocatedMaterial[]; // Materials allocated from other projects
   materialOrder?: MaterialOrder; // Material order created by project manager
+  accommodationBooking?: AccommodationBooking; // Hotel/lodging booking for the construction team
 }
+
+export interface AccommodationBooking {
+  name: string;
+  checkInDate: string; // ISO date (YYYY-MM-DD)
+  nights: number;
+  bookedAt?: string; // ISO timestamp
+}
+
+// Returns the calculated check-out date for an accommodation booking
+export const getAccommodationCheckOutDate = (booking: AccommodationBooking): Date => {
+  const d = new Date(booking.checkInDate);
+  d.setDate(d.getDate() + (booking.nights || 0));
+  return d;
+};
 
 export interface ChecklistItem {
   id: string;
@@ -104,6 +119,7 @@ export interface ChecklistItem {
   whatsappConfirmed?: boolean; // Flag to track WhatsApp group confirmation
   containerConfirmed?: boolean; // Flag to track container booking confirmation (hemtag)
   containerOrderConfirmed?: boolean; // Flag to track container order confirmation (boka)
+  accommodationConfirmed?: boolean; // Flag to track that accommodation has been booked
 }
 
 export interface WorkPhaseItem {
@@ -124,6 +140,7 @@ export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
   { label: 'Containerbeställning', completed: false, weight: 5 },
   { label: 'Ställningshantering', completed: false, weight: 5 },
   { label: 'Schedule construction team', completed: false, weight: 2 },
+  { label: 'Boka boende', completed: false, weight: 2 },
   { label: 'Skapa WhatsApp grupp', completed: false, weight: 1 },
   { label: 'Materialbeställning', completed: false, weight: 5 },
   { label: 'Dagliga egenkontroller', completed: false, weight: 5 },

@@ -74,6 +74,7 @@ export const useSupabaseStorage = () => {
           region: project.region || 'Stockholm',
           avvaratMaterial: project.avvarat_material || undefined,
           materialOrder: project.material_order || undefined,
+          accommodationBooking: project.accommodation_booking || undefined,
         };
 
         const migratedProject = migrateProjectToNewPlanning(baseProject);
@@ -337,6 +338,7 @@ export const useSupabaseStorage = () => {
             region: updatedProject.region,
             avvarat_material: updatedProject.avvaratMaterial || null,
             material_order: updatedProject.materialOrder || null,
+            accommodation_booking: updatedProject.accommodationBooking || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProject.id)
@@ -402,6 +404,7 @@ export const useSupabaseStorage = () => {
             work_phases: newProject.workPhases || [],
             activity_log: newProject.activityLog || [],
             region: newProject.region,
+            accommodation_booking: newProject.accommodationBooking || null,
             user_id: user.id,
             organization_id: organizationId,
           });
