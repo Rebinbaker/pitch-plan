@@ -535,6 +535,30 @@ export type Database = {
           },
         ]
       }
+      regions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scaffolding: {
         Row: {
           created_at: string
