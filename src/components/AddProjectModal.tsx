@@ -30,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist, defaultWorkPhases } from '@/types/project';
+import { RegionSelect } from '@/components/RegionSelect';
 import { useToast } from '@/hooks/use-toast';
 import { weekNumberToDate, calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 import { dateToWeekString, calculatePlannedStartDate, calculateBeraknatSlutDatum, migrateProjectToNewPlanning } from '@/utils/projectPlanning';
@@ -84,7 +85,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
       estimatedWorkDays: 7,
       rotStatus: 'No',
       status: 'planned',
-      region: 'Stockholm',
+      region: '',
       notes: '',
     },
   });
@@ -125,7 +126,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         estimatedWorkDays: 7,
         rotStatus: 'No',
         status: 'planned',
-        region: 'Stockholm',
+        region: '',
         notes: '',
       });
     }
@@ -296,17 +297,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Region</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Välj region" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Stockholm">Stockholm</SelectItem>
-                        <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <RegionSelect value={field.value} onChange={field.onChange} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
