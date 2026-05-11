@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Project, ProjectStatus, Region, ROTStatus, defaultChecklist, defaultWorkPhases } from '@/types/project';
+import { RegionSelect } from '@/components/RegionSelect';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -34,7 +35,7 @@ const quickProjectSchema = z.object({
   constructionStartWeek: z.string().min(1, 'Startvecka krävs'),
   estimatedWorkDays: z.number().min(1, 'Antal arbetsdagar krävs'),
   rotStatus: z.enum(['Yes', 'No'] as const),
-  region: z.enum(['Stockholm', 'Västra Götaland'] as const),
+  region: z.string().min(1, 'Region krävs'),
   notes: z.string().optional(),
 });
 
@@ -60,7 +61,7 @@ export function MobileAddProjectModal({ isOpen, onClose, onAddProject, teams }: 
       constructionStartWeek: '',
       estimatedWorkDays: 5,
       rotStatus: 'No',
-      region: 'Stockholm',
+      region: '',
       notes: '',
     },
   });
@@ -250,17 +251,13 @@ export function MobileAddProjectModal({ isOpen, onClose, onAddProject, teams }: 
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs">Region</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Stockholm">Stockholm</SelectItem>
-                            <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <RegionSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            triggerClassName="h-10"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
