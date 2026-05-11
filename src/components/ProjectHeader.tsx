@@ -53,6 +53,7 @@ export function ProjectHeader({
   onDateToChange,
 }: ProjectHeaderProps) {
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+  const { regions } = useRegions();
 
   const toggleStatus = (value: StatusFilterValue) => {
     if (statusFilters.includes(value)) {
