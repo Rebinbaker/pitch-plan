@@ -74,6 +74,7 @@ export const useSupabaseStorage = () => {
           region: project.region || 'Stockholm',
           avvaratMaterial: project.avvarat_material || undefined,
           materialOrder: project.material_order || undefined,
+          accommodationBooking: project.accommodation_booking || undefined,
         };
 
         const migratedProject = migrateProjectToNewPlanning(baseProject);
