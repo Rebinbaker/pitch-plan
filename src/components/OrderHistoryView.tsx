@@ -28,6 +28,7 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<MaterialOrderStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const { regions } = useRegions();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (projectId: string) => {

@@ -30,6 +30,7 @@ export function MaterialOrdersDashboard({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<MaterialOrderStatus | 'all'>('all');
   const [regionFilter, setRegionFilter] = useState<string>('all');
+  const { regions } = useRegions();
 
   // Filter projects based on user role and region
   const filteredProjects = projects.filter(project => {
