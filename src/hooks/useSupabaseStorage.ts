@@ -404,6 +404,7 @@ export const useSupabaseStorage = () => {
             work_phases: newProject.workPhases || [],
             activity_log: newProject.activityLog || [],
             region: newProject.region,
+            accommodation_booking: newProject.accommodationBooking || null,
             user_id: user.id,
             organization_id: organizationId,
           });
