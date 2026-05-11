@@ -1,61 +1,46 @@
-## Mål
-Möjliggöra att lägga till nya regioner direkt från projektmodalen (AddProjectModal), så att alla i organisationen kan använda dem. Idag är `Region` hårdkodad till `'Stockholm' | 'Västra Götaland'`.
+# Boka boende — checklist + karta
 
-## Lösning i korthet
+Lägger till "Boka boende" som ny checklist-punkt direkt efter "Schedule construction team". Användaren anger boendets namn, **incheckningsdatum** och **antal nätter**. Utcheckningsdatum räknas fram automatiskt. På kartan visas hur många dagar som är kvar till utcheckning.
 
-### 1. Databas (Supabase)
-Ny tabell `regions`:
-- `name` (text, unik per organisation)
-- `organization_id` (kopplad till organisation)
-- `user_id` (vem som skapade)
-- standardfält (id, created_at)
+## Användarflöde
 
-RLS: organisationsmedlemmar kan läsa, skapa och ta bort regioner i sin organisation.
+1. I projektets checklista finns en ny rad: **"Boka boende"** (efter "Schedule construction team").
+2. Klick på checkbox eller "Redigera" öppnar en dialog med:
+   - Boendets namn (text)
+   - Incheckningsdatum (datepicker, default = idag)
+   - Antal nätter (siffra, min 1, default 1)
+   - Beräknad utcheckning visas live under fälten (incheckning + nätter)
+3. Vid spara: punkten markeras som klar, bokningen sparas på projektet, en aktivitetslogg-rad skapas.
+4. Under raden visas en sammanfattning: *"Hotell X · 3 nätter · checkar ut tors 14 maj"* med "Redigera"-knapp.
+5. På kartans projekt-popup visas en ny rad om bokning finns: namn + "X dagar kvar till utcheckning" (röd ≤1 dag, gul ≤3 dagar, annars neutral).
 
-Seed: lägg in `Stockholm` och `Västra Götaland` automatiskt för befintlig organisation så inget bryts.
+## Datamodell
 
-### 2. Typer
-- Ändra `Region` i `src/types/project.ts` från en hårdkodad union till `string`, så att vilka regioner som helst kan användas.
-- Ta bort fallande TypeScript-fel i komponenter som jämför mot literalvärden.
+`src/types/project.ts`:
+- Lägg till `accommodationBooking?: { name: string; checkInDate: string; nights: number; bookedAt?: string }` på `Project`.
+- Lägg till `accommodationConfirmed?: boolean` på `ChecklistItem`.
+- Lägg till `{ label: 'Boka boende', completed: false, weight: 2 }` i `defaultChecklist` direkt efter `Schedule construction team`.
+- Hjälpfunktion `getCheckOutDate(booking)` = `checkInDate + nights dagar`.
 
-### 3. Hook
-Ny hook `useRegions()` som:
-- Hämtar regioner från Supabase för aktuell organisation
-- Exponerar `addRegion(name)` och `regions: string[]`
-- Cachar lokalt och invaliderar vid tillägg
+## Migration
 
-### 4. UI – AddProjectModal (desktop + mobil)
-I region-dropdownen:
-- Lista regioner från `useRegions()` istället för hårdkodade värden
-- Längst ned i listan: en knapp **"+ Lägg till ny region"**
-- Klick öppnar en liten inline-dialog/popover med textfält + Spara-knapp
-- Vid spar: anropar `addRegion`, stänger dialogen och väljer den nya regionen automatiskt
-
-Samma ändring i `src/components/mobile/MobileAddProjectModal.tsx`.
-
-### 5. Övriga ställen som listar regioner
-Filter-dropdowns (`ProjectHeader`, `WeeklyPlanningView`, `MobilePlanningView`, `TeamsView`, `ProjectMapView`, `MaterialOrdersDashboard`, `OrderHistoryView`, `DataExportModal`) byts till att läsa från `useRegions()` istället för hårdkodade `<SelectItem>`. Inget radering-UI där – bara läsning.
-
-## Tekniska detaljer
-
-```text
-regions
-├── id (uuid, PK)
-├── organization_id (uuid)
-├── user_id (uuid)
-├── name (text)
-├── created_at (timestamptz)
-└── UNIQUE (organization_id, name)
+Ny kolumn på `projects`-tabellen:
 ```
-
-RLS-policys speglar mönstret från `customers`/`projects` (`is_organization_member(auth.uid(), organization_id)`).
-
-Borttagning av regioner ingår **inte** i denna iteration – endast tillägg från modalen. Kan läggas till senare i Admin om du vill.
+accommodation_booking jsonb
+```
+(En enkel jsonb räcker — ingen separat tabell behövs eftersom det är 1:1 mot projekt och inga frågor körs mot fälten.)
 
 ## Filer som ändras
-- `supabase` migration (ny tabell + RLS + seed)
-- `src/types/project.ts` (Region → string)
-- `src/hooks/useRegions.ts` (ny)
-- `src/components/AddProjectModal.tsx` (dropdown + "Lägg till"-flöde)
-- `src/components/mobile/MobileAddProjectModal.tsx` (samma)
-- Övriga komponenter ovan: byt hårdkodade regionalternativ mot `useRegions()`
+
+- `supabase/migrations/...` (ny) — lägger till `accommodation_booking` kolumn.
+- `src/types/project.ts` — typer + defaultChecklist + helper.
+- `src/components/ProjectChecklist.tsx` — specialhantering av "Boka boende": dialog, sparlogik, sammanfattningsrad.
+- `src/components/ProjectMapView.tsx` — visa "X dagar kvar till utcheckning" i popup när bokning finns.
+- `src/components/ProjectDashboard.tsx` (eller där DB ↔ frontend mappas) — läs/skriv `accommodation_booking`.
+- `src/components/mobile/MobileProjectDetailModal.tsx` — säkerställ att samma checklist-rad fungerar på mobil.
+
+## Antaganden
+
+- Ett boende per projekt.
+- Incheckningsdatum default = idag, antal nätter default = 1.
+- Inga separata notiser nära utcheckning (bara visuell färgmarkering på kartan).
