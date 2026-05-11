@@ -119,6 +119,7 @@ export interface ChecklistItem {
   whatsappConfirmed?: boolean; // Flag to track WhatsApp group confirmation
   containerConfirmed?: boolean; // Flag to track container booking confirmation (hemtag)
   containerOrderConfirmed?: boolean; // Flag to track container order confirmation (boka)
+  accommodationConfirmed?: boolean; // Flag to track that accommodation has been booked
 }
 
 export interface WorkPhaseItem {
