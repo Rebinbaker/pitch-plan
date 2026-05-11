@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RegionSelect } from '@/components/RegionSelect';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -471,7 +472,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           id: `seller-${Date.now()}`,
           firstName: salesPerson.firstName,
           lastName: salesPerson.lastName,
-          region: salesPerson.region as 'Stockholm' | 'Västra Götaland'
+          region: salesPerson.region
         }]
       };
       
@@ -541,18 +542,10 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           </div>
           <div>
             <label className="text-sm font-medium">Region</label>
-            <Select 
-              value={salesPerson.region} 
-              onValueChange={(value) => setSalesPerson({ ...salesPerson, region: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Välj region" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Stockholm">Stockholm</SelectItem>
-                <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
-              </SelectContent>
-            </Select>
+            <RegionSelect
+              value={salesPerson.region}
+              onChange={(value) => setSalesPerson({ ...salesPerson, region: value })}
+            />
           </div>
         </div>
       ) : (

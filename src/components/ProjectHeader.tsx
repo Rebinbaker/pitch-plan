@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, Filter, CalendarIcon, X } from 'lucide-react';
 import { ProjectStatus, Region } from '@/types/project';
+import { useRegions } from '@/hooks/useRegions';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -52,6 +53,7 @@ export function ProjectHeader({
   onDateToChange,
 }: ProjectHeaderProps) {
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
+  const { regions } = useRegions();
 
   const toggleStatus = (value: StatusFilterValue) => {
     if (statusFilters.includes(value)) {
@@ -137,8 +139,9 @@ export function ProjectHeader({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alla regioner</SelectItem>
-              <SelectItem value="Stockholm">Stockholm</SelectItem>
-              <SelectItem value="Västra Götaland">Västra Götaland</SelectItem>
+              {regions.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

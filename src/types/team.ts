@@ -15,7 +15,7 @@ export interface Seller {
   id: string;
   firstName: string;
   lastName: string;
-  region: 'Stockholm' | 'Västra Götaland';
+  region: string;
 }
 
 export interface ConstructionTeam {
