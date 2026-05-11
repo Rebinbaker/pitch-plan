@@ -1,5 +1,5 @@
 export type ProjectStatus = 'planned' | 'ongoing' | 'completed' | 'invoiced' | 'ånger';
-export type Region = 'Stockholm' | 'Västra Götaland';
+export type Region = string;
 export type ROTStatus = 'Yes' | 'No';
 export type StorageLocation = 'Hos kund' | 'Ställningspark' | 'I bil' | 'Montörens garage' | 'Annat';
 export type PlannedAction = 
