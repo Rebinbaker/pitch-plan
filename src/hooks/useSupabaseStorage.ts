@@ -338,6 +338,7 @@ export const useSupabaseStorage = () => {
             region: updatedProject.region,
             avvarat_material: updatedProject.avvaratMaterial || null,
             material_order: updatedProject.materialOrder || null,
+            accommodation_booking: updatedProject.accommodationBooking || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProject.id)
