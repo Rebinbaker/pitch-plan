@@ -983,7 +983,7 @@ Tack!`);
                   } ${isEditable && !isAvvaratMaterial && !itemLocked ? 'cursor-pointer' : ''}`}
                   onClick={() => {
                     if (itemLocked) return; // Locked items disabled for click
-                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder) return; // These items disabled for manual click
+                    if (isBookScaffolding || isAvvaratMaterial || isWhatsApp || isContainerBooking || isContainerOrder || isAccommodation) return; // These items disabled for manual click
                     if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                     if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                     handleItemToggle(item.id);
@@ -996,12 +996,12 @@ Tack!`);
                         checked={!!isItemComplete}
                         onCheckedChange={() => {
                           if (itemLocked) return; // Locked items disabled
-                          if (isBookScaffolding || isWhatsApp || isContainerBooking) return; // These items disabled for manual completion
+                          if (isBookScaffolding || isWhatsApp || isContainerBooking || isAccommodation) return; // These items disabled for manual completion
                           if (isDailyInspections && !allWorkPhasesConfirmed) return; // Daily inspections disabled until all work phases confirmed
                           if (isScheduleTeam && !hasTeamAssigned) return; // Team scheduling disabled if no team assigned
                           handleItemToggle(item.id);
                         }}
-                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
+                        disabled={!isEditable || itemLocked || isBookScaffolding || isWhatsApp || isContainerBooking || isAccommodation || (isDailyInspections && !allWorkPhasesConfirmed) || (isScheduleTeam && !hasTeamAssigned)}
                         className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                       />
                       {itemLocked && (
