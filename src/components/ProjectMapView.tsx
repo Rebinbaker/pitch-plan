@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Project, ProjectStatus } from '@/types/project';
+import { Project, ProjectStatus, getAccommodationCheckOutDate } from '@/types/project';
 import { ScaffoldingTrailer } from '@/types/scaffolding';
 import { batchGeocodeAddresses } from '@/utils/geocoding';
 import { analyzeAllProjects, analyzeProjectRisk, RiskLevel } from '@/utils/riskAnalysis';
