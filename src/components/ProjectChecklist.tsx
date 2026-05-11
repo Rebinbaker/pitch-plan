@@ -950,10 +950,12 @@ Tack!`);
             const isContainerBooking = isContainerBookingItem(item.label);
             const isContainerOrder = isContainerOrderItem(item.label);
             const isMaterialOrder = item.label === 'Materialbeställning';
+            const isAccommodation = item.label === 'Boka boende';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
             const itemLocked = isItemLocked(index);
+            const hasAccommodationBooking = !!project?.accommodationBooking;
             
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
@@ -964,6 +966,8 @@ Tack!`);
               isItemComplete = item.completed && hasTeamAssigned;
             } else if (isAvvaratMaterial) {
               isItemComplete = materialAnswer !== null;
+            } else if (isAccommodation) {
+              isItemComplete = hasAccommodationBooking;
             }
             
             return (
