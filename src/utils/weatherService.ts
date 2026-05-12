@@ -259,79 +259,85 @@ function createHistoricalWeatherData(
   };
 }
 
-function processSMHIData(
-  smhiData: any, 
-  city: string, 
-  coordinates: { lat: number; lon: number },
-  startWeek?: string
-): WeatherForecast {
-  const timeSeries = smhiData.timeSeries || [];
-  
-  // Get current weather (first entry)
-  const currentData = timeSeries[0];
-  const current = parseTimeSeries(currentData);
-  
-  // Get forecast for next 7 days
-  const forecast: WeatherData[] = [];
-  const targetDates = getTargetDates(startWeek);
-  
-  for (const entry of timeSeries.slice(0, 168)) { // 7 days * 24 hours
-    const entryDate = format(parseISO(entry.validTime), 'yyyy-MM-dd');
-    
-    if (targetDates.includes(entryDate)) {
-      const weatherData = parseTimeSeries(entry);
-      
-      // Only add if we don't already have data for this date
-      if (!forecast.find(f => f.date === entryDate)) {
-        forecast.push(weatherData);
-      }
-    }
-  }
-  
-  // Generate warnings
-  const warnings = generateWeatherWarnings(forecast);
-  
-  return {
-    location: city,
-    region: city as any, // For backward compatibility
-    coordinates,
-    current,
-    forecast: forecast.slice(0, 7), // Max 7 days
-    warnings,
-    lastUpdated: new Date().toISOString()
-  };
+// WMO weather code → internal condition
+function wmoToCondition(code: number): WeatherCondition {
+  if (code === 0) return 'clear';
+  if (code <= 2) return 'partly-cloudy';
+  if (code === 3) return 'cloudy';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 57) return 'light-rain';
+  if (code >= 61 && code <= 65) return code >= 65 ? 'heavy-rain' : 'rain';
+  if (code >= 66 && code <= 67) return 'rain';
+  if (code >= 71 && code <= 77) return 'snow';
+  if (code >= 80 && code <= 82) return code === 82 ? 'heavy-rain' : 'rain';
+  if (code >= 85 && code <= 86) return 'snow';
+  if (code >= 95) return 'thunderstorm';
+  return 'partly-cloudy';
 }
 
-function parseTimeSeries(entry: any): WeatherData {
-  const parameters = entry.parameters || [];
-  
-  const getParameter = (name: string) => {
-    const param = parameters.find((p: any) => p.name === name);
-    return param ? param.values[0] : 0;
-  };
-  
-  const temperature = getParameter('t'); // Temperature
-  const precipitation = getParameter('pcat'); // Precipitation category
-  const windSpeed = getParameter('ws'); // Wind speed
-  const humidity = getParameter('r'); // Relative humidity
-  const precipitationIntensity = getParameter('pmean'); // Precipitation mean
-  
-  const conditions = determineWeatherCondition(precipitation, precipitationIntensity, temperature);
-  const riskLevel = calculateRiskLevel(temperature, windSpeed, precipitationIntensity);
-  const workSuitability = determineWorkSuitability(riskLevel, conditions);
-  
+function processOpenMeteoData(
+  data: any,
+  city: string,
+  coordinates: { lat: number; lon: number }
+): WeatherForecast {
+  const daily = data?.daily ?? {};
+  const dates: string[] = daily.time ?? [];
+  const tMax: number[] = daily.temperature_2m_max ?? [];
+  const tMin: number[] = daily.temperature_2m_min ?? [];
+  const precip: number[] = daily.precipitation_sum ?? [];
+  const wind: number[] = daily.wind_speed_10m_max ?? [];
+  const codes: number[] = daily.weathercode ?? [];
+  const hum: number[] = daily.relative_humidity_2m_mean ?? [];
+
+  const forecast: WeatherData[] = dates.map((date, i) => {
+    const conditions = wmoToCondition(codes[i] ?? 0);
+    const riskLevel = calculateRiskLevel(tMax[i] ?? 0, wind[i] ?? 0, precip[i] ?? 0);
+    const workSuitability = determineWorkSuitability(riskLevel, conditions);
+    return {
+      date,
+      temperature: { min: Math.round(tMin[i] ?? 0), max: Math.round(tMax[i] ?? 0) },
+      precipitation: Math.round((precip[i] ?? 0) * 10) / 10,
+      windSpeed: Math.round((wind[i] ?? 0) * 10) / 10,
+      humidity: Math.round(hum[i] ?? 0),
+      conditions,
+      riskLevel,
+      workSuitability,
+    };
+  });
+
+  // Current weather: use API current if today's date is within range, else first forecast day
+  const cur = data?.current;
+  let current: WeatherData;
+  if (cur) {
+    const conditions = wmoToCondition(cur.weathercode ?? 0);
+    const riskLevel = calculateRiskLevel(cur.temperature_2m ?? 0, cur.wind_speed_10m ?? 0, cur.precipitation ?? 0);
+    current = {
+      date: (cur.time ?? '').split('T')[0] || format(new Date(), 'yyyy-MM-dd'),
+      temperature: {
+        min: Math.round((cur.temperature_2m ?? 0) - 2),
+        max: Math.round((cur.temperature_2m ?? 0) + 2),
+      },
+      precipitation: Math.round((cur.precipitation ?? 0) * 10) / 10,
+      windSpeed: Math.round((cur.wind_speed_10m ?? 0) * 10) / 10,
+      humidity: Math.round(cur.relative_humidity_2m ?? 0),
+      conditions,
+      riskLevel,
+      workSuitability: determineWorkSuitability(riskLevel, conditions),
+    };
+  } else {
+    current = forecast[0];
+  }
+
+  const warnings = generateWeatherWarnings(forecast);
+
   return {
-    date: format(parseISO(entry.validTime), 'yyyy-MM-dd'),
-    temperature: {
-      min: Math.round(temperature - 2), // Rough estimate
-      max: Math.round(temperature + 2)
-    },
-    precipitation: Math.round(precipitationIntensity * 10) / 10,
-    windSpeed: Math.round(windSpeed * 10) / 10,
-    humidity: Math.round(humidity),
-    conditions,
-    riskLevel,
-    workSuitability
+    location: city,
+    region: city as any,
+    coordinates,
+    current,
+    forecast: forecast.slice(0, 7),
+    warnings,
+    lastUpdated: new Date().toISOString(),
   };
 }
 
