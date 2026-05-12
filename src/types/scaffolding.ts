@@ -11,4 +11,7 @@ export interface ScaffoldingTrailer {
   moverNote?: string;
   lastUpdated: string;
   description?: string; // Optional description field
+  lastProjectName?: string;
+  lastProjectLocation?: string;
+  lastReleasedAt?: string;
 }

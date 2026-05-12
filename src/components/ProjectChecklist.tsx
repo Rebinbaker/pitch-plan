@@ -835,7 +835,10 @@ Tack!`);
           ...assignedTrailer,
           status: 'Tillgänglig',
           assignedProject: undefined,
-          lastUpdated: new Date().toISOString().split('T')[0]
+          lastUpdated: new Date().toISOString().split('T')[0],
+          lastProjectName: project.name,
+          lastProjectLocation: project.address || '',
+          lastReleasedAt: new Date().toISOString(),
         };
         
         console.log('SCAFFOLDING RELEASE: Updating trailer', {

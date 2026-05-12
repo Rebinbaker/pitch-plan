@@ -567,6 +567,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          last_project_location: string | null
+          last_project_name: string | null
+          last_released_at: string | null
           name: string
           organization_id: string
           status: string
@@ -577,6 +580,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          last_project_location?: string | null
+          last_project_name?: string | null
+          last_released_at?: string | null
           name: string
           organization_id: string
           status?: string
@@ -587,6 +593,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          last_project_location?: string | null
+          last_project_name?: string | null
+          last_released_at?: string | null
           name?: string
           organization_id?: string
           status?: string

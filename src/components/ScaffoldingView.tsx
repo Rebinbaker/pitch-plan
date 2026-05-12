@@ -177,7 +177,26 @@ export function ScaffoldingView({ scaffolding, onUpdateScaffolding, onAddScaffol
                   return null;
                 })()
               )}
-              
+
+              {/* Last project info when trailer is available */}
+              {trailer.status === 'Tillgänglig' && trailer.lastProjectName && (
+                <div className="bg-green-50 dark:bg-green-950/20 p-2 rounded border border-green-200 dark:border-green-800 space-y-0.5">
+                  <div className="text-xs font-medium text-green-700 dark:text-green-300">
+                    Senast använd på: {trailer.lastProjectName}
+                  </div>
+                  {trailer.lastProjectLocation && (
+                    <div className="text-xs text-green-700/80 dark:text-green-300/80">
+                      {trailer.lastProjectLocation}
+                    </div>
+                  )}
+                  {trailer.lastReleasedAt && (
+                    <div className="text-xs text-green-700/70 dark:text-green-300/70">
+                      Frigjord {new Date(trailer.lastReleasedAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="text-xs text-muted-foreground">
                 Updated: {trailer.lastUpdated}
               </div>
