@@ -139,19 +139,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         notes: project.notes || '',
       });
     } else if (!isEditing) {
-      form.reset({
-        name: '',
-        address: '',
-        customerName: '',
-        customerPhone: '',
-        responsibleSeller: '',
-        constructionStartWeek: '',
-        estimatedWorkDays: 7,
-        rotStatus: 'No',
-        status: 'planned',
-        region: '',
-        notes: '',
-      });
+      form.reset(loadDraft());
     }
   }, [project, isEditing, form]);
 
