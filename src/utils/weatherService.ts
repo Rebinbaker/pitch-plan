@@ -10,8 +10,30 @@ import {
 } from '@/types/weather';
 import { addDays, format, parseISO } from 'date-fns';
 
-// SMHI API endpoints
-const SMHI_FORECAST_URL = 'https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point';
+// Open-Meteo (replaces SMHI which decommissioned the public pmp3g endpoint)
+const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
+const OPEN_METEO_GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
+
+// Cache geocoded city coordinates per session to avoid extra calls
+const cityCoordCache = new Map<string, { lat: number; lon: number }>();
+
+async function geocodeCity(city: string): Promise<{ lat: number; lon: number } | null> {
+  const key = city.toLowerCase();
+  if (cityCoordCache.has(key)) return cityCoordCache.get(key)!;
+  try {
+    const url = `${OPEN_METEO_GEOCODE_URL}?name=${encodeURIComponent(city)}&count=1&language=sv&country=SE`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const hit = data?.results?.[0];
+    if (!hit) return null;
+    const coords = { lat: hit.latitude, lon: hit.longitude };
+    cityCoordCache.set(key, coords);
+    return coords;
+  } catch {
+    return null;
+  }
+}
 
 // Function to extract city from address
 function extractCityFromAddress(address: string): string {
@@ -111,32 +133,62 @@ export async function fetchWeatherForProject(
     
     console.log('WEATHER DEBUG: Final city determined:', city);
     
-    // Get coordinates for the city with fallback support
-    const { lat, lon, actualCity } = findCityCoordinates(city);
+    // Get coordinates: try built-in city map first, then Open-Meteo geocoding
+    let { lat, lon, actualCity } = findCityCoordinates(city);
+    if (actualCity.includes('(fallback)')) {
+      const geo = await geocodeCity(city);
+      if (geo) {
+        lat = geo.lat;
+        lon = geo.lon;
+        actualCity = city;
+        console.log('WEATHER DEBUG: Geocoded coordinates via Open-Meteo:', geo);
+      }
+    }
     console.log('WEATHER DEBUG: Coordinates found:', { lat, lon, actualCity });
-    
+
     // Check if the requested week is in the past
     const isHistoricalWeek = isWeekInPast(startWeek);
     console.log('WEATHER DEBUG: Is historical week?', isHistoricalWeek);
-    
+
     if (isHistoricalWeek) {
-      // For historical weeks, return mock data with appropriate message
       return createHistoricalWeatherData(actualCity, { lat, lon }, startWeek);
     }
-    
-    const url = `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`;
+
+    // Determine date window: target week if provided & in forecast range, else next 7 days
+    const targetDates = getTargetDates(startWeek);
+    const start = targetDates[0];
+    const end = targetDates[targetDates.length - 1];
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const maxDate = format(addDays(new Date(), 15), 'yyyy-MM-dd');
+    const useTarget = start >= todayStr && end <= maxDate;
+
+    const params = new URLSearchParams({
+      latitude: String(lat),
+      longitude: String(lon),
+      daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weathercode,relative_humidity_2m_mean',
+      current: 'temperature_2m,wind_speed_10m,precipitation,relative_humidity_2m,weathercode',
+      wind_speed_unit: 'ms',
+      timezone: 'Europe/Stockholm',
+    });
+    if (useTarget) {
+      params.set('start_date', start);
+      params.set('end_date', end);
+    } else {
+      params.set('forecast_days', '7');
+    }
+
+    const url = `${OPEN_METEO_FORECAST_URL}?${params.toString()}`;
     console.log('WEATHER DEBUG: Fetching from URL:', url);
-    
+
     const response = await fetch(url);
-    
     if (!response.ok) {
-      console.error('WEATHER DEBUG: SMHI API error:', response.status);
+      console.error('WEATHER DEBUG: Open-Meteo API error:', response.status);
       return null;
     }
 
     const data = await response.json();
     console.log('WEATHER DEBUG: Successfully fetched weather data');
-    return processSMHIData(data, actualCity, { lat, lon }, startWeek);
+    return processOpenMeteoData(data, actualCity, { lat, lon });
   } catch (error) {
     console.error('WEATHER DEBUG: Error fetching weather data:', error);
     return null;
@@ -207,79 +259,85 @@ function createHistoricalWeatherData(
   };
 }
 
-function processSMHIData(
-  smhiData: any, 
-  city: string, 
-  coordinates: { lat: number; lon: number },
-  startWeek?: string
-): WeatherForecast {
-  const timeSeries = smhiData.timeSeries || [];
-  
-  // Get current weather (first entry)
-  const currentData = timeSeries[0];
-  const current = parseTimeSeries(currentData);
-  
-  // Get forecast for next 7 days
-  const forecast: WeatherData[] = [];
-  const targetDates = getTargetDates(startWeek);
-  
-  for (const entry of timeSeries.slice(0, 168)) { // 7 days * 24 hours
-    const entryDate = format(parseISO(entry.validTime), 'yyyy-MM-dd');
-    
-    if (targetDates.includes(entryDate)) {
-      const weatherData = parseTimeSeries(entry);
-      
-      // Only add if we don't already have data for this date
-      if (!forecast.find(f => f.date === entryDate)) {
-        forecast.push(weatherData);
-      }
-    }
-  }
-  
-  // Generate warnings
-  const warnings = generateWeatherWarnings(forecast);
-  
-  return {
-    location: city,
-    region: city as any, // For backward compatibility
-    coordinates,
-    current,
-    forecast: forecast.slice(0, 7), // Max 7 days
-    warnings,
-    lastUpdated: new Date().toISOString()
-  };
+// WMO weather code → internal condition
+function wmoToCondition(code: number): WeatherCondition {
+  if (code === 0) return 'clear';
+  if (code <= 2) return 'partly-cloudy';
+  if (code === 3) return 'cloudy';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 57) return 'light-rain';
+  if (code >= 61 && code <= 65) return code >= 65 ? 'heavy-rain' : 'rain';
+  if (code >= 66 && code <= 67) return 'rain';
+  if (code >= 71 && code <= 77) return 'snow';
+  if (code >= 80 && code <= 82) return code === 82 ? 'heavy-rain' : 'rain';
+  if (code >= 85 && code <= 86) return 'snow';
+  if (code >= 95) return 'thunderstorm';
+  return 'partly-cloudy';
 }
 
-function parseTimeSeries(entry: any): WeatherData {
-  const parameters = entry.parameters || [];
-  
-  const getParameter = (name: string) => {
-    const param = parameters.find((p: any) => p.name === name);
-    return param ? param.values[0] : 0;
-  };
-  
-  const temperature = getParameter('t'); // Temperature
-  const precipitation = getParameter('pcat'); // Precipitation category
-  const windSpeed = getParameter('ws'); // Wind speed
-  const humidity = getParameter('r'); // Relative humidity
-  const precipitationIntensity = getParameter('pmean'); // Precipitation mean
-  
-  const conditions = determineWeatherCondition(precipitation, precipitationIntensity, temperature);
-  const riskLevel = calculateRiskLevel(temperature, windSpeed, precipitationIntensity);
-  const workSuitability = determineWorkSuitability(riskLevel, conditions);
-  
+function processOpenMeteoData(
+  data: any,
+  city: string,
+  coordinates: { lat: number; lon: number }
+): WeatherForecast {
+  const daily = data?.daily ?? {};
+  const dates: string[] = daily.time ?? [];
+  const tMax: number[] = daily.temperature_2m_max ?? [];
+  const tMin: number[] = daily.temperature_2m_min ?? [];
+  const precip: number[] = daily.precipitation_sum ?? [];
+  const wind: number[] = daily.wind_speed_10m_max ?? [];
+  const codes: number[] = daily.weathercode ?? [];
+  const hum: number[] = daily.relative_humidity_2m_mean ?? [];
+
+  const forecast: WeatherData[] = dates.map((date, i) => {
+    const conditions = wmoToCondition(codes[i] ?? 0);
+    const riskLevel = calculateRiskLevel(tMax[i] ?? 0, wind[i] ?? 0, precip[i] ?? 0);
+    const workSuitability = determineWorkSuitability(riskLevel, conditions);
+    return {
+      date,
+      temperature: { min: Math.round(tMin[i] ?? 0), max: Math.round(tMax[i] ?? 0) },
+      precipitation: Math.round((precip[i] ?? 0) * 10) / 10,
+      windSpeed: Math.round((wind[i] ?? 0) * 10) / 10,
+      humidity: Math.round(hum[i] ?? 0),
+      conditions,
+      riskLevel,
+      workSuitability,
+    };
+  });
+
+  // Current weather: use API current if today's date is within range, else first forecast day
+  const cur = data?.current;
+  let current: WeatherData;
+  if (cur) {
+    const conditions = wmoToCondition(cur.weathercode ?? 0);
+    const riskLevel = calculateRiskLevel(cur.temperature_2m ?? 0, cur.wind_speed_10m ?? 0, cur.precipitation ?? 0);
+    current = {
+      date: (cur.time ?? '').split('T')[0] || format(new Date(), 'yyyy-MM-dd'),
+      temperature: {
+        min: Math.round((cur.temperature_2m ?? 0) - 2),
+        max: Math.round((cur.temperature_2m ?? 0) + 2),
+      },
+      precipitation: Math.round((cur.precipitation ?? 0) * 10) / 10,
+      windSpeed: Math.round((cur.wind_speed_10m ?? 0) * 10) / 10,
+      humidity: Math.round(cur.relative_humidity_2m ?? 0),
+      conditions,
+      riskLevel,
+      workSuitability: determineWorkSuitability(riskLevel, conditions),
+    };
+  } else {
+    current = forecast[0];
+  }
+
+  const warnings = generateWeatherWarnings(forecast);
+
   return {
-    date: format(parseISO(entry.validTime), 'yyyy-MM-dd'),
-    temperature: {
-      min: Math.round(temperature - 2), // Rough estimate
-      max: Math.round(temperature + 2)
-    },
-    precipitation: Math.round(precipitationIntensity * 10) / 10,
-    windSpeed: Math.round(windSpeed * 10) / 10,
-    humidity: Math.round(humidity),
-    conditions,
-    riskLevel,
-    workSuitability
+    location: city,
+    region: city as any,
+    coordinates,
+    current,
+    forecast: forecast.slice(0, 7),
+    warnings,
+    lastUpdated: new Date().toISOString(),
   };
 }
 
