@@ -113,12 +113,15 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
     return () => sub.unsubscribe();
   }, [form, isEditing]);
 
-  // Watch the region field to filter sellers
+  // Watch the region field (kept for other logic, but sellers are no longer filtered by region)
   const selectedRegion = form.watch('region');
-  
-  // Get all sellers from teams data (both from regular teams and from "Säljare" type teams)
+
+  // Get all sellers from teams data — show every seller regardless of region
   const allSellers = teamsData.flatMap(team => team.sellers || []);
-  const availableSellers = allSellers.filter(seller => seller.region === selectedRegion);
+  // Deduplicate by full name to avoid duplicates across teams
+  const availableSellers = Array.from(
+    new Map(allSellers.map(s => [`${s.firstName} ${s.lastName}`, s])).values()
+  );
 
 
 
