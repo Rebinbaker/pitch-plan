@@ -214,6 +214,30 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
             </div>
           )}
 
+          {/* Accommodation booking */}
+          {project.accommodationBooking && (() => {
+            const checkOut = getAccommodationCheckOutDate(project.accommodationBooking);
+            const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            const daysLeft = Math.ceil((startOfDay(checkOut).getTime() - startOfDay(new Date()).getTime()) / 86400000);
+            const colorClass =
+              daysLeft <= 1 ? 'text-destructive' : daysLeft <= 3 ? 'text-warning' : 'text-foreground';
+            const label =
+              daysLeft < 0
+                ? `${Math.abs(daysLeft)} dag${Math.abs(daysLeft) !== 1 ? 'ar' : ''} sedan utcheckning`
+                : daysLeft === 0
+                ? 'Checkar ut idag'
+                : `${daysLeft} dag${daysLeft !== 1 ? 'ar' : ''} kvar till utcheckning`;
+            return (
+              <div className="flex items-start gap-2 text-sm">
+                <Hotel className={`w-4 h-4 mt-0.5 ${colorClass}`} />
+                <div>
+                  <div className="font-medium">{project.accommodationBooking.name}</div>
+                  <div className={`text-xs ${colorClass}`}>{label}</div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Avvarat Material */}
           {project.avvaratMaterial?.hasLeftoverMaterial && (
             <div className="flex items-center gap-2 text-sm">
