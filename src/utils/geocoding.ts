@@ -1,6 +1,6 @@
 type GeocodeResult = { lat: number; lng: number };
 
-const CACHE_KEY = 'geocode_cache_v1';
+const CACHE_KEY = 'geocode_cache_v2';
 
 function isValidGeocodeResult(value: unknown): value is GeocodeResult {
   if (!value || typeof value !== 'object') return false;
