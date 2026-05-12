@@ -172,6 +172,9 @@ export const useSupabaseStorage = () => {
         location: '',
         moverNote: scaffold.description || '',
         lastUpdated: scaffold.updated_at || scaffold.created_at,
+        lastProjectName: scaffold.last_project_name || undefined,
+        lastProjectLocation: scaffold.last_project_location || undefined,
+        lastReleasedAt: scaffold.last_released_at || undefined,
       }));
       
       setSupabaseScaffolding(mappedScaffolding);
