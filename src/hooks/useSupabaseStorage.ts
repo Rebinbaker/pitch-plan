@@ -438,14 +438,19 @@ export const useSupabaseStorage = () => {
     try {
       // Always use Supabase if user is logged in
       if (user && organizationId) {
+        const updatePayload: any = {
+          name: updatedTrailer.name,
+          status: updatedTrailer.status,
+          description: updatedTrailer.moverNote,
+          updated_at: new Date().toISOString(),
+        };
+        if (updatedTrailer.lastProjectName !== undefined) updatePayload.last_project_name = updatedTrailer.lastProjectName || null;
+        if (updatedTrailer.lastProjectLocation !== undefined) updatePayload.last_project_location = updatedTrailer.lastProjectLocation || null;
+        if (updatedTrailer.lastReleasedAt !== undefined) updatePayload.last_released_at = updatedTrailer.lastReleasedAt || null;
+
         const { error } = await supabase
           .from('scaffolding' as any)
-          .update({
-            name: updatedTrailer.name,
-            status: updatedTrailer.status,
-            description: updatedTrailer.moverNote,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updatePayload)
           .eq('id', updatedTrailer.id);
         
         if (error) throw error;
