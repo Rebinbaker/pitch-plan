@@ -133,32 +133,62 @@ export async function fetchWeatherForProject(
     
     console.log('WEATHER DEBUG: Final city determined:', city);
     
-    // Get coordinates for the city with fallback support
-    const { lat, lon, actualCity } = findCityCoordinates(city);
+    // Get coordinates: try built-in city map first, then Open-Meteo geocoding
+    let { lat, lon, actualCity } = findCityCoordinates(city);
+    if (actualCity.includes('(fallback)')) {
+      const geo = await geocodeCity(city);
+      if (geo) {
+        lat = geo.lat;
+        lon = geo.lon;
+        actualCity = city;
+        console.log('WEATHER DEBUG: Geocoded coordinates via Open-Meteo:', geo);
+      }
+    }
     console.log('WEATHER DEBUG: Coordinates found:', { lat, lon, actualCity });
-    
+
     // Check if the requested week is in the past
     const isHistoricalWeek = isWeekInPast(startWeek);
     console.log('WEATHER DEBUG: Is historical week?', isHistoricalWeek);
-    
+
     if (isHistoricalWeek) {
-      // For historical weeks, return mock data with appropriate message
       return createHistoricalWeatherData(actualCity, { lat, lon }, startWeek);
     }
-    
-    const url = `${SMHI_FORECAST_URL}/lon/${lon}/lat/${lat}/data.json`;
+
+    // Determine date window: target week if provided & in forecast range, else next 7 days
+    const targetDates = getTargetDates(startWeek);
+    const start = targetDates[0];
+    const end = targetDates[targetDates.length - 1];
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const maxDate = format(addDays(new Date(), 15), 'yyyy-MM-dd');
+    const useTarget = start >= todayStr && end <= maxDate;
+
+    const params = new URLSearchParams({
+      latitude: String(lat),
+      longitude: String(lon),
+      daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weathercode,relative_humidity_2m_mean',
+      current: 'temperature_2m,wind_speed_10m,precipitation,relative_humidity_2m,weathercode',
+      wind_speed_unit: 'ms',
+      timezone: 'Europe/Stockholm',
+    });
+    if (useTarget) {
+      params.set('start_date', start);
+      params.set('end_date', end);
+    } else {
+      params.set('forecast_days', '7');
+    }
+
+    const url = `${OPEN_METEO_FORECAST_URL}?${params.toString()}`;
     console.log('WEATHER DEBUG: Fetching from URL:', url);
-    
+
     const response = await fetch(url);
-    
     if (!response.ok) {
-      console.error('WEATHER DEBUG: SMHI API error:', response.status);
+      console.error('WEATHER DEBUG: Open-Meteo API error:', response.status);
       return null;
     }
 
     const data = await response.json();
     console.log('WEATHER DEBUG: Successfully fetched weather data');
-    return processSMHIData(data, actualCity, { lat, lon }, startWeek);
+    return processOpenMeteoData(data, actualCity, { lat, lon });
   } catch (error) {
     console.error('WEATHER DEBUG: Error fetching weather data:', error);
     return null;
