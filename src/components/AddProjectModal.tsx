@@ -73,22 +73,45 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = !!project;
 
+  const DRAFT_KEY = 'addProjectDraft';
+  const emptyDefaults: ProjectFormValues = {
+    name: '',
+    address: '',
+    customerName: '',
+    customerPhone: '',
+    responsibleSeller: '',
+    constructionStartWeek: '',
+    estimatedWorkDays: 7,
+    rotStatus: 'No',
+    status: 'planned',
+    region: '',
+    notes: '',
+  };
+
+  const loadDraft = (): ProjectFormValues => {
+    if (isEditing) return emptyDefaults;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) return { ...emptyDefaults, ...JSON.parse(raw) };
+    } catch {}
+    return emptyDefaults;
+  };
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
-    defaultValues: {
-      name: '',
-      address: '',
-      customerName: '',
-      customerPhone: '',
-      responsibleSeller: '',
-      constructionStartWeek: '',
-      estimatedWorkDays: 7,
-      rotStatus: 'No',
-      status: 'planned',
-      region: '',
-      notes: '',
-    },
+    defaultValues: loadDraft(),
   });
+
+  // Persist draft on every change (only for new projects)
+  React.useEffect(() => {
+    if (isEditing) return;
+    const sub = form.watch((values) => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
+      } catch {}
+    });
+    return () => sub.unsubscribe();
+  }, [form, isEditing]);
 
   // Watch the region field to filter sellers
   const selectedRegion = form.watch('region');
