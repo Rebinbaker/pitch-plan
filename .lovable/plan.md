@@ -1,46 +1,49 @@
-# Boka boende — checklist + karta
+## Visa senaste projekt på lediga ställningsvagnar
 
-Lägger till "Boka boende" som ny checklist-punkt direkt efter "Schedule construction team". Användaren anger boendets namn, **incheckningsdatum** och **antal nätter**. Utcheckningsdatum räknas fram automatiskt. På kartan visas hur många dagar som är kvar till utcheckning.
+När en ställning checkas av som nedmonterad i checklistan ska vagnen komma ihåg vilket projekt som använde den senast. Den informationen visas på vagnens kort så fort den blir "Tillgänglig" igen — så att laget vet var den står och kan köra den vidare.
 
-## Användarflöde
+### Användarflöde
 
-1. I projektets checklista finns en ny rad: **"Boka boende"** (efter "Schedule construction team").
-2. Klick på checkbox eller "Redigera" öppnar en dialog med:
-   - Boendets namn (text)
-   - Incheckningsdatum (datepicker, default = idag)
-   - Antal nätter (siffra, min 1, default 1)
-   - Beräknad utcheckning visas live under fälten (incheckning + nätter)
-3. Vid spara: punkten markeras som klar, bokningen sparas på projektet, en aktivitetslogg-rad skapas.
-4. Under raden visas en sammanfattning: *"Hotell X · 3 nätter · checkar ut tors 14 maj"* med "Redigera"-knapp.
-5. På kartans projekt-popup visas en ny rad om bokning finns: namn + "X dagar kvar till utcheckning" (röd ≤1 dag, gul ≤3 dagar, annars neutral).
+1. I projektets checklista bockas "Nedmontering ställning" som klar.
+2. Den tilldelade vagnen frigörs (status → Tillgänglig) precis som idag.
+3. **Nytt:** vagnen taggas med projektets namn + adress + datum för frigörande.
+4. På Ställningar-sidan (desktop + mobil) visas på kortet, när status = Tillgänglig:
+   *"Senast använd på: Villa Andersson – Storgatan 15 (frigjord 12 maj)"*
+5. När vagnen tilldelas ett nytt projekt rensas/skrivs taggen över när den frigörs nästa gång.
 
-## Datamodell
+### Datamodell
 
-`src/types/project.ts`:
-- Lägg till `accommodationBooking?: { name: string; checkInDate: string; nights: number; bookedAt?: string }` på `Project`.
-- Lägg till `accommodationConfirmed?: boolean` på `ChecklistItem`.
-- Lägg till `{ label: 'Boka boende', completed: false, weight: 2 }` i `defaultChecklist` direkt efter `Schedule construction team`.
-- Hjälpfunktion `getCheckOutDate(booking)` = `checkInDate + nights dagar`.
+Två nya kolumner på `public.scaffolding`:
+- `last_project_name text`
+- `last_project_location text`
+- `last_released_at timestamptz`
 
-## Migration
+(Räcker med text — vi behöver bara visa det, inte joina mot projects. Om projektet senare raderas finns informationen kvar.)
 
-Ny kolumn på `projects`-tabellen:
-```
-accommodation_booking jsonb
-```
-(En enkel jsonb räcker — ingen separat tabell behövs eftersom det är 1:1 mot projekt och inga frågor körs mot fälten.)
+På `ScaffoldingTrailer`-typen läggs motsvarande fält till:
+- `lastProjectName?: string`
+- `lastProjectLocation?: string`
+- `lastReleasedAt?: string`
 
-## Filer som ändras
+### Filer som ändras
 
-- `supabase/migrations/...` (ny) — lägger till `accommodation_booking` kolumn.
-- `src/types/project.ts` — typer + defaultChecklist + helper.
-- `src/components/ProjectChecklist.tsx` — specialhantering av "Boka boende": dialog, sparlogik, sammanfattningsrad.
-- `src/components/ProjectMapView.tsx` — visa "X dagar kvar till utcheckning" i popup när bokning finns.
-- `src/components/ProjectDashboard.tsx` (eller där DB ↔ frontend mappas) — läs/skriv `accommodation_booking`.
-- `src/components/mobile/MobileProjectDetailModal.tsx` — säkerställ att samma checklist-rad fungerar på mobil.
+- `supabase/migrations/...` (ny) — lägger till tre kolumner.
+- `src/types/scaffolding.ts` — nya valfria fält.
+- `src/integrations/supabase/types.ts` — regenereras efter migration.
+- `src/hooks/useSupabaseStorage.ts`
+  - Mappar in nya kolumnerna i `loadSupabaseScaffolding`.
+  - `updateScaffolding` skickar med `last_project_name`, `last_project_location`, `last_released_at` när de finns.
+- `src/components/ProjectChecklist.tsx` (rad 833–846) — när vagnen frigörs sätts:
+  ```ts
+  lastProjectName: project.name,
+  lastProjectLocation: project.address,
+  lastReleasedAt: new Date().toISOString(),
+  ```
+- `src/components/ScaffoldingView.tsx` — visa rad "Senast använd på: …" på kortet om `status === 'Tillgänglig'` och `lastProjectName` finns.
+- `src/components/mobile/MobileScaffoldingView.tsx` — samma rad i mobilkortet.
 
-## Antaganden
+### Antaganden
 
-- Ett boende per projekt.
-- Incheckningsdatum default = idag, antal nätter default = 1.
-- Inga separata notiser nära utcheckning (bara visuell färgmarkering på kartan).
+- Endast en "senaste användning" sparas (skrivs över vid nästa frigörande).
+- Visas bara när vagnen är *Tillgänglig* — när den är *I bruk* visas det aktiva projektet som idag.
+- Befintliga vagnar får tomma fält tills de frigörs nästa gång (ingen retroaktiv backfill).
