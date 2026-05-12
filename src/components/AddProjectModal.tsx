@@ -257,7 +257,8 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
         });
       }
 
-      form.reset();
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+      form.reset(emptyDefaults);
       onClose();
     } catch (error) {
       toast({
