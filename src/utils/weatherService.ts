@@ -10,8 +10,30 @@ import {
 } from '@/types/weather';
 import { addDays, format, parseISO } from 'date-fns';
 
-// SMHI API endpoints
-const SMHI_FORECAST_URL = 'https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point';
+// Open-Meteo (replaces SMHI which decommissioned the public pmp3g endpoint)
+const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
+const OPEN_METEO_GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
+
+// Cache geocoded city coordinates per session to avoid extra calls
+const cityCoordCache = new Map<string, { lat: number; lon: number }>();
+
+async function geocodeCity(city: string): Promise<{ lat: number; lon: number } | null> {
+  const key = city.toLowerCase();
+  if (cityCoordCache.has(key)) return cityCoordCache.get(key)!;
+  try {
+    const url = `${OPEN_METEO_GEOCODE_URL}?name=${encodeURIComponent(city)}&count=1&language=sv&country=SE`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const hit = data?.results?.[0];
+    if (!hit) return null;
+    const coords = { lat: hit.latitude, lon: hit.longitude };
+    cityCoordCache.set(key, coords);
+    return coords;
+  } catch {
+    return null;
+  }
+}
 
 // Function to extract city from address
 function extractCityFromAddress(address: string): string {
