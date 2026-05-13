@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppNavSidebar } from '@/components/AppNavSidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -275,18 +277,26 @@ const Index = () => {
             </div>
           ) : (
             /* Desktop Layout */
-            <div>
+            <SidebarProvider defaultOpen={false}>
+              <div className="flex w-full">
+                <AppNavSidebar
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  unreadNotifications={notifications.filter(n => !n.isRead).length}
+                />
+                <div className="flex-1 min-w-0">
               {/* Header with logo on left and profile on right */}
               <div className="flex justify-between items-center mb-6">
                 {/* Logo on the left */}
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                  <SidebarTrigger />
                   <img 
                     src="/lovable-uploads/c09b6995-d03a-4e86-b925-942212af5d38.png" 
                     alt="Lokala Hantverkarna" 
                     className="h-20 w-auto hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+
                 {/* Profile on the right */}
                 <div className="flex items-center gap-3">
                   <DropdownMenu>
@@ -331,25 +341,6 @@ const Index = () => {
               </div>
               
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-10 hover:bg-background/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-                  <TabsTrigger value="projects">Projekt</TabsTrigger>
-                  <TabsTrigger value="scaffolding">Ställningsvagnar</TabsTrigger>
-                  <TabsTrigger value="teams">Team</TabsTrigger>
-                  <TabsTrigger value="customers">Kunder</TabsTrigger>
-                  <TabsTrigger value="files">Filer</TabsTrigger>
-                  <TabsTrigger value="planning">Planering</TabsTrigger>
-                  <TabsTrigger value="timetracking">Tidsrapporter</TabsTrigger>
-                  <TabsTrigger value="material">Avvarat Material</TabsTrigger>
-                  <TabsTrigger value="security">Säkerhet</TabsTrigger>
-                  <TabsTrigger value="notifications">
-                    Meddelanden
-                    {notifications.filter(n => !n.isRead).length > 0 && (
-                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                        {notifications.filter(n => !n.isRead).length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                </TabsList>
 
                 <TabsContent value="projects" className="space-y-6">
                   <ProjectDashboard 
@@ -458,7 +449,9 @@ const Index = () => {
                   setShowMigrationModal(false);
                 }}
               />
-            </div>
+                </div>
+              </div>
+            </SidebarProvider>
           )}
         </div>
       </div>
