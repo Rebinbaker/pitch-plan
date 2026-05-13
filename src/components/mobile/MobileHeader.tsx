@@ -15,7 +15,8 @@ import {
   Calendar,
   Package,
   Shield,
-  Bell
+  Bell,
+  Contact
 } from 'lucide-react';
 
 interface MobileHeaderProps {
@@ -45,6 +46,7 @@ export function MobileHeader({
     { id: 'files', label: 'Filer', icon: FileText },
     { id: 'planning', label: 'Veckoplanering', icon: Calendar },
     { id: 'material', label: 'Material', icon: Package },
+    { id: 'resources', label: 'Resurser', icon: Contact },
     { id: 'security', label: 'Säkerhet', icon: Shield },
     { id: 'notifications', label: 'Meddelanden', icon: Bell, badge: unreadNotifications },
   ];
