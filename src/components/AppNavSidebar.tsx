@@ -1,4 +1,4 @@
-import { FolderKanban, Truck, Users, UserCircle, FileText, CalendarDays, Clock, Package, Shield, Bell } from 'lucide-react';
+import { FolderKanban, Truck, Users, UserCircle, FileText, CalendarDays, Clock, Package, Shield, Bell, Contact } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +26,7 @@ const items = [
   { value: 'planning', label: 'Planering', icon: CalendarDays },
   { value: 'timetracking', label: 'Tidsrapporter', icon: Clock },
   { value: 'material', label: 'Avvarat Material', icon: Package },
+  { value: 'resources', label: 'Resurser', icon: Contact },
   { value: 'security', label: 'Säkerhet', icon: Shield },
   { value: 'notifications', label: 'Meddelanden', icon: Bell },
 ];

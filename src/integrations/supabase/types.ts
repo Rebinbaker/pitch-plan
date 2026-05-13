@@ -562,6 +562,75 @@ export type Database = {
         }
         Relationships: []
       }
+      resources: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          contact_person: string | null
+          counties: string[]
+          created_at: string
+          email: string | null
+          id: string
+          is_favorite: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          rating: number | null
+          resource_types: string[]
+          times_used: number
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          contact_person?: string | null
+          counties?: string[]
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_favorite?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          rating?: number | null
+          resource_types?: string[]
+          times_used?: number
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          contact_person?: string | null
+          counties?: string[]
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_favorite?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          rating?: number | null
+          resource_types?: string[]
+          times_used?: number
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       scaffolding: {
         Row: {
           created_at: string

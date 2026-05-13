@@ -31,6 +31,7 @@ import { NotificationsView } from '@/components/NotificationsView';
 import { AvvaratMaterialOverview } from '@/components/AvvaratMaterialOverview';
 import { SecurityStatus } from '@/components/SecurityStatus';
 import { CustomersView } from '@/components/CustomersView';
+import { ResourcesView } from '@/components/resources/ResourcesView';
 import { DataMigrationModal } from '@/components/DataMigrationModal';
 import { DataExportModal } from '@/components/DataExportModal';
 import TimeTrackingView from '@/components/TimeTrackingView';
@@ -262,6 +263,9 @@ const Index = () => {
                 {activeTab === 'material' && (
                   <MobileMaterialView projects={projects} />
                 )}
+                {activeTab === 'resources' && (
+                  <div className="p-4"><ResourcesView /></div>
+                )}
                 {activeTab === 'security' && (
                   <MobileSecurityView />
                 )}
@@ -413,6 +417,10 @@ const Index = () => {
 
                 <TabsContent value="material" className="space-y-6">
                   <AvvaratMaterialOverview projects={projects} />
+                </TabsContent>
+
+                <TabsContent value="resources" className="space-y-6">
+                  <ResourcesView />
                 </TabsContent>
 
                 <TabsContent value="security" className="space-y-6">
