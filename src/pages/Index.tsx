@@ -277,18 +277,26 @@ const Index = () => {
             </div>
           ) : (
             /* Desktop Layout */
-            <div>
+            <SidebarProvider defaultOpen={false}>
+              <div className="flex w-full">
+                <AppNavSidebar
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  unreadNotifications={notifications.filter(n => !n.isRead).length}
+                />
+                <div className="flex-1 min-w-0">
               {/* Header with logo on left and profile on right */}
               <div className="flex justify-between items-center mb-6">
                 {/* Logo on the left */}
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                  <SidebarTrigger />
                   <img 
                     src="/lovable-uploads/c09b6995-d03a-4e86-b925-942212af5d38.png" 
                     alt="Lokala Hantverkarna" 
                     className="h-20 w-auto hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+
                 {/* Profile on the right */}
                 <div className="flex items-center gap-3">
                   <DropdownMenu>
