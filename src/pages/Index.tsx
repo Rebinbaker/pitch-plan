@@ -449,7 +449,9 @@ const Index = () => {
                   setShowMigrationModal(false);
                 }}
               />
-            </div>
+                </div>
+              </div>
+            </SidebarProvider>
           )}
         </div>
       </div>
