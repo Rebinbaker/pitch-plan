@@ -263,6 +263,9 @@ const Index = () => {
                 {activeTab === 'material' && (
                   <MobileMaterialView projects={projects} />
                 )}
+                {activeTab === 'resources' && (
+                  <div className="p-4"><ResourcesView /></div>
+                )}
                 {activeTab === 'security' && (
                   <MobileSecurityView />
                 )}
