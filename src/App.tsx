@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import WorkerApp from "./pages/WorkerApp";
+import ScaffolderApp from "./pages/ScaffolderApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
