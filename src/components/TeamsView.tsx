@@ -297,6 +297,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               <SelectItem value="Internt">Internt</SelectItem>
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
               <SelectItem value="Säljare">Säljare</SelectItem>
+              <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
             </SelectContent>
           </Select>
           
