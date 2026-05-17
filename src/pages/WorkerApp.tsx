@@ -386,7 +386,7 @@ const WorkerAppInner = () => {
                     className="w-full mt-2"
                     size="lg"
                     disabled={!!openCheckIn || working === job.project_id || !job.hourly_rate}
-                    onClick={() => handleCheckIn(job)}
+                    onClick={() => startCheckInFlow(job)}
                   >
                     {working === job.project_id ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
