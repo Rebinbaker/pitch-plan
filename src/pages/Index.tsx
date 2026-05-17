@@ -183,6 +183,10 @@ const Index = () => {
     deleteTeam(teamId);
   };
 
+  if (!roleLoading && isWorker) {
+    return <Navigate to="/worker" replace />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
