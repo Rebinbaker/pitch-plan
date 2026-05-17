@@ -46,11 +46,6 @@ const Index = () => {
   const { isAdmin, role, loading: roleLoading, isWorker } = useUserRole();
   const isMobile = useIsMobile();
   
-  // Workers go straight to their app
-  if (!roleLoading && isWorker) {
-    return <Navigate to="/worker" replace />;
-  }
-  
   // Debug logging
   console.log('Current user role:', role, 'isAdmin:', isAdmin, 'roleLoading:', roleLoading);
   const [username, setUsername] = useState<string>('');
@@ -187,6 +182,10 @@ const Index = () => {
   const handleDeleteTeam = (teamId: string) => {
     deleteTeam(teamId);
   };
+
+  if (!roleLoading && isWorker) {
+    return <Navigate to="/worker" replace />;
+  }
 
   if (loading) {
     return (
