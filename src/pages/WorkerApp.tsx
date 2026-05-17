@@ -65,6 +65,7 @@ const WorkerAppInner = () => {
   const { user, signOut } = useAuth();
   const { organizationId } = useOrganization();
   const [jobs, setJobs] = useState<AssignedJob[]>([]);
+  const [redirectToScaffolder, setRedirectToScaffolder] = useState(false);
   const [openCheckIn, setOpenCheckIn] = useState<OpenCheckIn | null>(null);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(true);
