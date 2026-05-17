@@ -1089,6 +1089,75 @@ export type Database = {
           },
         ]
       }
+      worker_check_ins: {
+        Row: {
+          check_in_at: string
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_out_at: string | null
+          check_out_lat: number | null
+          check_out_lng: number | null
+          created_at: string
+          distance_km: number | null
+          duration_hours: number | null
+          hourly_rate_snapshot: number
+          id: string
+          notes: string | null
+          organization_id: string
+          project_id: string
+          project_name: string | null
+          team_id: string | null
+          team_member_id: string | null
+          updated_at: string
+          user_id: string
+          wage_amount: number | null
+        }
+        Insert: {
+          check_in_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_at?: string | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          created_at?: string
+          distance_km?: number | null
+          duration_hours?: number | null
+          hourly_rate_snapshot?: number
+          id?: string
+          notes?: string | null
+          organization_id: string
+          project_id: string
+          project_name?: string | null
+          team_id?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+          user_id: string
+          wage_amount?: number | null
+        }
+        Update: {
+          check_in_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_at?: string | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          created_at?: string
+          distance_km?: number | null
+          duration_hours?: number | null
+          hourly_rate_snapshot?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          project_id?: string
+          project_name?: string | null
+          team_id?: string | null
+          team_member_id?: string | null
+          updated_at?: string
+          user_id?: string
+          wage_amount?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1126,7 +1195,7 @@ export type Database = {
       sync_trailer_status: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "worker"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1254,7 +1323,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "worker"],
     },
   },
 } as const
