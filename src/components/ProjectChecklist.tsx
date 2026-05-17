@@ -1670,9 +1670,10 @@ Tack!`);
                               Inget team valt
                             </SelectItem>
                             {teams.filter(team => 
-                              team.availabilityNextWeek === 'Available' || 
+                              team.type !== 'Säljare' &&
+                              (team.availabilityNextWeek === 'Available' || 
                               team.availabilityNextWeek === 'Tillgänglig' || 
-                              team.name === project.constructionTeam
+                              team.name === project.constructionTeam)
                             )
                               .map(team => (
                                 <SelectItem 
