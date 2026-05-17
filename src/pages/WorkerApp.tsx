@@ -449,6 +449,67 @@ const WorkerAppInner = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!pendingJob} onOpenChange={(o) => !o && closePhotoDialog()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verifiera incheckning med foto</DialogTitle>
+          </DialogHeader>
+          {pendingJob && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                Ta ett foto från arbetsplatsen — t.ex. taket, ställningen eller skylten. Detta sparas som verifikation.
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-2 flex items-center justify-center min-h-[200px]">
+                {photoPreview ? (
+                  <div className="relative w-full">
+                    <img src={photoPreview} alt="Förhandsvisning" className="w-full max-h-[300px] object-contain rounded" />
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-2 right-2 h-7 w-7"
+                      onClick={() => { setPhotoFile(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground text-sm py-8">
+                    Inget foto valt än
+                  </div>
+                )}
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={onPhotoSelected}
+              />
+              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+                <Camera className="w-4 h-4 mr-2" /> {photoPreview ? 'Ta nytt foto' : 'Ta foto'}
+              </Button>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={closePhotoDialog} disabled={working === pendingJob?.project_id}>
+              Avbryt
+            </Button>
+            <Button
+              onClick={confirmCheckIn}
+              disabled={!photoFile || working === pendingJob?.project_id}
+            >
+              {working === pendingJob?.project_id ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              Bekräfta incheckning
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
