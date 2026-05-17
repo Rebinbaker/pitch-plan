@@ -9,6 +9,9 @@ export interface TeamMember {
   position?: string;
   email?: string;
   phone?: string;
+  hourly_rate?: number;
+  user_id?: string;
+  login_email?: string;
 }
 
 export interface Seller {

@@ -5,12 +5,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { 
   User, Crown, Clock, AlertTriangle, TrendingUp, 
-  Phone, Mail, Edit, CheckCircle, XCircle, Trash2 
+  Phone, Mail, Edit, CheckCircle, XCircle, Trash2, Wallet, KeyRound
 } from 'lucide-react';
 import { TeamMember, ConstructionTeam } from '@/types/team';
 import { WorkloadMetrics } from '@/types/workload';
 import { getWorkloadColor } from '@/utils/workloadCalculations';
 import { AddTeamMemberModal } from './AddTeamMemberModal';
+import { CreateWorkerLoginModal } from './CreateWorkerLoginModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,6 +190,29 @@ export function TeamMemberCard({
             )}
           </div>
         )}
+
+        {/* Hourly rate */}
+        <div className="flex items-center gap-2 text-sm">
+          <Wallet className="w-4 h-4 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            Timlön: {member.hourly_rate ? `${member.hourly_rate} kr/h` : 'Ej satt'}
+          </span>
+        </div>
+
+        {/* Worker login */}
+        <div className="pt-2 border-t">
+          <CreateWorkerLoginModal
+            team={team}
+            member={member}
+            onCreated={() => onUpdateTeam({ ...team })}
+            trigger={
+              <Button variant={member.user_id ? 'outline' : 'default'} size="sm" className="w-full">
+                <KeyRound className="w-4 h-4 mr-2" />
+                {member.user_id ? `Inlogg klart${member.login_email ? ` (${member.login_email})` : ''}` : 'Skapa inlogg för byggare'}
+              </Button>
+            }
+          />
+        </div>
 
         {/* Skills */}
         {member.skills && member.skills.length > 0 && (

@@ -31,6 +31,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
     email: editingMember?.email || '',
     phone: editingMember?.phone || '',
     skills: editingMember?.skills?.join(', ') || '',
+    hourly_rate: editingMember?.hourly_rate?.toString() || '',
     isLeader: editingMember ? team.leader === `${editingMember.firstName} ${editingMember.lastName}` : false
   });
 
@@ -46,6 +47,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       position: currentMember.position || undefined,
       email: currentMember.email || undefined,
       phone: currentMember.phone || undefined,
+      hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
       skills: currentMember.skills 
         ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
         : [],
@@ -60,6 +62,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       email: '',
       phone: '',
       skills: '',
+      hourly_rate: '',
       isLeader: false
     });
   };
@@ -80,6 +83,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
         position: currentMember.position || undefined,
         email: currentMember.email || undefined,
         phone: currentMember.phone || undefined,
+        hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
         skills: currentMember.skills 
           ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
           : []
@@ -139,6 +143,7 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       email: '',
       phone: '',
       skills: '',
+      hourly_rate: '',
       isLeader: false
     });
     setOpen(false);
@@ -227,15 +232,29 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="email">E-post</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={currentMember.email}
-                  onChange={(e) => setCurrentMember({ ...currentMember, email: e.target.value })}
-                  placeholder="namn@example.com"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">E-post</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={currentMember.email}
+                    onChange={(e) => setCurrentMember({ ...currentMember, email: e.target.value })}
+                    placeholder="namn@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hourly_rate">Timlön (kr/h)</Label>
+                  <Input
+                    id="hourly_rate"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={currentMember.hourly_rate}
+                    onChange={(e) => setCurrentMember({ ...currentMember, hourly_rate: e.target.value })}
+                    placeholder="t.ex. 280"
+                  />
+                </div>
               </div>
 
               <div>
