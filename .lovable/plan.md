@@ -1,58 +1,68 @@
-# Bygg-app: incheckning & lön per medlem
+# Ställningsmontör-app (egen vy som uppdaterar projektkortet)
 
-Mål: När ett arbetslag tilldelas ett projekt ska varje byggare i laget kunna logga in i appen, se sina tilldelade jobb och GPS-checka in/ut. Timern börjar vid incheckning och stoppas vid utcheckning. Lönen beräknas automatiskt utifrån timlönen som är satt på medlemmen i Team-fliken.
+## Mål
+Ge ställningsmontörer en egen mobilvänlig vy (likt `WorkerApp`) där de bara ser sina tilldelade projekt och kan bekräfta tre steg per projekt:
+1. **Ställning bokad**
+2. **Transport bokad**
+3. **Ställning uppmonterad på plats**
 
-## Dina val
-- **Inlogg:** Du skapar konto åt varje byggare (e-post + lösenord) från Team-fliken.
-- **Timlön:** `hourly_rate` per `TeamMember` på Team-fliken.
-- **In/ut:** Individuellt — varje byggare själv.
-- **App-form:** Samma kodbas, ny mobilvy `worker` med begränsad meny (funkar redan i Capacitor).
+När montören bockar i ett steg uppdateras motsvarande fält på projektet så att admin/projektledare ser det direkt i checklistan på projektkortet. Samma princip som ni redan har för "byggare" — varje roll jobbar i sin egen vy och uppdaterar samma projektkort.
 
-## Vad som byggs
+## Hur det knyts ihop med befintligt system
 
-### 1. Databas (migrering)
-- Ny enum-roll `worker` i `app_role`.
-- Lägg till på `teams.members` (jsonb-fält per medlem):
-  - `hourly_rate` (numeric) — sätts på Team-fliken
-  - `user_id` (uuid, nullable) — kopplar medlem till auth-användare när konto skapats
-- Ny tabell `worker_check_ins`:
-  - `user_id`, `team_member_id`, `team_id`, `project_id`, `organization_id`
-  - `check_in_at`, `check_out_at`
-  - `check_in_lat/lng`, `check_out_lat/lng`, `distance_km`
-  - `hourly_rate_snapshot` (numeric) — låses vid incheckning
-  - `duration_hours`, `wage_amount` (beräknas vid utcheckning)
-  - RLS: organisationsmedlemmar kan se egna check-ins; admin ser alla.
-- Edge function: `create-worker-account` (admin-only) som skapar auth-användare, sätter rollen `worker` och länkar `team_member_id` → `user_id` i teams.members.
+- **Tilldelning:** Ett projekts ställningsteam pekas ut via `project.constructionTeam` redan idag (eller liknande fält). Vi inför ett separat fält `scaffolding_team` på projektet så ett bygge kan ha både ett byggteam och ett ställningsteam samtidigt utan att krocka.
+- **Vilka ser projektet:** En ställningsmontör (TeamMember i ett team av typ `Ställningsmontör`) ser bara projekt där deras team är satt som `scaffolding_team`.
+- **Roller:** Vi använder samma `worker`-roll som idag (skapas via "Create worker login"). Routing baseras på *teamets typ*, inte på en ny DB-roll — montörer som tillhör ett Ställningsmontör-team får ställningsvyn, övriga workers får byggarvyn.
 
-### 2. Team-fliken (admin/projektledare)
-- I `AddTeamMemberModal`: nytt fält **Timlön (kr/h)**.
-- I `TeamMemberCard`: knapp **"Skapa inlogg"** → öppnar dialog (e-post + lösenord) → anropar edge-funktionen → visar status "Inlogg skapat" + e-post.
-- Visa hourly_rate på kortet.
+## Nya/uppdaterade ytor
 
-### 3. Byggar-vy (`/worker` rutt)
-Tre flikar i mobilanpassad layout:
-- **Mina jobb idag** — listar projekt där byggaren ingår i `construction_team` på projektet, med adress, lagledare, kontaktinfo.
-- **Checka in/ut** — stor knapp som använder befintlig `LocationVerification` (1 km radie från projektadress). Visar live-timer och dagens intjänade lön. Endast incheckning tillåten på tilldelade projekt.
-- **Min historik** — egna check-ins, timmar, lön per dag/vecka/månad.
+### 1. Ny route `/scaffolder` (ny sida `src/pages/ScaffolderApp.tsx`)
+Tre kort per tilldelat projekt med adress, projektnamn, lagledare och tre toggle-knappar:
+- ☐ Bokat ställningar (datum + ev. anteckning)
+- ☐ Bokat transport (datum + ev. anteckning)
+- ☐ Ställningar uppmonterade (kräver foto, samma flöde som dagens incheckning)
 
-### 4. Routing & roller
-- `ProtectedRoute` förbättras: roll `worker` redirectas alltid till `/worker`. Övriga roller får valet (men kan besöka `/worker`).
-- `AppNavSidebar` döljs för worker-rollen; istället en minimal mobilbottenmeny.
-- Auth-sidan oförändrad — byggaren loggar in med konto admin skapat.
+Varje bekräftelse är "engångs"-action (kan ångras endast av admin). Visar status, vem som bekräftade och när.
 
-### 5. Lönrapport (admin)
-- Ny vy under Tidsregistrering: "Lönrapport" där admin väljer period och team och får summa timmar + lön per byggare. Bygger på `worker_check_ins`.
+### 2. Routing i `src/App.tsx` / `src/pages/Index.tsx`
+Vid inloggning: hämta användarens team. Om hen tillhör ett team med `type = 'Ställningsmontör'` → redirect till `/scaffolder`. Om `worker` men byggteam → `/worker` (befintligt). Övriga → admin-vyn.
+
+### 3. Projektchecklistan (admin-sida)
+Befintliga checklist-item `Ställningshantering` (och relaterade ställnings-actions) får tre understatus som speglar montörens bekräftelser. Auto-bockas när alla tre är klara. Visar liten badge "Bekräftat av [montör] · [datum]" så projektledaren ser källan.
+
+### 4. Tilldela ställningsteam till projekt
+I `MobileEditProjectModal` och projektets edit-flöde: ny dropdown "Ställningsteam" som **bara** listar team av typ `Ställningsmontör` (motsvarande filtret som redan utesluter Säljare/Ställningsmontör från byggteam-dropdownen, fast tvärtom).
+
+## Databasändringar
+
+Ny tabell `scaffolding_confirmations` (en rad per projekt):
+
+| fält | typ |
+|---|---|
+| project_id | uuid |
+| organization_id | uuid |
+| booked_at / booked_by / booked_note | timestamptz / uuid / text |
+| transport_booked_at / _by / _note | – |
+| assembled_at / _by / _note / _photo_url | – + text |
+
+RLS:
+- SELECT: org members
+- INSERT/UPDATE: org member **och** användaren tillhör projektets `scaffolding_team`
+- Admin får alltid skriva
+
+Tillägg på `projects`: `scaffolding_team_id uuid` (nullable).
+
+Storage: återanvänd bucket `worker-checkin-photos` för uppmonteringsfoton (eller ny `scaffolding-photos` om ni vill separera — säg till).
 
 ## Tekniska detaljer
-- Geofencing: återanvänd `LocationVerification` (1 km). Block om ej verifierad.
-- Timer: räknas client-side från `check_in_at`, autouppdatering var 30 s.
-- Lön = `duration_hours * hourly_rate_snapshot` (snapshot låser lönen mot retroaktiva ändringar).
-- Edge function `create-worker-account` behöver `SUPABASE_SERVICE_ROLE_KEY` (finns) för att skapa användare via admin-API.
-- För Capacitor: GPS funkar redan; ingen ny native-plugin behövs.
 
-## Frågor jag inte tar ställning till nu (kan läggas till senare)
-- Foto-verifiering vid in/ut (befintlig `PhotoVerification` finns att aktivera).
-- Påminnelser/notiser om byggare glömmer checka ut.
-- Övertid/OB-regler.
+- `ScaffolderApp.tsx` återanvänder mönstret från `WorkerApp.tsx` (auth-guard, hämtning av tilldelade projekt, foto-capture med `capture="environment"`, GPS-verifiering valfri för uppmontering).
+- Ny hook `useScaffolderJobs` som returnerar projekt där `scaffolding_team_id` matchar något av användarens team.
+- I `ProjectChecklist.tsx` läs `scaffolding_confirmations` och rendera de tre understegen som read-only checkboxar för admin (de bockas av montören).
+- Notifiering till projektledaren via befintliga `notifications`-tabellen när ett steg bekräftas.
 
-Säg till om något ska ändras i planen, annars implementerar jag den.
+## Öppna frågor innan jag bygger
+
+1. Ska "transport bokad" innehålla val av leverantör / vilken ställningsvagn (kopplat till befintliga `scaffolding`-tabellen), eller räcker fri text?
+2. Ska foto vara obligatoriskt även för "bokat ställningar" och "bokat transport", eller bara för uppmontering?
+3. Vill du att nedmontering också ska in i denna vy senare (matchar checklist-itemet "Nedmontering av ställningar")? Jag kan lägga grunden för det nu.
