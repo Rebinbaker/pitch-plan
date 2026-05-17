@@ -210,9 +210,9 @@ export function TeamMemberCard({
                 <KeyRound className="w-4 h-4 mr-2" />
                 {member.user_id
                   ? `Inlogg klart${member.login_email ? ` (${member.login_email})` : ''}`
-                  : team.team_type === 'Ställningsmontör'
+                  : team.type === 'Ställningsmontör'
                     ? 'Skapa inlogg för ställningsmontör'
-                    : team.team_type === 'Säljare'
+                    : team.type === 'Säljare'
                       ? 'Skapa inlogg för säljare'
                       : 'Skapa inlogg för byggare'}
               </Button>
