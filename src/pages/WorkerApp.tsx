@@ -177,12 +177,23 @@ const WorkerAppInner = () => {
     });
   });
 
-  const handleCheckIn = async (job: AssignedJob) => {
-    if (!user || !organizationId) return;
+  const startCheckInFlow = (job: AssignedJob) => {
     if (openCheckIn) {
       toast({ title: 'Du har en pågående incheckning', description: 'Checka ut först.', variant: 'destructive' });
       return;
     }
+    setPendingJob(job);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  const confirmCheckIn = async () => {
+    if (!pendingJob || !user || !organizationId) return;
+    if (!photoFile) {
+      toast({ title: 'Foto krävs', description: 'Ta ett foto för att verifiera incheckningen.', variant: 'destructive' });
+      return;
+    }
+    const job = pendingJob;
     setWorking(job.project_id);
     try {
       const pos = await getPosition();
@@ -203,6 +214,14 @@ const WorkerAppInner = () => {
         }
       }
 
+      // Upload photo
+      const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('worker-checkin-photos')
+        .upload(path, photoFile, { contentType: photoFile.type || 'image/jpeg', upsert: false });
+      if (upErr) throw upErr;
+
       const { data, error } = await supabase.from('worker_check_ins').insert({
         organization_id: organizationId,
         user_id: user.id,
@@ -214,11 +233,13 @@ const WorkerAppInner = () => {
         check_in_lng: pos.coords.longitude,
         distance_km: distanceKm,
         hourly_rate_snapshot: job.hourly_rate,
+        check_in_photo_url: path,
       }).select().single();
 
       if (error) throw error;
       toast({ title: 'Incheckad', description: `${job.project_name} — timer igång` });
       setOpenCheckIn(data as any);
+      closePhotoDialog();
     } catch (e: any) {
       toast({ title: 'Kunde inte checka in', description: e.message, variant: 'destructive' });
     } finally {
