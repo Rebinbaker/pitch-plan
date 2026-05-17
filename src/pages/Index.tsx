@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppNavSidebar } from '@/components/AppNavSidebar';
@@ -43,8 +43,13 @@ import { toast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { signOut, user } = useAuth();
-  const { isAdmin, role, loading: roleLoading } = useUserRole();
+  const { isAdmin, role, loading: roleLoading, isWorker } = useUserRole();
   const isMobile = useIsMobile();
+  
+  // Workers go straight to their app
+  if (!roleLoading && isWorker) {
+    return <Navigate to="/worker" replace />;
+  }
   
   // Debug logging
   console.log('Current user role:', role, 'isAdmin:', isAdmin, 'roleLoading:', roleLoading);
