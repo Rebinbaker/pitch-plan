@@ -102,7 +102,7 @@ const WorkerAppInner = () => {
     setLoading(true);
     try {
       // find teams where this user is a member
-      const { data: teams, error: teamsErr } = await supabase
+      const { data: teams, error: teamsErr } = await (supabase as any)
         .from('teams')
         .select('id, name, type, members, leader, organization_id')
         .eq('organization_id', organizationId);
