@@ -56,6 +56,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
       case 'Internt': return 'bg-blue-500';
       case 'Underentreprenör': return 'bg-purple-500';
       case 'Säljare': return 'bg-green-500';
+      case 'Ställningsmontör': return 'bg-amber-500';
       default: return 'bg-gray-500';
     }
   };
@@ -296,6 +297,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               <SelectItem value="Internt">Internt</SelectItem>
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
               <SelectItem value="Säljare">Säljare</SelectItem>
+              <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
             </SelectContent>
           </Select>
           
@@ -516,6 +518,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
               <SelectItem value="Internt">Internt</SelectItem>
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
               <SelectItem value="Säljare">Säljare</SelectItem>
+              <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
             </SelectContent>
           </Select>
         </div>
