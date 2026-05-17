@@ -104,9 +104,19 @@ const WorkerAppInner = () => {
       // find teams where this user is a member
       const { data: teams, error: teamsErr } = await supabase
         .from('teams')
-        .select('id, name, members, leader, organization_id')
+        .select('id, name, type, members, leader, organization_id')
         .eq('organization_id', organizationId);
       if (teamsErr) throw teamsErr;
+
+      const myAllTeams = (teams || []).filter((t: any) => {
+        const members = Array.isArray(t.members) ? t.members : [];
+        return members.some((m: any) => m?.user_id === user.id);
+      });
+      // If user is ONLY in scaffolding teams, redirect to scaffolder app
+      if (myAllTeams.length > 0 && myAllTeams.every((t: any) => t.type === 'Ställningsmontör')) {
+        setRedirectToScaffolder(true);
+        return;
+      }
 
       const myTeams = (teams || []).map(t => {
         const members = Array.isArray(t.members) ? (t.members as any[]) : [];
