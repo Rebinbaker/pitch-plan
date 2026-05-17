@@ -1,4 +1,4 @@
-export type TeamType = 'Internt' | 'Underentreprenör' | 'Säljare';
+export type TeamType = 'Internt' | 'Underentreprenör' | 'Säljare' | 'Ställningsmontör';
 export type AvailabilityStatus = 'Tillgänglig' | 'Upptagen' | 'Begränsad';
 
 export interface TeamMember {
