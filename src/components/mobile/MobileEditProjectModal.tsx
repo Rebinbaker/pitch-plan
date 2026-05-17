@@ -35,6 +35,7 @@ const editProjectSchema = z.object({
   status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   completion_percentage: z.number().min(0).max(100),
   construction_team: z.string().optional(),
+  scaffolding_team_id: z.string().optional(),
   assigned_trailer: z.string().optional(),
   notes: z.string().optional(),
 });
