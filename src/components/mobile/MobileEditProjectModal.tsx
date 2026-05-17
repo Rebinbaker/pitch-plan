@@ -286,7 +286,7 @@ export function MobileEditProjectModal({
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="">Inget team</SelectItem>
-                            {teams.map((team) => (
+                            {teams.filter((team) => team.type !== 'Säljare').map((team) => (
                               <SelectItem key={team.id} value={team.name}>
                                 {team.name}
                               </SelectItem>

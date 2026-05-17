@@ -30,7 +30,8 @@ export function TeamSelectionModal({
   const [isAssigning, setIsAssigning] = useState(false);
 
   const availableTeams = teams.filter(team => 
-    team.availabilityNextWeek === 'Tillgänglig' || team.availabilityNextWeek === 'Begränsad'
+    team.type !== 'Säljare' &&
+    (team.availabilityNextWeek === 'Tillgänglig' || team.availabilityNextWeek === 'Begränsad')
   );
 
   const getSelectedTeam = () => {
