@@ -1670,7 +1670,7 @@ Tack!`);
                               Inget team valt
                             </SelectItem>
                             {teams.filter(team => 
-                              team.type !== 'Säljare' &&
+                              team.type !== 'Säljare' && team.type !== 'Ställningsmontör' &&
                               (team.availabilityNextWeek === 'Available' || 
                               team.availabilityNextWeek === 'Tillgänglig' || 
                               team.name === project.constructionTeam)
