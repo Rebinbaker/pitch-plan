@@ -1,53 +1,140 @@
+
 ## Mål
 
-Ställningsmontören får en egen vy som speglar admin-vyn, men där allt fokus ligger på ställningar. Han kan följa sina projekt, bocka av ställningsmoment och se sin tidsrapport/lön.
+Michel (ställningschef) ska, så fort ett sälj skapas, automatiskt få ett eget ställningskort där han kan driva hela processen: mäta upp → materialspec → beställa material (mail skickas automatiskt) → boka transport → tilldela montörer + datum → bekräfta uppmontering → nedmontering. Allt syns även hos admin.
 
-## Vad byggs
+## Vad Michels kort ska innehålla
 
-### 1. `/scaffolder` — gör om till tre flikar
-- **Mina projekt** (default)
-- **Historik**
-- **Tidsrapport** (lön/incheckningar)
+Kortet blir ett scrollbart fönster med tydliga sektioner. I ordning:
 
-### 2. Fliken "Mina projekt"
-- Hämta projekt där `scaffolding_team_id` = mitt team **ELLER** `construction_team` = mitt teams namn (för befintliga projekt utan ny koppling).
-- Filtrera på status `pågående` + `planerade` (samma som admin "Pågående" + "Planerat").
-- Visa **samma `ProjectCard`-komponent** som admin använder (adress, kund, status, datum, progress) — read-only läge (inga admin-knappar).
-- Klick på kort → ny modal `ScaffolderProjectModal` (inte hela admin-modalen).
+**1. Projektinfo (top)**
+- Adress (klickbar → Google Maps), kund, telefon, säljare, ROT-status
+- Startvecka + planerat start-datum
+- Notisfält "Senaste händelse" (vem gjorde vad senast)
 
-### 3. `ScaffolderProjectModal` — ställningsfokuserad
-- Topp: projektinfo (namn, adress, kund, datum, karta-länk).
-- **Ställningschecklista** med tre steg (sparas i `scaffolding_confirmations`):
-  1. ✅ Ställningar bokade (kommentar valfri)
-  2. ✅ Transport bokad (kommentar valfri)
-  3. ✅ Ställningar uppmonterade (foto krävs)
-- Varje rad visar bekräftat av/när om klart, "Markera klart"-knapp annars.
-- Efter sista bekräftelsen → projektets checklist-item "Ställningshantering" hos admin uppdateras automatiskt (admin-sidan läser från samma tabell).
-- (Nedmontering kan läggas till i nästa iteration — håller scopet rent nu.)
+**2. Mätning & uppskattning**
+- Fält: antal löpmeter ställning, antal våningar, fasadhöjd, sidor (norr/söder/öst/väst), special (utskjutande tak, balkonger, etc.)
+- Fältet "Beräknat antal sektioner" räknas ut automatiskt
+- "Mätt klart"-toggle med datum + ev. foto av huset
 
-### 4. Fliken "Tidsrapport"
-- Återanvänd samma in-/utcheckningslogik som `WorkerApp` (samma `worker_check_ins`-tabell, samma foto-flow, samma GPS-check).
-- Visa pågående incheckning, dagens summa, historik (timmar + lön).
-- Incheckning sker från projektkort i "Mina projekt" (knapp "Checka in" på kortet, precis som i WorkerApp).
+**3. Materialspecifikation**
+- Lista rader: typ (ram, plank, fotlist, räcke, konsol, fästöra, etc.), antal, enhet, kommentar
+- Lägg till/ta bort rad, spara som utkast
+- Förifyllda standardrader från en mall (kan ändras)
+- Summering: total vikt/volym (informativt)
 
-### 5. Routing-fix
-- WorkerApp redirectar redan till `/scaffolder` om användaren bara är i Ställningsmontör-team. Skärmdumpen visar `/worker` med "inga projekt" — beror på att Michel inte var i ett Ställningsmontör-team än, eller att Index inte redirectade. Behåller logiken; ingen ändring behövs där.
+**4. Materialbeställning**
+- Knapp "Skicka beställning" → edge function mailar leverantör (Resend) med materialspec + leveransadress + önskat leveransdatum
+- Visar status: utkast → skickad (visar tidpunkt + mottagare) → bekräftad (markeras manuellt när leverantör svarat)
+- Möjlighet att skicka påminnelse
+
+**5. Transport**
+- Fält: transportör, önskad leveransdag, kontaktperson, bilstorlek
+- Bekräfta-knapp (samma mönster som idag) + ev. foto av lastad bil
+
+**6. Montörsplanering**
+- Lista över medlemmar i Michels Ställning-team
+- Välj vilka montörer som ska på jobbet + startdatum + uppskattat antal dagar
+- Skapar rader i `team_schedules` så montörerna ser jobbet i sin egen kalender
+- Visar deras tillgänglighet (upptagen/ledig den veckan)
+
+**7. Uppmontering (bekräftelse)**
+- Bock + foto (befintlig logik), kommentar
+- Triggar att admin-checklistans "Ställningshantering" sätts klar
+
+**8. Nedmontering**
+- Egen rad: planerat datum + ansvarig montör
+- Bock + foto när nedmonterat
+- Trigger för admin-checklistans "Nedmontering av ställningar"
+
+**9. Dokument & foton**
+- Mini-galleri med alla foton (mätning, lastning, uppmontering, nedmontering)
+- Möjlighet att ladda upp fritt: ritningar, kvitton, leveransbevis
+
+**10. Aktivitetslogg**
+- Vem gjorde vad och när (lokalt för kortet)
+
+## Automatik vid nytt sälj
+
+Trigger på `projects` (AFTER INSERT): skapa tom rad i `scaffolding_confirmations` + tom rad i ny tabell `scaffolding_jobs` (se nedan) för projektet, så Michels kort är redo direkt.
+
+(Auto-tilldelning av team och notiser tar vi i nästa iteration enligt önskemål.)
 
 ## Teknisk struktur
 
 ```text
-src/pages/ScaffolderApp.tsx          (skrivs om)
-src/components/scaffolder/
-  ScaffolderProjectsList.tsx         (ny — visar ProjectCard-grid)
-  ScaffolderProjectModal.tsx         (ny — checklista + info)
-  ScaffolderTimeTracking.tsx         (ny — extraherad från WorkerApp)
+Nya/ändrade filer:
+  src/components/scaffolder/ScaffolderProjectModal.tsx   (skrivs om till fliksystem)
+  src/components/scaffolder/sections/
+    MeasurementSection.tsx
+    MaterialSpecSection.tsx
+    MaterialOrderSection.tsx
+    TransportSection.tsx
+    AssemblerAssignmentSection.tsx
+    AssemblySection.tsx          (befintlig 'assembled'-logik, utbruten)
+    DismantleSection.tsx
+    DocumentsSection.tsx
+    ScaffolderActivityLog.tsx
+
+  supabase/functions/send-scaffolding-order/index.ts     (ny edge function, Resend)
+
+Databasmigration:
+  CREATE TABLE scaffolding_jobs (
+    id uuid PK,
+    project_id uuid (unik),
+    organization_id uuid,
+    measurement jsonb,              -- { meters, floors, height, sides, notes, completed_at, photo_url }
+    material_spec jsonb,            -- array av rader
+    order_status text,              -- draft | sent | confirmed
+    order_sent_at timestamptz,
+    order_sent_to text,
+    order_confirmed_at timestamptz,
+    transport jsonb,                -- { carrier, date, contact, vehicle, booked_at, photo_url }
+    assigned_members jsonb,         -- [{ user_id, name, start_date, days }]
+    dismantle jsonb,                -- { planned_date, responsible, done_at, photo_url, note }
+    documents jsonb,                -- [{ url, name, type, uploaded_at, uploaded_by }]
+    activity_log jsonb,
+    created_at, updated_at
+  );
+
+  ALTER TABLE scaffolding_confirmations -- ingen ändring, fortsätter användas för 3 huvudbekräftelser
+
+  RLS:
+    SELECT  -> organization_member
+    INSERT/UPDATE -> admin OR is_project_scaffolder(auth.uid(), project_id)
+
+  Trigger på projects AFTER INSERT:
+    INSERT INTO scaffolding_confirmations (project_id, organization_id) ...
+    INSERT INTO scaffolding_jobs (project_id, organization_id) ...
+
+Edge function send-scaffolding-order:
+  - Input: project_id
+  - Validerar att caller är project-scaffolder eller admin
+  - Hämtar projekt + scaffolding_jobs + leverantörsmail (från ny secret eller fält i jobbet)
+  - Renderar HTML-mail (adress, materialrader, leveransdatum, kontakt)
+  - Skickar via Resend (RESEND_API_KEY finns redan)
+  - Uppdaterar scaffolding_jobs.order_status='sent', order_sent_at, order_sent_to
+  - Loggar i activity_log
+
+Admin-sidan:
+  - ScaffoldingConfirmationsCard utökas med summering av jobs-data (material skickad? transport bokad? montörer satta?)
+  - Ingen brytande ändring för befintliga projekt
 ```
 
-- Återanvänder `ProjectCard` direkt (med `isAdmin={false}` så inga admin-knappar visas).
-- Återanvänder `scaffolding_confirmations`-tabellen som redan finns.
-- Återanvänder `worker_check_ins`-tabellen och `worker-checkin-photos`-bucket.
+## Säkerhet
+- Funktionen `is_project_scaffolder` finns redan och återanvänds i RLS för `scaffolding_jobs`.
+- Edge function använder service-role internt, validerar caller via JWT + RPC `is_project_scaffolder`.
 
 ## Vad som INTE ingår nu
-- Nedmontering av ställningar (separat iteration).
-- Redigering av projektinfo från montörens vy (read-only).
-- Admin-checklistans auto-uppdatering är redan kopplad via `ScaffoldingConfirmationsCard` i ProjectDetailModal — ingen ny logik krävs där.
+- Auto-tilldelning av Michels team baserat på region (sparas till senare)
+- Notifikation i hans flöde vid nytt sälj (sparas)
+- Auto-block i veckoplanering (vi gör det manuellt via montörsplanering-sektionen tills vidare)
+- Leverantörsregister/prisuppföljning som egna vyer — vi börjar med fritt fält för leverantörsmail per beställning
+
+## Förslag på ordning för bygget
+1. Migration (ny tabell + trigger + RLS) — backfill rader för befintliga projekt
+2. Edge function `send-scaffolding-order`
+3. Skriv om `ScaffolderProjectModal` till fliklayout med sektionerna
+4. Bygg sektionerna i tur och ordning (mätning → materialspec → beställning → transport → montörer → nedmontering → dokument)
+5. Utöka `ScaffoldingConfirmationsCard` för admin-vyn
+6. Test: skapa nytt projekt, verifiera att Michels kort dyker upp tomt och kan fyllas i hela vägen
