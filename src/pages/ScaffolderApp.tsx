@@ -75,7 +75,7 @@ const ScaffolderAppInner = () => {
     setLoading(true);
     try {
       // Find teams of type Ställningsmontör where user is a member
-      const { data: teams, error: teamsErr } = await supabase
+      const { data: teams, error: teamsErr } = await (supabase as any)
         .from('teams')
         .select('id, name, type, members')
         .eq('organization_id', organizationId)
