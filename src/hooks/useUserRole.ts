@@ -44,6 +44,7 @@ export const useUserRole = () => {
   const isAdmin = role === 'admin';
   const isModerator = role === 'moderator';
   const isUser = role === 'user';
+  const isWorker = role === 'worker';
 
   return {
     role,
@@ -51,5 +52,6 @@ export const useUserRole = () => {
     isAdmin,
     isModerator,
     isUser,
+    isWorker,
   };
 };
