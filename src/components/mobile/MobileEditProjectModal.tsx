@@ -70,6 +70,7 @@ export function MobileEditProjectModal({
       status: project.status,
       completion_percentage: project.completionPercentage || 0,
       construction_team: project.constructionTeam || '',
+      scaffolding_team_id: project.scaffoldingTeamId || '',
       assigned_trailer: project.assignedTrailer || '',
       notes: project.notes || '',
     },
