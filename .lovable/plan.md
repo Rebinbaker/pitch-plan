@@ -1,140 +1,117 @@
-
 ## Mål
+Bygg om ställningschefens vy så att den ser ut och fungerar som huvudappen (kort + checklista-modal + karta), men helt anpassad för ställningsarbete med 6-stegs checklista, automatisk materialberäkning, fotokrav och notiser.
 
-Michel (ställningschef) ska, så fort ett sälj skapas, automatiskt få ett eget ställningskort där han kan driva hela processen: mäta upp → materialspec → beställa material (mail skickas automatiskt) → boka transport → tilldela montörer + datum → bekräfta uppmontering → nedmontering. Allt syns även hos admin.
+## 1. Layout — matcha huvudappen
 
-## Vad Michels kort ska innehålla
+Ersätt nuvarande `ScaffolderProjectsList` + `ScaffolderProjectModal` med samma struktur som `ProjectDashboard`/`ProjectDetailModal`:
 
-Kortet blir ett scrollbart fönster med tydliga sektioner. I ordning:
+- Header med bild-bakgrund, titel "Ställningsprojekt", sökfält, statusfilter (Planerad / Pågående / Klar)
+- KPI-rad: `Totalt`, `Att planera`, `Pågående`, `Klara denna vecka`, `Försenade`
+- **Lista / Karta**-toggle (samma knapp uppe till höger)
+- Projektkort med adress, kund, byggstart, progress-bar (baserat på ställnings-checklistans 6 steg), risk-badge (röd/gul/grön)
+- Modal: flikar **Översikt · Checklista · Material · Transport · Bemanning · Foton · Aktivitetslogg**
 
-**1. Projektinfo (top)**
-- Adress (klickbar → Google Maps), kund, telefon, säljare, ROT-status
-- Startvecka + planerat start-datum
-- Notisfält "Senaste händelse" (vem gjorde vad senast)
+## 2. Checklista (6 sektioner i tabben "Checklista")
 
-**2. Mätning & uppskattning**
-- Fält: antal löpmeter ställning, antal våningar, fasadhöjd, sidor (norr/söder/öst/väst), special (utskjutande tak, balkonger, etc.)
-- Fältet "Beräknat antal sektioner" räknas ut automatiskt
-- "Mätt klart"-toggle med datum + ev. foto av huset
-
-**3. Materialspecifikation**
-- Lista rader: typ (ram, plank, fotlist, räcke, konsol, fästöra, etc.), antal, enhet, kommentar
-- Lägg till/ta bort rad, spara som utkast
-- Förifyllda standardrader från en mall (kan ändras)
-- Summering: total vikt/volym (informativt)
-
-**4. Materialbeställning**
-- Knapp "Skicka beställning" → edge function mailar leverantör (Resend) med materialspec + leveransadress + önskat leveransdatum
-- Visar status: utkast → skickad (visar tidpunkt + mottagare) → bekräftad (markeras manuellt när leverantör svarat)
-- Möjlighet att skicka påminnelse
-
-**5. Transport**
-- Fält: transportör, önskad leveransdag, kontaktperson, bilstorlek
-- Bekräfta-knapp (samma mönster som idag) + ev. foto av lastad bil
-
-**6. Montörsplanering**
-- Lista över medlemmar i Michels Ställning-team
-- Välj vilka montörer som ska på jobbet + startdatum + uppskattat antal dagar
-- Skapar rader i `team_schedules` så montörerna ser jobbet i sin egen kalender
-- Visar deras tillgänglighet (upptagen/ledig den veckan)
-
-**7. Uppmontering (bekräftelse)**
-- Bock + foto (befintlig logik), kommentar
-- Triggar att admin-checklistans "Ställningshantering" sätts klar
-
-**8. Nedmontering**
-- Egen rad: planerat datum + ansvarig montör
-- Bock + foto när nedmonterat
-- Trigger för admin-checklistans "Nedmontering av ställningar"
-
-**9. Dokument & foton**
-- Mini-galleri med alla foton (mätning, lastning, uppmontering, nedmontering)
-- Möjlighet att ladda upp fritt: ritningar, kvitton, leveransbevis
-
-**10. Aktivitetslogg**
-- Vem gjorde vad och när (lokalt för kortet)
-
-## Automatik vid nytt sälj
-
-Trigger på `projects` (AFTER INSERT): skapa tom rad i `scaffolding_confirmations` + tom rad i ny tabell `scaffolding_jobs` (se nedan) för projektet, så Michels kort är redo direkt.
-
-(Auto-tilldelning av team och notiser tar vi i nästa iteration enligt önskemål.)
-
-## Teknisk struktur
+Tabb-modal i exakt samma stil som huvudappens checklista (collapsible-sektioner med progress).
 
 ```text
-Nya/ändrade filer:
-  src/components/scaffolder/ScaffolderProjectModal.tsx   (skrivs om till fliksystem)
-  src/components/scaffolder/sections/
-    MeasurementSection.tsx
-    MaterialSpecSection.tsx
-    MaterialOrderSection.tsx
-    TransportSection.tsx
-    AssemblerAssignmentSection.tsx
-    AssemblySection.tsx          (befintlig 'assembled'-logik, utbruten)
-    DismantleSection.tsx
-    DocumentsSection.tsx
-    ScaffolderActivityLog.tsx
-
-  supabase/functions/send-scaffolding-order/index.ts     (ny edge function, Resend)
-
-Databasmigration:
-  CREATE TABLE scaffolding_jobs (
-    id uuid PK,
-    project_id uuid (unik),
-    organization_id uuid,
-    measurement jsonb,              -- { meters, floors, height, sides, notes, completed_at, photo_url }
-    material_spec jsonb,            -- array av rader
-    order_status text,              -- draft | sent | confirmed
-    order_sent_at timestamptz,
-    order_sent_to text,
-    order_confirmed_at timestamptz,
-    transport jsonb,                -- { carrier, date, contact, vehicle, booked_at, photo_url }
-    assigned_members jsonb,         -- [{ user_id, name, start_date, days }]
-    dismantle jsonb,                -- { planned_date, responsible, done_at, photo_url, note }
-    documents jsonb,                -- [{ url, name, type, uploaded_at, uploaded_by }]
-    activity_log jsonb,
-    created_at, updated_at
-  );
-
-  ALTER TABLE scaffolding_confirmations -- ingen ändring, fortsätter användas för 3 huvudbekräftelser
-
-  RLS:
-    SELECT  -> organization_member
-    INSERT/UPDATE -> admin OR is_project_scaffolder(auth.uid(), project_id)
-
-  Trigger på projects AFTER INSERT:
-    INSERT INTO scaffolding_confirmations (project_id, organization_id) ...
-    INSERT INTO scaffolding_jobs (project_id, organization_id) ...
-
-Edge function send-scaffolding-order:
-  - Input: project_id
-  - Validerar att caller är project-scaffolder eller admin
-  - Hämtar projekt + scaffolding_jobs + leverantörsmail (från ny secret eller fält i jobbet)
-  - Renderar HTML-mail (adress, materialrader, leveransdatum, kontakt)
-  - Skickar via Resend (RESEND_API_KEY finns redan)
-  - Uppdaterar scaffolding_jobs.order_status='sent', order_sent_at, order_sent_to
-  - Loggar i activity_log
-
-Admin-sidan:
-  - ScaffoldingConfirmationsCard utökas med summering av jobs-data (material skickad? transport bokad? montörer satta?)
-  - Ingen brytande ändring för befintliga projekt
+1. PLANERING        8 punkter + Kommentarer/Risker/Extra material
+2. MATERIALBERÄKNING fält + auto-räknad lista + "Materiallista godkänd"
+3. TRANSPORT        5 punkter + tel/Maps-länk/bilder på avställning
+4. BEMANNING        5 punkter (montörer/starttid/boende/verktyg/lastbil)
+5. UTFÖRANDE        5 punkter (påbörjad/färdig/säkerhet/bilder/signering)
+6. SLUTFÖRT         3 punkter (PL notifierad/bygglag kan starta/klarmarkerad)
 ```
 
-## Säkerhet
-- Funktionen `is_project_scaffolder` finns redan och återanvänds i RLS för `scaffolding_jobs`.
-- Edge function använder service-role internt, validerar caller via JWT + RPC `is_project_scaffolder`.
+Varje box sparas direkt till `scaffolding_jobs.checklist` (ny jsonb-kolumn) med `{key, checked, at, by}`.
 
-## Vad som INTE ingår nu
-- Auto-tilldelning av Michels team baserat på region (sparas till senare)
-- Notifikation i hans flöde vid nytt sälj (sparas)
-- Auto-block i veckoplanering (vi gör det manuellt via montörsplanering-sektionen tills vidare)
-- Leverantörsregister/prisuppföljning som egna vyer — vi börjar med fritt fält för leverantörsmail per beställning
+## 3. Auto-materialberäkning
 
-## Förslag på ordning för bygget
-1. Migration (ny tabell + trigger + RLS) — backfill rader för befintliga projekt
-2. Edge function `send-scaffolding-order`
-3. Skriv om `ScaffolderProjectModal` till fliklayout med sektionerna
-4. Bygg sektionerna i tur och ordning (mätning → materialspec → beställning → transport → montörer → nedmontering → dokument)
-5. Utöka `ScaffoldingConfirmationsCard` för admin-vyn
-6. Test: skapa nytt projekt, verifiera att Michels kort dyker upp tomt och kan fyllas i hela vägen
+Tabben "Material" får ett formulär:
+
+```text
+Indata: längder (sidor[]), höjd (m), antal gavlar, specialdelar (textarea)
+
+Beräknas:
+  ramar         = ceil(totalLängd / 3) * floors
+  bomlag        = ramar
+  diagonaler    = ceil(ramar / 2)
+  fotplattor    = ramar * 2
+  räcken        = ramar * floors
+  trappor       = max(1, floor(totalLängd / 12))
+  konsoler      = round(ramar * 0.3)
+  väderskydd    = checkbox → täcker hela ytan
+```
+
+Resultatet visas som tabell + knapp **"Använd som materialspecifikation"** som fyller `material_spec` (befintlig). Sedan fungerar befintliga **Beställning**-flöde.
+
+## 4. Fotokrav (blockerar slutförande)
+
+Ny jsonb `documents.photos = { before: {hus,mark,placering}, after: {sida_n,sida_s,sida_o,sida_v,infästning,åtkomst,helhet} }`.
+
+Lagring: bucket `worker-checkin-photos` under prefix `scaffolding/{project_id}/`.
+
+Regel i klienten + edge: "Klar"-knapp disabled tills alla obligatoriska foton finns + säkerhetscheck signerad.
+
+## 5. Karta
+
+Ny komponent `ScaffolderMapView` som återanvänder `react-leaflet`-uppställningen från `ProjectMapView` men:
+
+- Pin-färg = ställningsstatus (grå=ej planerad, blå=planerad, gul=pågående, grön=klar)
+- Sidopanel listar **Ställningsvagnar nära att släppas** (från `scaffolding`-tabellen där `status='I bruk'` + projekt med checklist-key `assembled` checked → "snart ledig") och **Upptagna ställningar**
+- Toggle Lista/Karta lagras i `localStorage` (`scaffolder-view-mode`), samma mönster som projektmemoryt
+
+## 6. Automatisering (notiser + logg)
+
+När `utforande.faerdigbyggd` markeras:
+
+- Uppdatera `scaffolding_confirmations.assembled_at` (befintlig flow)
+- Sätt motsvarande checkbox i `projects.checklist` ("Boka ställningsvagn") som klar
+- Skriv `activity_log`-rad med user_id + timestamp
+- Skapa `notifications`-rader till alla org-medlemmar med role admin/moderator (byggledare/COO) och till `responsible_seller`
+
+Görs i ny edge function `scaffolding-mark-assembled` som kallas från klienten.
+
+## Teknisk översikt
+
+### Databas (migration)
+- `scaffolding_jobs` ALTER: lägg till kolumn `checklist jsonb not null default '{}'`, `photos jsonb not null default '{}'`, `safety_signed_at timestamptz`, `safety_signed_by uuid`
+- `scaffolding_jobs` ALTER: lägg till `risk_level text check in ('green','yellow','red') default 'green'`
+- Storage: använd befintlig `worker-checkin-photos`-bucket, policys finns redan
+
+### Edge functions
+- Ny: `scaffolding-mark-assembled` (validerar scaffolder/admin, uppdaterar tabeller, skickar notiser)
+- Befintlig `send-scaffolding-order` behålls
+
+### Frontend (nya/ändrade filer)
+```text
+src/pages/ScaffolderApp.tsx                       (tabs: Projekt | Karta | Historik | Tid)
+src/components/scaffolder/ScaffolderDashboard.tsx (NY — header/KPI/grid)
+src/components/scaffolder/ScaffolderProjectCard.tsx (NY)
+src/components/scaffolder/ScaffolderMapView.tsx   (NY)
+src/components/scaffolder/ScaffolderProjectModal.tsx (omarbetad — 7 tabbar)
+src/components/scaffolder/sections/
+  PlaneringSection.tsx
+  MaterialBerakningSection.tsx
+  TransportSection.tsx
+  BemanningSection.tsx
+  UtforandeSection.tsx
+  SlutfortSection.tsx
+  FotoUploadSection.tsx
+src/utils/scaffoldingCalculator.ts                (NY — auto-formler)
+```
+
+### Byggordning
+1. Migration (kolumner på `scaffolding_jobs`)
+2. `scaffoldingCalculator.ts` + sektionskomponenter
+3. Modal med 7 tabbar
+4. Dashboard + kort (kopiera mönster från `ProjectDashboard`)
+5. Kartvy
+6. Edge function + notiser
+7. Genomtest med befintligt projekt
+
+### Begränsningar i denna iteration
+- Bilder lagras men automatisk komprimering/EXIF görs inte
+- Notis-mailen till säljare/COO begränsas till in-app `notifications` (ingen e-post — kan läggas till senare)
+- Materialformlerna är schablon-baserade; finjustering görs när Michel testat
