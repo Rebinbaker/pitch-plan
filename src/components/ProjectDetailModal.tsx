@@ -543,6 +543,10 @@ Tack! 👷‍♂️`;
                 📄 Exportera projektrapport
               </Button>
             </div>
+
+            {project.scaffoldingTeamId && (
+              <ScaffoldingConfirmationsCard projectId={project.id} />
+            )}
           </TabsContent>
 
           <TabsContent value="checklist">
