@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-project-from-sale]
 verify_jwt = false
+
+[functions.get-team-availability]
+verify_jwt = false
