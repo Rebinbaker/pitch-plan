@@ -208,7 +208,13 @@ export function TeamMemberCard({
             trigger={
               <Button variant={member.user_id ? 'outline' : 'default'} size="sm" className="w-full">
                 <KeyRound className="w-4 h-4 mr-2" />
-                {member.user_id ? `Inlogg klart${member.login_email ? ` (${member.login_email})` : ''}` : 'Skapa inlogg för byggare'}
+                {member.user_id
+                  ? `Inlogg klart${member.login_email ? ` (${member.login_email})` : ''}`
+                  : team.team_type === 'Ställningsmontör'
+                    ? 'Skapa inlogg för ställningsmontör'
+                    : team.team_type === 'Säljare'
+                      ? 'Skapa inlogg för säljare'
+                      : 'Skapa inlogg för byggare'}
               </Button>
             }
           />
