@@ -1094,6 +1094,7 @@ export type Database = {
           check_in_at: string
           check_in_lat: number | null
           check_in_lng: number | null
+          check_in_photo_url: string | null
           check_out_at: string | null
           check_out_lat: number | null
           check_out_lng: number | null
@@ -1116,6 +1117,7 @@ export type Database = {
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
+          check_in_photo_url?: string | null
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null
@@ -1138,6 +1140,7 @@ export type Database = {
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
+          check_in_photo_url?: string | null
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null

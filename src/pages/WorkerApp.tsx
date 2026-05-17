@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, MapPin, Play, Square, Clock, Wallet, Briefcase, Loader2 } from 'lucide-react';
+import { LogOut, MapPin, Play, Square, Clock, Wallet, Briefcase, Loader2, Camera, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface AssignedJob {
   project_id: string;
@@ -69,6 +70,24 @@ const WorkerAppInner = () => {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [pendingJob, setPendingJob] = useState<AssignedJob | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const onPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setPhotoFile(f);
+    setPhotoPreview(URL.createObjectURL(f));
+  };
+
+  const closePhotoDialog = () => {
+    setPendingJob(null);
+    setPhotoFile(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+  };
 
   // live timer
   useEffect(() => {
@@ -158,12 +177,23 @@ const WorkerAppInner = () => {
     });
   });
 
-  const handleCheckIn = async (job: AssignedJob) => {
-    if (!user || !organizationId) return;
+  const startCheckInFlow = (job: AssignedJob) => {
     if (openCheckIn) {
       toast({ title: 'Du har en pågående incheckning', description: 'Checka ut först.', variant: 'destructive' });
       return;
     }
+    setPendingJob(job);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  const confirmCheckIn = async () => {
+    if (!pendingJob || !user || !organizationId) return;
+    if (!photoFile) {
+      toast({ title: 'Foto krävs', description: 'Ta ett foto för att verifiera incheckningen.', variant: 'destructive' });
+      return;
+    }
+    const job = pendingJob;
     setWorking(job.project_id);
     try {
       const pos = await getPosition();
@@ -184,6 +214,14 @@ const WorkerAppInner = () => {
         }
       }
 
+      // Upload photo
+      const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('worker-checkin-photos')
+        .upload(path, photoFile, { contentType: photoFile.type || 'image/jpeg', upsert: false });
+      if (upErr) throw upErr;
+
       const { data, error } = await supabase.from('worker_check_ins').insert({
         organization_id: organizationId,
         user_id: user.id,
@@ -195,11 +233,13 @@ const WorkerAppInner = () => {
         check_in_lng: pos.coords.longitude,
         distance_km: distanceKm,
         hourly_rate_snapshot: job.hourly_rate,
+        check_in_photo_url: path,
       }).select().single();
 
       if (error) throw error;
       toast({ title: 'Incheckad', description: `${job.project_name} — timer igång` });
       setOpenCheckIn(data as any);
+      closePhotoDialog();
     } catch (e: any) {
       toast({ title: 'Kunde inte checka in', description: e.message, variant: 'destructive' });
     } finally {
@@ -346,7 +386,7 @@ const WorkerAppInner = () => {
                     className="w-full mt-2"
                     size="lg"
                     disabled={!!openCheckIn || working === job.project_id || !job.hourly_rate}
-                    onClick={() => handleCheckIn(job)}
+                    onClick={() => startCheckInFlow(job)}
                   >
                     {working === job.project_id ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -409,6 +449,67 @@ const WorkerAppInner = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!pendingJob} onOpenChange={(o) => !o && closePhotoDialog()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verifiera incheckning med foto</DialogTitle>
+          </DialogHeader>
+          {pendingJob && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                Ta ett foto från arbetsplatsen — t.ex. taket, ställningen eller skylten. Detta sparas som verifikation.
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-2 flex items-center justify-center min-h-[200px]">
+                {photoPreview ? (
+                  <div className="relative w-full">
+                    <img src={photoPreview} alt="Förhandsvisning" className="w-full max-h-[300px] object-contain rounded" />
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-2 right-2 h-7 w-7"
+                      onClick={() => { setPhotoFile(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground text-sm py-8">
+                    Inget foto valt än
+                  </div>
+                )}
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={onPhotoSelected}
+              />
+              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
+                <Camera className="w-4 h-4 mr-2" /> {photoPreview ? 'Ta nytt foto' : 'Ta foto'}
+              </Button>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={closePhotoDialog} disabled={working === pendingJob?.project_id}>
+              Avbryt
+            </Button>
+            <Button
+              onClick={confirmCheckIn}
+              disabled={!photoFile || working === pendingJob?.project_id}
+            >
+              {working === pendingJob?.project_id ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              Bekräfta incheckning
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
