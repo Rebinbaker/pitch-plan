@@ -738,6 +738,66 @@ export type Database = {
         }
         Relationships: []
       }
+      scaffolding_jobs: {
+        Row: {
+          activity_log: Json
+          assigned_members: Json
+          created_at: string
+          dismantle: Json
+          documents: Json
+          id: string
+          material_spec: Json
+          measurement: Json
+          order_confirmed_at: string | null
+          order_notes: string | null
+          order_sent_at: string | null
+          order_sent_to: string | null
+          order_status: string
+          organization_id: string
+          project_id: string
+          transport: Json
+          updated_at: string
+        }
+        Insert: {
+          activity_log?: Json
+          assigned_members?: Json
+          created_at?: string
+          dismantle?: Json
+          documents?: Json
+          id?: string
+          material_spec?: Json
+          measurement?: Json
+          order_confirmed_at?: string | null
+          order_notes?: string | null
+          order_sent_at?: string | null
+          order_sent_to?: string | null
+          order_status?: string
+          organization_id: string
+          project_id: string
+          transport?: Json
+          updated_at?: string
+        }
+        Update: {
+          activity_log?: Json
+          assigned_members?: Json
+          created_at?: string
+          dismantle?: Json
+          documents?: Json
+          id?: string
+          material_spec?: Json
+          measurement?: Json
+          order_confirmed_at?: string | null
+          order_notes?: string | null
+          order_sent_at?: string | null
+          order_sent_to?: string | null
+          order_status?: string
+          organization_id?: string
+          project_id?: string
+          transport?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_schedules: {
         Row: {
           created_at: string
