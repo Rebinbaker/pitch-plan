@@ -7,7 +7,6 @@ import { Loader2, Search, LayoutGrid, Map as MapIcon, Hammer } from 'lucide-reac
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from '@/hooks/use-toast';
 import type { Project, ProjectStatus } from '@/types/project';
 import { ScaffolderProjectCard } from './ScaffolderProjectCard';
@@ -43,7 +42,8 @@ export function ScaffolderDashboard({ mode = 'active' }: { mode?: 'active' | 'hi
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
-  const [viewMode, setViewMode] = useLocalStorage<'list' | 'map'>('scaffolder-view-mode', 'list');
+  const [viewMode, setViewModeState] = useState<'list' | 'map'>(() => (localStorage.getItem('scaffolder-view-mode') as 'list' | 'map') || 'list');
+  const setViewMode = (m: 'list' | 'map') => { localStorage.setItem('scaffolder-view-mode', m); setViewModeState(m); };
   const [selected, setSelected] = useState<Project | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
