@@ -57,6 +57,7 @@ export const useSupabaseStorage = () => {
           customerPhone: project.customer_phone || '',
           responsibleSeller: project.responsible_seller || '',
           constructionTeam: project.construction_team || '',
+          scaffoldingTeamId: project.scaffolding_team_id || '',
           constructionStartWeek: project.construction_start_week || '',
           rotStatus: project.rot_status as any || 'No',
           status: project.status as any,
