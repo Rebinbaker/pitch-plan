@@ -70,6 +70,24 @@ const WorkerAppInner = () => {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [pendingJob, setPendingJob] = useState<AssignedJob | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const onPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setPhotoFile(f);
+    setPhotoPreview(URL.createObjectURL(f));
+  };
+
+  const closePhotoDialog = () => {
+    setPendingJob(null);
+    setPhotoFile(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+  };
 
   // live timer
   useEffect(() => {
