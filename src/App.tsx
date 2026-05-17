@@ -29,6 +29,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/worker" element={<WorkerApp />} />
+            <Route path="/scaffolder" element={<ScaffolderApp />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
