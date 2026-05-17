@@ -17,6 +17,8 @@ export const useOrganization = () => {
         return;
       }
 
+      setLoading(true);
+
       try {
         // Get user's organization membership
         const { data: membership, error: membershipError } = await supabase
@@ -30,9 +32,14 @@ export const useOrganization = () => {
         if (membership) {
           setOrganizationId(membership.organization_id);
           setOrganizationName((membership.organizations as any)?.name || '');
+        } else {
+          setOrganizationId(null);
+          setOrganizationName('');
         }
       } catch (error) {
         console.error('Error fetching organization:', error);
+        setOrganizationId(null);
+        setOrganizationName('');
       } finally {
         setLoading(false);
       }
