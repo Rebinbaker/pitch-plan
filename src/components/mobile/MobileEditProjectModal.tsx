@@ -35,6 +35,7 @@ const editProjectSchema = z.object({
   status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   completion_percentage: z.number().min(0).max(100),
   construction_team: z.string().optional(),
+  scaffolding_team_id: z.string().optional(),
   assigned_trailer: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -69,6 +70,7 @@ export function MobileEditProjectModal({
       status: project.status,
       completion_percentage: project.completionPercentage || 0,
       construction_team: project.constructionTeam || '',
+      scaffolding_team_id: project.scaffoldingTeamId || '',
       assigned_trailer: project.assignedTrailer || '',
       notes: project.notes || '',
     },
@@ -87,6 +89,7 @@ export function MobileEditProjectModal({
         status: values.status,
         completionPercentage: values.completion_percentage,
         constructionTeam: values.construction_team || '',
+        scaffoldingTeamId: values.scaffolding_team_id || '',
         assignedTrailer: values.assigned_trailer || '',
         notes: values.notes || '',
       };
@@ -288,6 +291,34 @@ export function MobileEditProjectModal({
                             <SelectItem value="">Inget team</SelectItem>
                             {teams.filter((team) => team.type !== 'Säljare' && team.type !== 'Ställningsmontör').map((team) => (
                               <SelectItem key={team.id} value={team.name}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {teams.filter((t) => t.type === 'Ställningsmontör').length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="scaffolding_team_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Ställningsteam</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder="Välj ställningsteam" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Inget ställningsteam</SelectItem>
+                            {teams.filter((t) => t.type === 'Ställningsmontör').map((team) => (
+                              <SelectItem key={team.id} value={team.id}>
                                 {team.name}
                               </SelectItem>
                             ))}

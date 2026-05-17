@@ -65,6 +65,7 @@ const WorkerAppInner = () => {
   const { user, signOut } = useAuth();
   const { organizationId } = useOrganization();
   const [jobs, setJobs] = useState<AssignedJob[]>([]);
+  const [redirectToScaffolder, setRedirectToScaffolder] = useState(false);
   const [openCheckIn, setOpenCheckIn] = useState<OpenCheckIn | null>(null);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,11 +102,21 @@ const WorkerAppInner = () => {
     setLoading(true);
     try {
       // find teams where this user is a member
-      const { data: teams, error: teamsErr } = await supabase
+      const { data: teams, error: teamsErr } = await (supabase as any)
         .from('teams')
-        .select('id, name, members, leader, organization_id')
+        .select('id, name, type, members, leader, organization_id')
         .eq('organization_id', organizationId);
       if (teamsErr) throw teamsErr;
+
+      const myAllTeams = (teams || []).filter((t: any) => {
+        const members = Array.isArray(t.members) ? t.members : [];
+        return members.some((m: any) => m?.user_id === user.id);
+      });
+      // If user is ONLY in scaffolding teams, redirect to scaffolder app
+      if (myAllTeams.length > 0 && myAllTeams.every((t: any) => t.type === 'Ställningsmontör')) {
+        setRedirectToScaffolder(true);
+        return;
+      }
 
       const myTeams = (teams || []).map(t => {
         const members = Array.isArray(t.members) ? (t.members as any[]) : [];
@@ -300,6 +311,10 @@ const WorkerAppInner = () => {
       }), { hours: 0, wage: 0 });
     return sum;
   }, [history]);
+
+  if (redirectToScaffolder) {
+    return <Navigate to="/scaffolder" replace />;
+  }
 
   if (loading) {
     return (

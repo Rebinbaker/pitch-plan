@@ -39,6 +39,7 @@ import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { ScaffoldingConfirmationsCard } from '@/components/ScaffoldingConfirmationsCard';
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -542,6 +543,10 @@ Tack! 👷‍♂️`;
                 📄 Exportera projektrapport
               </Button>
             </div>
+
+            {project.scaffoldingTeamId && (
+              <ScaffoldingConfirmationsCard projectId={project.id} />
+            )}
           </TabsContent>
 
           <TabsContent value="checklist">

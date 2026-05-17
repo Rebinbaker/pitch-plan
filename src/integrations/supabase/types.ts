@@ -451,6 +451,7 @@ export type Database = {
           responsible_seller: string | null
           rot_status: string | null
           scaffolding_responsible: string | null
+          scaffolding_team_id: string | null
           start_date: string | null
           status: string
           updated_at: string
@@ -483,6 +484,7 @@ export type Database = {
           responsible_seller?: string | null
           rot_status?: string | null
           scaffolding_responsible?: string | null
+          scaffolding_team_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -515,6 +517,7 @@ export type Database = {
           responsible_seller?: string | null
           rot_status?: string | null
           scaffolding_responsible?: string | null
+          scaffolding_team_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -680,6 +683,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scaffolding_confirmations: {
+        Row: {
+          assembled_at: string | null
+          assembled_by: string | null
+          assembled_note: string | null
+          assembled_photo_url: string | null
+          booked_at: string | null
+          booked_by: string | null
+          booked_note: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          project_id: string
+          transport_booked_at: string | null
+          transport_booked_by: string | null
+          transport_booked_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          assembled_at?: string | null
+          assembled_by?: string | null
+          assembled_note?: string | null
+          assembled_photo_url?: string | null
+          booked_at?: string | null
+          booked_by?: string | null
+          booked_note?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          project_id: string
+          transport_booked_at?: string | null
+          transport_booked_by?: string | null
+          transport_booked_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assembled_at?: string | null
+          assembled_by?: string | null
+          assembled_note?: string | null
+          assembled_photo_url?: string | null
+          booked_at?: string | null
+          booked_by?: string | null
+          booked_note?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          project_id?: string
+          transport_booked_at?: string | null
+          transport_booked_by?: string | null
+          transport_booked_note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       team_schedules: {
         Row: {
@@ -1193,6 +1250,10 @@ export type Database = {
       }
       is_organization_member: {
         Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_project_scaffolder: {
+        Args: { _project_id: string; _user_id: string }
         Returns: boolean
       }
       sync_trailer_status: { Args: never; Returns: undefined }

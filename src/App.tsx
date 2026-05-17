@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import WorkerApp from "./pages/WorkerApp";
+import ScaffolderApp from "./pages/ScaffolderApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/worker" element={<WorkerApp />} />
+            <Route path="/scaffolder" element={<ScaffolderApp />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
