@@ -1,78 +1,58 @@
-## Resurser-flik – översikt
+# Bygg-app: incheckning & lön per medlem
 
-En ny flik **"Resurser"** i sidomenyn där projektledare kan hitta externa kontakter (transportörer, leverantörer som XL Bygg, elektriker, rörmokare, solcellsmontörer m.fl.) per län i Sverige. Tanken är att snabbt kunna filtrera fram rätt kontakt när ett behov dyker upp i ett projekt.
+Mål: När ett arbetslag tilldelas ett projekt ska varje byggare i laget kunna logga in i appen, se sina tilldelade jobb och GPS-checka in/ut. Timern börjar vid incheckning och stoppas vid utcheckning. Lönen beräknas automatiskt utifrån timlönen som är satt på medlemmen i Team-fliken.
 
-## Funktioner
+## Dina val
+- **Inlogg:** Du skapar konto åt varje byggare (e-post + lösenord) från Team-fliken.
+- **Timlön:** `hourly_rate` per `TeamMember` på Team-fliken.
+- **In/ut:** Individuellt — varje byggare själv.
+- **App-form:** Samma kodbas, ny mobilvy `worker` med begränsad meny (funkar redan i Capacitor).
 
-**Huvudvy – Sverigeöversikt**
-- Lista över Sveriges 21 län (kort/grid) med antal resurser per län
-- Sökfält högst upp som söker tvärs över alla län (namn, företag, ort, typ)
-- Knapp "Lägg till resurs"
+## Vad som byggs
 
-**Län-vy (klickar på ett län)**
-- Lista med alla resurser i det länet
-- Filterchips för typ: Transportör, Byggvaruhus, Elektriker, Rörmokare, Solcellsmontör, Plåtslagare, Målare, Container, Ställning, Annat
-- Sortering: namn, ort, senast använd
-- Möjlighet att markera favorit/ofta använd
+### 1. Databas (migrering)
+- Ny enum-roll `worker` i `app_role`.
+- Lägg till på `teams.members` (jsonb-fält per medlem):
+  - `hourly_rate` (numeric) — sätts på Team-fliken
+  - `user_id` (uuid, nullable) — kopplar medlem till auth-användare när konto skapats
+- Ny tabell `worker_check_ins`:
+  - `user_id`, `team_member_id`, `team_id`, `project_id`, `organization_id`
+  - `check_in_at`, `check_out_at`
+  - `check_in_lat/lng`, `check_out_lat/lng`, `distance_km`
+  - `hourly_rate_snapshot` (numeric) — låses vid incheckning
+  - `duration_hours`, `wage_amount` (beräknas vid utcheckning)
+  - RLS: organisationsmedlemmar kan se egna check-ins; admin ser alla.
+- Edge function: `create-worker-account` (admin-only) som skapar auth-användare, sätter rollen `worker` och länkar `team_member_id` → `user_id` i teams.members.
 
-**Resurskort visar**
-- Företagsnamn
-- Typ (badge med färg per kategori)
-- Kontaktperson
-- Telefon (klickbar `tel:`)
-- E-post (klickbar `mailto:`)
-- Adress / ort
-- Webbsida
-- Anteckningar (t.ex. prisnivå, omdöme, vilka projekt de använts på)
-- Snabbknappar: Ring, Maila, Kopiera info
+### 2. Team-fliken (admin/projektledare)
+- I `AddTeamMemberModal`: nytt fält **Timlön (kr/h)**.
+- I `TeamMemberCard`: knapp **"Skapa inlogg"** → öppnar dialog (e-post + lösenord) → anropar edge-funktionen → visar status "Inlogg skapat" + e-post.
+- Visa hourly_rate på kortet.
 
-**Lägg till / redigera-modal**
-- Alla fält ovan
-- Län (dropdown), typ (dropdown), möjlighet att lägga in flera typer per resurs (en transportör kan t.ex. täcka flera län – stöds via multi-val på län)
+### 3. Byggar-vy (`/worker` rutt)
+Tre flikar i mobilanpassad layout:
+- **Mina jobb idag** — listar projekt där byggaren ingår i `construction_team` på projektet, med adress, lagledare, kontaktinfo.
+- **Checka in/ut** — stor knapp som använder befintlig `LocationVerification` (1 km radie från projektadress). Visar live-timer och dagens intjänade lön. Endast incheckning tillåten på tilldelade projekt.
+- **Min historik** — egna check-ins, timmar, lön per dag/vecka/månad.
 
-**Behörighet**
-- Alla i organisationen kan se och lägga till
-- Endast admin kan radera (samma mönster som projektborttagning)
+### 4. Routing & roller
+- `ProtectedRoute` förbättras: roll `worker` redirectas alltid till `/worker`. Övriga roller får valet (men kan besöka `/worker`).
+- `AppNavSidebar` döljs för worker-rollen; istället en minimal mobilbottenmeny.
+- Auth-sidan oförändrad — byggaren loggar in med konto admin skapat.
 
-## Vidareutveckling – förslag att överväga
+### 5. Lönrapport (admin)
+- Ny vy under Tidsregistrering: "Lönrapport" där admin väljer period och team och får summa timmar + lön per byggare. Bygger på `worker_check_ins`.
 
-1. **Koppling till projekt**: från ett projekt kunna klicka "Hitta resurs" som öppnar Resurser-fliken förfiltrerad på projektets län.
-2. **Användningshistorik**: logga när en resurs "använts" på ett projekt, så man ser vilka som faktiskt anlitats och hur ofta.
-3. **Betyg/omdöme** (1–5 stjärnor + kommentar) så teamet bygger upp gemensam erfarenhet.
-4. **Bifoga filer** per resurs (offerter, avtal, prislistor) – återanvänder befintlig file storage.
-5. **Import/export CSV** för att snabbt fylla på initialt.
-6. **Mobilvy** – samma data men kort-baserad, med direkta ring/maila-knappar (viktigt ute på fält).
+## Tekniska detaljer
+- Geofencing: återanvänd `LocationVerification` (1 km). Block om ej verifierad.
+- Timer: räknas client-side från `check_in_at`, autouppdatering var 30 s.
+- Lön = `duration_hours * hourly_rate_snapshot` (snapshot låser lönen mot retroaktiva ändringar).
+- Edge function `create-worker-account` behöver `SUPABASE_SERVICE_ROLE_KEY` (finns) för att skapa användare via admin-API.
+- För Capacitor: GPS funkar redan; ingen ny native-plugin behövs.
 
-## Teknisk plan
+## Frågor jag inte tar ställning till nu (kan läggas till senare)
+- Foto-verifiering vid in/ut (befintlig `PhotoVerification` finns att aktivera).
+- Påminnelser/notiser om byggare glömmer checka ut.
+- Övertid/OB-regler.
 
-**Databas (Supabase)** – ny tabell `resources`:
-- `name`, `company`, `resource_types` (text[]), `counties` (text[]), `contact_person`, `phone`, `email`, `address`, `city`, `postal_code`, `website`, `notes`, `is_favorite`, `rating` (numeric, valfri), `times_used` (int, default 0)
-- Standard `organization_id`, `user_id`, `created_at`, `updated_at`
-- RLS: samma mönster som övriga tabeller (`is_organization_member`)
-- Admin-only delete via `has_role`
-
-**Konstanter**
-- `src/data/swedishCounties.ts` – alla 21 län
-- `src/data/resourceTypes.ts` – kategorier + färger/ikoner
-
-**Komponenter**
-- `src/components/resources/ResourcesView.tsx` – huvudvy med läns-grid + global sök
-- `src/components/resources/CountyResourcesView.tsx` – län-vy med filter
-- `src/components/resources/ResourceCard.tsx`
-- `src/components/resources/AddEditResourceModal.tsx`
-- `src/components/mobile/MobileResourcesView.tsx`
-
-**Hook**
-- `src/hooks/useResources.ts` – CRUD mot Supabase, optimistiska uppdateringar i samma stil som `useSupabaseStorage`
-
-**Integration**
-- Ny post i `AppNavSidebar.tsx` (ikon: `MapPin` eller `Contact`)
-- Ny `TabsContent value="resources"` i `src/pages/Index.tsx`
-- Mobil: ny post i `MobileHeader`/navigationen
-
-## Frågor innan jag börjar
-
-1. **Län eller region?** Vill du strikt 21 svenska län, eller era befintliga "regions" från `regions`-tabellen? (Län ger nationell täckning, regions matchar er nuvarande projektindelning.)
-2. **Vilka typer ska finnas från start?** Mitt förslag: Transportör, Byggvaruhus, Elektriker, Rörmokare, Solcellsmontör, Plåtslagare, Målare, Container, Ställning, Annat. Lägga till/ta bort något?
-3. **Ska en resurs kunna täcka flera län** (t.ex. en transportör som kör hela södra Sverige)? Mitt förslag: ja, via multi-val.
-4. **Koppling till projekt** (förslag 1+2 ovan) – vill du ha det i v1 eller spara till senare?
+Säg till om något ska ändras i planen, annars implementerar jag den.
