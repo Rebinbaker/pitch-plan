@@ -742,6 +742,7 @@ export type Database = {
         Row: {
           activity_log: Json
           assigned_members: Json
+          checklist: Json
           created_at: string
           dismantle: Json
           documents: Json
@@ -754,13 +755,18 @@ export type Database = {
           order_sent_to: string | null
           order_status: string
           organization_id: string
+          photos: Json
           project_id: string
+          risk_level: string
+          safety_signed_at: string | null
+          safety_signed_by: string | null
           transport: Json
           updated_at: string
         }
         Insert: {
           activity_log?: Json
           assigned_members?: Json
+          checklist?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
@@ -773,13 +779,18 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id: string
+          photos?: Json
           project_id: string
+          risk_level?: string
+          safety_signed_at?: string | null
+          safety_signed_by?: string | null
           transport?: Json
           updated_at?: string
         }
         Update: {
           activity_log?: Json
           assigned_members?: Json
+          checklist?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
@@ -792,7 +803,11 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id?: string
+          photos?: Json
           project_id?: string
+          risk_level?: string
+          safety_signed_at?: string | null
+          safety_signed_by?: string | null
           transport?: Json
           updated_at?: string
         }
