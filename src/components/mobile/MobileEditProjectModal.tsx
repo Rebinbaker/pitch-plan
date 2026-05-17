@@ -302,6 +302,34 @@ export function MobileEditProjectModal({
                   />
                 )}
 
+                {teams.filter((t) => t.type === 'Ställningsmontör').length > 0 && (
+                  <FormField
+                    control={form.control}
+                    name="scaffolding_team_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Ställningsteam</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder="Välj ställningsteam" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Inget ställningsteam</SelectItem>
+                            {teams.filter((t) => t.type === 'Ställningsmontör').map((team) => (
+                              <SelectItem key={team.id} value={team.id}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 {trailers.length > 0 && (
                   <FormField
                     control={form.control}
