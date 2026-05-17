@@ -325,6 +325,7 @@ export const useSupabaseStorage = () => {
             customer_phone: updatedProject.customerPhone,
             responsible_seller: updatedProject.responsibleSeller,
             construction_team: updatedProject.constructionTeam,
+            scaffolding_team_id: updatedProject.scaffoldingTeamId || null,
             construction_start_week: updatedProject.constructionStartWeek,
             rot_status: updatedProject.rotStatus,
             status: updatedProject.status,
