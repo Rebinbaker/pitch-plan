@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Briefcase, Clock, History } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { ScaffolderProjectsList } from '@/components/scaffolder/ScaffolderProjectsList';
+import { ScaffolderDashboard } from '@/components/scaffolder/ScaffolderDashboard';
 import { ScaffolderTimeTracking } from '@/components/scaffolder/ScaffolderTimeTracking';
 
 const ScaffolderAppInner = () => {
@@ -30,11 +30,11 @@ const ScaffolderAppInner = () => {
           </TabsList>
 
           <TabsContent value="projects">
-            <ScaffolderProjectsList mode="active" />
+            <ScaffolderDashboard mode="active" />
           </TabsContent>
 
           <TabsContent value="history">
-            <ScaffolderProjectsList mode="history" />
+            <ScaffolderDashboard mode="history" />
           </TabsContent>
 
           <TabsContent value="time">
