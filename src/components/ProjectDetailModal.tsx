@@ -39,6 +39,7 @@ import { downloadProjectReport } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDeadlineFromWorkDays } from '@/utils/weekCalculations';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
+import { ScaffoldingConfirmationsCard } from '@/components/ScaffoldingConfirmationsCard';
 
 interface ProjectDetailModalProps {
   project: Project | null;
