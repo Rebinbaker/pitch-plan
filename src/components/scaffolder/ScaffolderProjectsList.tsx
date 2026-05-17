@@ -45,38 +45,33 @@ interface Props {
 
 export function ScaffolderProjectsList({ mode }: Props) {
   const { user } = useAuth();
-  const { organizationId } = useOrganization();
+  const { organizationId, loading: organizationLoading } = useOrganization();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Project | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   const load = async () => {
-    if (!user || !organizationId) return;
+    if (!user) {
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!organizationId) {
+      if (!organizationLoading) {
+        setProjects([]);
+        setLoading(false);
+      }
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: teams } = await (supabase as any)
-        .from('teams')
-        .select('id, name, type, members')
-        .eq('organization_id', organizationId)
-        .eq('type', 'Ställningsmontör');
-
-      const myTeams = (teams || []).filter((t: any) => {
-        const members = Array.isArray(t.members) ? t.members : [];
-        return members.some((m: any) => m?.user_id === user.id);
-      });
-
-      if (myTeams.length === 0) {
-        setProjects([]);
-        return;
-      }
-
-      const teamIds = myTeams.map((t: any) => t.id);
       let query = supabase
         .from('projects' as any)
         .select('*')
-        .eq('organization_id', organizationId)
-        .in('scaffolding_team_id', teamIds);
+        .eq('organization_id', organizationId);
 
       if (mode === 'active') {
         query = query.in('status', ['planned', 'ongoing']);
@@ -94,7 +89,7 @@ export function ScaffolderProjectsList({ mode }: Props) {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, organizationId, mode]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, organizationId, organizationLoading, mode]);
 
   if (loading) {
     return <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
