@@ -245,6 +245,8 @@ export function AIPhotoAnalysisTab({ projectId, initialAnalysis, analyzedAt, onA
               <p className="text-xs text-muted-foreground border-t pt-3">Lägg till en bild av huset ovan för att kunna rita och visualisera ställningen.</p>
             )}
 
+            <ScaffoldingSectionsPanel projectId={projectId} />
+
             <div className="flex justify-end">
               <Button onClick={applyAsSpec} disabled={!analysis.materials?.length}>
                 Använd som materialspecifikation
