@@ -1,6 +1,7 @@
 import React from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { AdminPanel } from '@/components/AdminPanel';
+import { PeriCatalogUpload } from '@/components/admin/PeriCatalogUpload';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -39,6 +40,10 @@ const Admin: React.FC = () => {
         </div>
         
         <AdminPanel />
+
+        <div className="mt-6">
+          <PeriCatalogUpload />
+        </div>
       </div>
     </div>
   );
