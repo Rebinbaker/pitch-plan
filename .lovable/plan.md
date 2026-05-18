@@ -1,117 +1,101 @@
 ## Mål
-Bygg om ställningschefens vy så att den ser ut och fungerar som huvudappen (kort + checklista-modal + karta), men helt anpassad för ställningsarbete med 6-stegs checklista, automatisk materialberäkning, fotokrav och notiser.
+Skala ned ställningsmontörens vy till ett enkelt kort med AI-driven foto-analys som returnerar uppskattad höjd/längd och en PERI-materiallista.
 
-## 1. Layout — matcha huvudappen
+## 1. Förenklad checklista (4 punkter)
 
-Ersätt nuvarande `ScaffolderProjectsList` + `ScaffolderProjectModal` med samma struktur som `ProjectDashboard`/`ProjectDetailModal`:
-
-- Header med bild-bakgrund, titel "Ställningsprojekt", sökfält, statusfilter (Planerad / Pågående / Klar)
-- KPI-rad: `Totalt`, `Att planera`, `Pågående`, `Klara denna vecka`, `Försenade`
-- **Lista / Karta**-toggle (samma knapp uppe till höger)
-- Projektkort med adress, kund, byggstart, progress-bar (baserat på ställnings-checklistans 6 steg), risk-badge (röd/gul/grön)
-- Modal: flikar **Översikt · Checklista · Material · Transport · Bemanning · Foton · Aktivitetslogg**
-
-## 2. Checklista (6 sektioner i tabben "Checklista")
-
-Tabb-modal i exakt samma stil som huvudappens checklista (collapsible-sektioner med progress).
+Ersätt 6-stegs checklistan med:
 
 ```text
-1. PLANERING        8 punkter + Kommentarer/Risker/Extra material
-2. MATERIALBERÄKNING fält + auto-räknad lista + "Materiallista godkänd"
-3. TRANSPORT        5 punkter + tel/Maps-länk/bilder på avställning
-4. BEMANNING        5 punkter (montörer/starttid/boende/verktyg/lastbil)
-5. UTFÖRANDE        5 punkter (påbörjad/färdig/säkerhet/bilder/signering)
-6. SLUTFÖRT         3 punkter (PL notifierad/bygglag kan starta/klarmarkerad)
+☐ Foton + AI-analys klar
+☐ Materiallista godkänd & beställd
+☐ Transport bokad + montörer tilldelade
+☐ Ställning byggd & säkerhetssignerad
 ```
 
-Varje box sparas direkt till `scaffolding_jobs.checklist` (ny jsonb-kolumn) med `{key, checked, at, by}`.
+Allt annat (planerings-8-punkter, transport-5, bemanning-5, utförande-5, slutfört-3) tas bort. Risk-badge och "Klar"-spärr (foton + signering) behålls.
 
-## 3. Auto-materialberäkning
+## 2. AI-foto-analys (huvudfunktionen)
 
-Tabben "Material" får ett formulär:
+Ny tabb **"AI-analys"** i ställningsmodalen:
+
+- **Bildkälla**: knapp "Använd projektets bilder" (hämtar från `project-files`) + drag-and-drop upload till `worker-checkin-photos/scaffolding/{project_id}/ai-input/`
+- **"Analysera med AI"**-knapp → anropar edge function `analyze-scaffolding-photos`
+- **Resultat** visas direkt:
+  - Uppskattad **höjd**, **längd per sida**, **antal våningar**, **taktyp**, **risker** (åtkomst/mark/lift)
+  - **PERI-materiallista** (tabell: artikel, antal, enhet)
+  - Konfidensgrad + "AI-uppskattning, justera vid behov"-not
+- **"Använd som materialspecifikation"** fyller befintlig `material_spec` → befintligt beställnings-mail fungerar
+
+## 3. PERI-katalog
+
+Du laddar upp PERI-katalogen (PDF/Excel) i nästa steg. Vi:
+
+1. Parsar den med `document--parse_document` 
+2. Sparar artiklar i ny tabell `peri_catalog` (artikelnummer, namn, kategori, enhet, ev. pris)
+3. AI:n får katalogen som kontext + system-prompt: *"Returnera ENDAST artiklar från denna katalog"*
+
+## 4. Edge function: `analyze-scaffolding-photos`
 
 ```text
-Indata: längder (sidor[]), höjd (m), antal gavlar, specialdelar (textarea)
-
-Beräknas:
-  ramar         = ceil(totalLängd / 3) * floors
-  bomlag        = ramar
-  diagonaler    = ceil(ramar / 2)
-  fotplattor    = ramar * 2
-  räcken        = ramar * floors
-  trappor       = max(1, floor(totalLängd / 12))
-  konsoler      = round(ramar * 0.3)
-  väderskydd    = checkbox → täcker hela ytan
+Input:  { project_id, photo_urls: [], catalog_version }
+1. Hämtar PERI-katalog från DB
+2. Skickar bilderna + katalog till Lovable AI (google/gemini-2.5-pro — multimodal)
+3. Output via AI SDK structured output (Zod-schema):
+     { estimated: {sides_m[], height_m, floors, roof_type},
+       risks: [],
+       materials: [{peri_artnr, name, qty, unit}],
+       confidence: 0-1, notes }
+4. Sparar i scaffolding_jobs.ai_analysis (jsonb)
+5. Returnerar till klienten
 ```
 
-Resultatet visas som tabell + knapp **"Använd som materialspecifikation"** som fyller `material_spec` (befintlig). Sedan fungerar befintliga **Beställning**-flöde.
+Använder befintlig `LOVABLE_API_KEY` och `createLovableAiGatewayProvider`-mönstret.
 
-## 4. Fotokrav (blockerar slutförande)
+## 5. Databas
 
-Ny jsonb `documents.photos = { before: {hus,mark,placering}, after: {sida_n,sida_s,sida_o,sida_v,infästning,åtkomst,helhet} }`.
+```sql
+ALTER TABLE scaffolding_jobs 
+  ADD COLUMN ai_analysis jsonb DEFAULT '{}',
+  ADD COLUMN ai_analyzed_at timestamptz;
 
-Lagring: bucket `worker-checkin-photos` under prefix `scaffolding/{project_id}/`.
+CREATE TABLE peri_catalog (
+  id uuid pk, organization_id uuid, 
+  artnr text, name text, category text, unit text, 
+  price_sek numeric, active boolean default true
+);
+-- RLS: org-medlemmar läser, admin/moderator skriver
+```
 
-Regel i klienten + edge: "Klar"-knapp disabled tills alla obligatoriska foton finns + säkerhetscheck signerad.
+Vi tar bort de oanvända kolumnerna `checklist`, `photos`, `safety_signed_at/by`, `risk_level` behålls.
 
-## 5. Karta
+## 6. Filer som ändras/skapas
 
-Ny komponent `ScaffolderMapView` som återanvänder `react-leaflet`-uppställningen från `ProjectMapView` men:
-
-- Pin-färg = ställningsstatus (grå=ej planerad, blå=planerad, gul=pågående, grön=klar)
-- Sidopanel listar **Ställningsvagnar nära att släppas** (från `scaffolding`-tabellen där `status='I bruk'` + projekt med checklist-key `assembled` checked → "snart ledig") och **Upptagna ställningar**
-- Toggle Lista/Karta lagras i `localStorage` (`scaffolder-view-mode`), samma mönster som projektmemoryt
-
-## 6. Automatisering (notiser + logg)
-
-När `utforande.faerdigbyggd` markeras:
-
-- Uppdatera `scaffolding_confirmations.assembled_at` (befintlig flow)
-- Sätt motsvarande checkbox i `projects.checklist` ("Boka ställningsvagn") som klar
-- Skriv `activity_log`-rad med user_id + timestamp
-- Skapa `notifications`-rader till alla org-medlemmar med role admin/moderator (byggledare/COO) och till `responsible_seller`
-
-Görs i ny edge function `scaffolding-mark-assembled` som kallas från klienten.
-
-## Teknisk översikt
-
-### Databas (migration)
-- `scaffolding_jobs` ALTER: lägg till kolumn `checklist jsonb not null default '{}'`, `photos jsonb not null default '{}'`, `safety_signed_at timestamptz`, `safety_signed_by uuid`
-- `scaffolding_jobs` ALTER: lägg till `risk_level text check in ('green','yellow','red') default 'green'`
-- Storage: använd befintlig `worker-checkin-photos`-bucket, policys finns redan
-
-### Edge functions
-- Ny: `scaffolding-mark-assembled` (validerar scaffolder/admin, uppdaterar tabeller, skickar notiser)
-- Befintlig `send-scaffolding-order` behålls
-
-### Frontend (nya/ändrade filer)
 ```text
-src/pages/ScaffolderApp.tsx                       (tabs: Projekt | Karta | Historik | Tid)
-src/components/scaffolder/ScaffolderDashboard.tsx (NY — header/KPI/grid)
-src/components/scaffolder/ScaffolderProjectCard.tsx (NY)
-src/components/scaffolder/ScaffolderMapView.tsx   (NY)
-src/components/scaffolder/ScaffolderProjectModal.tsx (omarbetad — 7 tabbar)
-src/components/scaffolder/sections/
-  PlaneringSection.tsx
-  MaterialBerakningSection.tsx
-  TransportSection.tsx
-  BemanningSection.tsx
-  UtforandeSection.tsx
-  SlutfortSection.tsx
-  FotoUploadSection.tsx
-src/utils/scaffoldingCalculator.ts                (NY — auto-formler)
+SKAPAS:
+  supabase/functions/analyze-scaffolding-photos/index.ts
+  supabase/functions/_shared/ai-gateway.ts (om saknas)
+  src/components/scaffolder/AIPhotoAnalysisTab.tsx
+  src/components/admin/PeriCatalogUpload.tsx (admin laddar upp katalogen)
+
+FÖRENKLAS:
+  src/components/scaffolder/ScaffolderProjectModal.tsx  → 3 tabbar: Översikt | AI-analys | Material
+  src/components/scaffolder/scaffoldingChecklist.ts     → 4 punkter
+  src/components/scaffolder/ScaffolderProjectCard.tsx   → mindre info
+
+TAS BORT:
+  Sektionerna för planering/transport/bemanning/utförande/slutfört (komponenter fanns aldrig som separata filer — bara i checklistan)
 ```
 
-### Byggordning
-1. Migration (kolumner på `scaffolding_jobs`)
-2. `scaffoldingCalculator.ts` + sektionskomponenter
-3. Modal med 7 tabbar
-4. Dashboard + kort (kopiera mönster från `ProjectDashboard`)
-5. Kartvy
-6. Edge function + notiser
-7. Genomtest med befintligt projekt
+## Byggordning
 
-### Begränsningar i denna iteration
-- Bilder lagras men automatisk komprimering/EXIF görs inte
-- Notis-mailen till säljare/COO begränsas till in-app `notifications` (ingen e-post — kan läggas till senare)
-- Materialformlerna är schablon-baserade; finjustering görs när Michel testat
+1. **Du laddar upp PERI-katalogen** → jag parsar och skapar migration för `peri_catalog` + seed
+2. Migration: förenkla `scaffolding_jobs`
+3. Edge function `analyze-scaffolding-photos`
+4. `AIPhotoAnalysisTab` + förenklad modal/checklista
+5. Test med 3-4 riktiga husbilder
+
+## Begränsningar
+
+- AI-uppskattning är just det — en uppskattning. Användaren måste alltid kunna justera värdena innan beställning.
+- Första versionen kör en bild-batch åt gången (max ~10 bilder per analys).
+- Priser i PERI-katalogen lägger vi till senare om de inte finns med från start.
