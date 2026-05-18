@@ -785,6 +785,8 @@ export type Database = {
           activity_log: Json
           ai_analysis: Json
           ai_analyzed_at: string | null
+          ai_visualization_path: string | null
+          ai_visualized_at: string | null
           assigned_members: Json
           created_at: string
           dismantle: Json
@@ -808,6 +810,8 @@ export type Database = {
           activity_log?: Json
           ai_analysis?: Json
           ai_analyzed_at?: string | null
+          ai_visualization_path?: string | null
+          ai_visualized_at?: string | null
           assigned_members?: Json
           created_at?: string
           dismantle?: Json
@@ -831,6 +835,8 @@ export type Database = {
           activity_log?: Json
           ai_analysis?: Json
           ai_analyzed_at?: string | null
+          ai_visualization_path?: string | null
+          ai_visualized_at?: string | null
           assigned_members?: Json
           created_at?: string
           dismantle?: Json
