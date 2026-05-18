@@ -15,6 +15,8 @@ interface Body {
     height_m?: number;
     length_m?: number;
     calibration_reference_m?: number;
+    scale_confidence?: number;
+    calibration_sources?: Array<{ label: string; meters: number; px: number }>;
   };
 }
 
@@ -66,7 +68,9 @@ EXAKTA MÅTT FRÅN ANVÄNDAREN (mycket viktigt — följ dessa proportioner):
 - Ställningens HÖJD från mark till takfot: ${heightM} m
 - Ställningens LÄNGD längs fasaden: ${lengthM} m
 - Total fasadyta som ska täckas: ~${(heightM * lengthM).toFixed(1)} m²
-${m.calibration_reference_m ? `- Skala kalibrerad mot referensmått ${m.calibration_reference_m} m i bilden.` : ''}
+${Array.isArray(m.calibration_sources) && m.calibration_sources.length
+  ? `- Skala kalibrerad mot ${m.calibration_sources.length} referens(er): ${m.calibration_sources.map((c) => `${c.label} (${c.meters} m)`).join(', ')}.${typeof m.scale_confidence === 'number' ? ` Konfidens: ${Math.round(m.scale_confidence * 100)}%.` : ''}`
+  : (m.calibration_reference_m ? `- Skala kalibrerad mot referensmått ${m.calibration_reference_m} m i bilden.` : '')}
 
 KRAV:
 - Behåll huset, omgivningen, ljus, perspektiv och kameravinkel exakt som i originalbilden.
