@@ -11,6 +11,11 @@ interface Body {
   photo_url: string;
   analysis?: any;
   notes?: string;
+  measurements?: {
+    height_m?: number;
+    length_m?: number;
+    calibration_reference_m?: number;
+  };
 }
 
 Deno.serve(async (req) => {
