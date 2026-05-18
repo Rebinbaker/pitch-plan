@@ -46,8 +46,27 @@ export function AIPhotoAnalysisTab({ projectId, initialAnalysis, analyzedAt, onA
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | undefined>(initialAnalysis);
   const [loadingProjectPics, setLoadingProjectPics] = useState(false);
+  const [visualizing, setVisualizing] = useState(false);
+  const [vizUrl, setVizUrl] = useState<string | null>(null);
 
   useEffect(() => setAnalysis(initialAnalysis), [initialAnalysis]);
+
+  const visualize = async () => {
+    const first = photos[0]?.signedUrl || photos[0]?.publicUrl;
+    if (!first) { toast({ title: 'Lägg till minst en bild först', variant: 'destructive' }); return; }
+    setVisualizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('visualize-scaffolding', {
+        body: { project_id: projectId, photo_url: first, analysis, notes: notes || undefined },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setVizUrl((data as any).image_url);
+      toast({ title: 'Visualisering klar', description: 'AI har ritat in ställningen på bilden' });
+    } catch (e: any) {
+      toast({ title: 'Visualisering misslyckades', description: e.message, variant: 'destructive' });
+    } finally { setVisualizing(false); }
+  };
 
   const upload = async (files: FileList) => {
     if (!user) return;
