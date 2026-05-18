@@ -131,15 +131,15 @@ ${body.notes ? `\nExtra info: ${body.notes}` : ''}`;
     }
 
     // Konvertera data URL → bytes och ladda upp till storage
-    const m = imgUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-    if (!m) {
+    const dataMatch = imgUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+    if (!dataMatch) {
       return new Response(JSON.stringify({ error: 'Ogiltigt bildformat från AI' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const mime = m[1];
+    const mime = dataMatch[1];
     const ext = mime.split('/')[1].replace('jpeg', 'jpg');
-    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(dataMatch[2]), (c) => c.charCodeAt(0));
     const path = `${user.id}/scaffolding/${body.project_id}/ai-viz/${Date.now()}.${ext}`;
     const { error: upErr } = await admin.storage.from('worker-checkin-photos')
       .upload(path, bytes, { contentType: mime, upsert: true });
