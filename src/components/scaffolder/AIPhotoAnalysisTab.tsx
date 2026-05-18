@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Upload, X, Image as ImageIcon, Wand2, AlertTriangle } from 'lucide-react';
+import { Loader2, Sparkles, Upload, X, Image as ImageIcon, Wand2, AlertTriangle, Construction, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
