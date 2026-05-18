@@ -1,60 +1,118 @@
 ## Mål
 
-Få höjd/längd att stämma bättre genom att (1) tvinga räta linjer och (2) tillåta flera kalibreringsreferenser (egna mått + byggnadsstandarder) som snittas ihop till en stabilare skala.
+Bygga om AI-fotoanalysen till ett **AI-assisterat men regelstyrt** ställningsprojekteringssystem där AI hjälper, användaren mäter, en regelmotor räknar PERI-material och en overlay ritas på bilden.
 
-## Varför nuvarande mått blir för korta
+Detta är ett stort bygge — jag föreslår att leverera i **4 faser** så att varje steg kan testas och justeras innan nästa börjar.
 
-- Skalan kommer från **en enda kort kalibreringslinje** (du satte 2,1 m). Ett pixelfel på 5 px ger 10–20 % skalfel.
-- Höjd- och längdlinjerna är **inte räta** — du drar diagonalt, så pixelavståndet underskattar verkligt avstånd när du tror du drar lodrätt/vågrätt.
-- Ingen perspektivkompensation. En kort referens långt fram i bilden ger fel skala för fasaden längre bort.
+---
 
-## Vad jag bygger
+## Fas 1 — Datamodell & sektioner (grund)
 
-### 1. Lås raka linjer (`ScaffoldingPhotoMeasure.tsx`)
-- Ny `axis`-egenskap per linjetyp:
-  - `height` → låst **vertikal** (samma x)
-  - `length` → låst **horisontell** (samma y)
-  - `calibrate` → fri, eller väljbar (vertikal/horisontell/fri)
-- Shift-tangent = tillfälligt fri linje om något undantag behövs.
-- Vid `onMove`: snäpp x2/y2 till linjens fasta axel.
-- Tooltip visar live-mått under dragning.
+**Nya/utökade tabeller**
+- `scaffolding_sections` — en rad per ställningssektion (Sida 1, gavel osv.)
+  - `project_id`, `name`, `length_m`, `height_m`, `eave_height_m`, `width_m` (0.67/0.73), `work_levels`, `ground_condition`, `anchoring`, `bridging` (jsonb), `obstacles` (jsonb), `notes`
+- `scaffolding_measurements` — varje ritad linje
+  - `project_id`, `section_id` (nullable), `photo_url`, `type` (calibration/length/height/eave/obstacle/bridging/level-diff), `meters`, `px_length`, `coords` (jsonb {x1,y1,x2,y2}), `comment`, `confidence`, `source` (manual/ai)
+- `scaffolding_jobs` — utöka med: `project_status` (enum 9 statusar), `material_lines` (jsonb beräknat), `manual_overrides` (jsonb), `overlay_state` (jsonb), `checklist_state` (jsonb)
 
-### 2. Flera referensmått (kalibreringspanel)
-Ersätt enskilt "Referensmått"-fält med en lista över referenser:
+**Statusenum**
+`not_analyzed | ai_draft | measurements_verified | scaffolding_generated | manually_adjusted | material_approved | order_created | built | safety_checked`
 
+---
+
+## Fas 2 — Mät- & kalibreringsflöde
+
+Ersätt nuvarande `ScaffoldingPhotoMeasure` med en flerstegs-canvas:
+
+**Steg 1 – Kalibrering**
+- Välj referens: ytterdörr 2,10 m, fönster 1,20 m, garageport 2,10 m, tegelskift 0,32 m, våningshöjd 2,70 m, eller egen
+- Rita minst en (helst två) referenslinjer → räkna `metersPerPx` med viktat medelvärde och spridning
+- Färgad konfidensbadge (grön <10 %, gul <20 %, röd >20 %)
+- Varning om bara 1 referens
+
+**Steg 2 – Mått**
+Verktygspalett med typer: `fasadlängd`, `ställningshöjd`, `takfotshöjd`, `hinderzon` (rektangel), `överbryggning`, `marknivå-skillnad`. Axellåsning (vertikal/horisontell) från befintlig logik. Live-tooltip i meter. Varje linje sparas i `scaffolding_measurements`.
+
+**Steg 3 – Sektioner**
+Lista över sektioner. Knyt mätta linjer till en sektion (eller skapa ny från en längdlinje + höjdlinje). Formulär för bredd, bomlagshöjd, markförhållande, förankring, behov av fackverksbalk.
+
+---
+
+## Fas 3 — Regelmotor (PERI)
+
+Ny ren TS-modul: `src/utils/peri/scaffoldingEngine.ts`.
+
+**Input**: `ScaffoldingSection[]` + PERI-katalogartiklar (från `peri_catalog`-tabellen).
+
+**Konstanter (default, justerbara per system)**
+```ts
+BAY_LENGTHS = [3.07, 2.57, 2.07, 1.57, 1.09, 0.73]  // PERI UP standardfack
+LIFT_HEIGHT = 2.0    // bomlag
+DECK_WIDTH = 0.67    // standard
+ANCHOR_GRID = { vertical: 4.0, horizontal: 4.0 }  // var 4:e m
 ```
-[ + Lägg till referens ]
-  • Egen: rita linje + skriv mått (t.ex. "fönsterbredd 1,2 m")  [ta bort]
-  • Standard: dropdown med vanliga svenska byggmått ▾
-       - Ytterdörr höjd 2,10 m
-       - Ytterdörr bredd 0,90 m
-       - Fönster standard höjd 1,20 m
-       - Fönster standard bredd 1,00 m
-       - Tegelpannrad ≈ 0,32 m
-       - Våningshöjd hus ≈ 2,70 m
-       - Garageport höjd 2,10 m
-       - Takfotshöjd 1-plan ≈ 2,70 m
-```
 
-- Varje referens = en uppmätt linje + känt mått → ger en `metersPerPx`.
-- Slutlig skala = **viktat medel** där referenser med längre pixellängd får högre vikt (mer pålitliga).
-- Visa skala + spridning: "Skala 1,8 cm/px (±6 %, 3 referenser)" — färgat gult om spridning >15 %.
-- Varning om spridning är stor: "Dina referenser är inkonsekventa — kontrollera placeringen."
+**Algoritm per sektion**
+1. Dela längden i fackbitar (girigt största fack först + passbit)
+2. Antal bomlag = ceil(height / 2.0)
+3. Antal spirelinjer = facksektioner + 1
+4. Räkna:
+   - **Bottenskruvar/träunderlägg** = spirelinjer
+   - **Spiror + toppspiror** = spirelinjer × bomlag (välj längd)
+   - **Längd-/tvärbalkar** per fack och bomlag
+   - **Stålplan/combiplan** = facksektioner × arbetsnivåer
+   - **Fotlister** runt arbetsplan (längd + gavlar)
+   - **Räcken** översta planet + ändräcken på gavlar
+   - **Diagonaler** = var 5:e fack per bomlag (regel)
+   - **Förankringar** = ceil(area / (4×4)) × (öglebult + plugg + förankringsrör + koppling)
+   - **Fackverksbalk** om `bridging.span_m > 0`: välj balk efter spann, addera extra spiror vid landningar
+   - **Hörn-/returmaterial** = extra koppling/spira per hörn mellan sektioner
 
-### 3. Bättre UX runt kalibrering
-- Tydlig instruktion: "Rita längs något så långt som möjligt på samma avstånd som fasaden för bäst noggrannhet."
-- Knapp "Använd vägg-/fönsterstandard" som låter dig välja standardmått och bara rita linjen.
-- Höjd/längd-mått visas både vid linjen och i sammanfattningen, med konfidens-badge baserat på spridningen.
+5. Mappa varje regel mot `artnr` i `peri_catalog` (fallback om saknas → varningsrad)
 
-### 4. Skicka rikare data till `visualize-scaffolding`
-- `measurements.calibration_sources: [{label, meters, px}]`
-- `measurements.scale_confidence: number`
-- AI-prompten nämner att måtten är kalibrerade mot flera referenser.
+**Output**: `MaterialLine[] { artnr, name, qty, unit, section_id, source: 'auto'|'manual', rule_id, note? }`
 
-## Filer som ändras
-- `src/components/scaffolder/ScaffoldingPhotoMeasure.tsx` — axislåsning, multi-referens-state, viktad skala, ny UI.
-- `supabase/functions/visualize-scaffolding/index.ts` — ta emot `calibration_sources`, använda i prompten.
+**Test**: snapshot-test för en 10×6 m sektion → förväntad lista.
 
-## Inte i scope nu
-- Perspektivkorrigering (4-punkts homografi) — kan läggas till senare som "avancerat läge" om detta inte räcker.
-- AI-snäppning till takfot/kanter — kan läggas till efteråt.
+---
+
+## Fas 4 — Visuell overlay + AI-assist + checklista
+
+**Overlay-renderare** (SVG ovanpå bilden, skalad med `metersPerPx`)
+- Vertikala spirelinjer, horisontella bomlag, arbetsplan (fyllda rektanglar), diagonaler, räcken, fotlister, fackverksbalk över hinder, ankarprickar
+- Drag-handtag för att flytta sektion, dra i kant för längd/höjd, +/- bomlag, lägg till/ta bort fack
+- Vid ändring → regelmotor körs om → materiallista uppdateras live
+
+**AI-assist** (edge function `analyze-scaffolding-photos` uppdateras)
+- Returnerar **förslag** med konfidens för: takfotshöjd, fasadlängd, hinder (typ + bbox), behov av överbryggning, risker
+- UI visar förslag i sidpanel — användaren kan "Acceptera" (skapar mätlinje/sektion) eller "Avvisa"
+- Tre badges per värde: `AI-förslag` (grå) | `Bekräftad` (grön) | `Behöver granskas` (gul)
+
+**Materiallistepanel**
+- Tabell med artnr, namn, antal, enhet, sektion, källa (auto/manuell), kommentar
+- "Lägg till manuell rad" + "Justera antal" (sparas i `manual_overrides`)
+- Summerad totallista
+- Knapp "Godkänn materiallista" → status `material_approved`
+
+**Checklista för ställningschef** (15 punkter enligt spec)
+- Sparas i `scaffolding_jobs.checklist_state`
+- När "Ställning klar" bockas → uppdatera `projects.status` + logga i `activity_log` (vem, när, bilder, kommentar)
+
+---
+
+## Tekniska detaljer
+
+- **Frontend**: React + Konva (eller ren SVG) för canvas. Konva ger bättre drag-handtag — föreslår att lägga till `react-konva`.
+- **Regelmotor**: ren TypeScript i `src/utils/peri/` — körs i browsern (snabbt, inga round-trips). Edge function endast för AI-bildanalys.
+- **PERI-katalog**: använd befintlig `peri_catalog`-tabell. Lägg till ett `rule_mapping`-fält (jsonb) per artikel som regelmotorn matchar mot (t.ex. `{ kind: 'spire', length_m: 2.0 }`).
+- **Bakåtkomp**: nuvarande `AIPhotoAnalysisTab` ersätts av nytt `ScaffoldingProjectorTab` med 4 underflikar: **Bild & mått** | **Sektioner** | **Ritning & material** | **Checklista**.
+
+---
+
+## Förslag på leveransordning
+
+1. **Fas 1 + 2** först (databas + mätflöde med sektioner) — ca ett par stora steg
+2. **Fas 3** (regelmotor + materiallista, ingen overlay än) — verifierbart med tabellutdata
+3. **Fas 4** (overlay-canvas, AI-assist-panel, checklista, statusflöde)
+
+Vill du att jag börjar med **Fas 1 + 2** direkt, eller vill du ändra något i planen (t.ex. byta Konva mot ren SVG, eller skala ner sektionsmodellen)?
