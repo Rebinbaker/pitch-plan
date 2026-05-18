@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, User, Phone, Calendar, AlertTriangle, ShieldCheck, Hammer } from 'lucide-react';
+import { MapPin, User, Phone, Calendar, AlertTriangle, Sparkles, Hammer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Project } from '@/types/project';
-import { progressOverall, ChecklistState } from './scaffoldingChecklist';
+import { simpleProgress, SimpleChecklistState } from './scaffoldingChecklist';
 
 interface Props {
   project: Project;
@@ -14,25 +14,25 @@ interface Props {
 }
 
 export function ScaffolderProjectCard({ project, onOpen }: Props) {
-  const [state, setState] = useState<ChecklistState>({});
+  const [state, setState] = useState<SimpleChecklistState>({});
   const [risk, setRisk] = useState<'green' | 'yellow' | 'red'>('green');
-  const [safetySigned, setSafetySigned] = useState(false);
+  const [aiDone, setAiDone] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from('scaffolding_jobs' as any)
-        .select('checklist, risk_level, safety_signed_at')
+        .select('simple_checklist, risk_level, ai_analyzed_at')
         .eq('project_id', project.id).maybeSingle();
       if (data) {
-        setState((data as any).checklist || {});
+        setState((data as any).simple_checklist || {});
         setRisk((data as any).risk_level || 'green');
-        setSafetySigned(!!(data as any).safety_signed_at);
+        setAiDone(!!(data as any).ai_analyzed_at);
       }
     })();
   }, [project.id]);
 
-  const pct = progressOverall(state);
+  const pct = simpleProgress(state);
 
   return (
     <Card
@@ -53,7 +53,7 @@ export function ScaffolderProjectCard({ project, onOpen }: Props) {
             {risk === 'red' && <Badge variant="destructive" className="gap-1"><AlertTriangle className="w-3 h-3" />Akut</Badge>}
             {risk === 'yellow' && <Badge className="bg-yellow-500 text-white gap-1"><AlertTriangle className="w-3 h-3" />Risk</Badge>}
             {risk === 'green' && <Badge className="bg-emerald-600 text-white">OK</Badge>}
-            {safetySigned && <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-600"><ShieldCheck className="w-3 h-3" />Signerad</Badge>}
+            {aiDone && <Badge variant="outline" className="gap-1 text-primary border-primary"><Sparkles className="w-3 h-3" />AI</Badge>}
           </div>
         </div>
       </CardHeader>
@@ -65,7 +65,7 @@ export function ScaffolderProjectCard({ project, onOpen }: Props) {
         </div>
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Ställnings­framdrift</span>
+            <span className="text-muted-foreground">Framdrift</span>
             <span className="font-medium">{pct}%</span>
           </div>
           <Progress value={pct} className="h-2" />

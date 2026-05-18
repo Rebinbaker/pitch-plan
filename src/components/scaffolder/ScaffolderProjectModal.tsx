@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import {
-  Calendar, Truck, Hammer, CheckCircle2, Camera, X, Loader2, MapPin, User, Phone,
-  Package, Mail, Users, ClipboardList, ImageIcon, Send, Plus, Trash2, AlertTriangle, ShieldCheck,
+  Calendar, CheckCircle2, Loader2, MapPin, User, Phone,
+  Package, Mail, Sparkles, ClipboardList, Send, AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,32 +20,25 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import type { Project } from '@/types/project';
-import {
-  SCAFFOLDING_CHECKLIST, REQUIRED_PHOTOS, ChecklistState,
-  progressOfSection, progressOverall,
-} from './scaffoldingChecklist';
-import { calculateScaffolding, calcToMaterialSpec, ScaffoldingInput } from '@/utils/scaffoldingCalculator';
+import { SIMPLE_CHECKLIST, SimpleChecklistState, simpleProgress } from './scaffoldingChecklist';
+import { AIPhotoAnalysisTab } from './AIPhotoAnalysisTab';
+
+interface MaterialRow { id: string; type: string; quantity: number; unit: string; notes?: string }
 
 interface ScaffoldingJob {
   id?: string;
   project_id: string;
-  measurement: ScaffoldingInput & { notes?: string };
-  material_spec: Array<{ id: string; type: string; quantity: number; unit: string; notes?: string }>;
+  material_spec: MaterialRow[];
   order_status: 'draft' | 'sent' | 'confirmed';
   order_sent_at?: string | null;
   order_sent_to?: string | null;
   order_confirmed_at?: string | null;
   order_notes?: string | null;
-  transport: any;
-  assigned_members: Array<{ user_id?: string; member_id?: string; name: string; start_date?: string; days?: number }>;
-  dismantle: any;
-  documents: any[];
-  activity_log: Array<{ at: string; user_id?: string; action: string; [k: string]: any }>;
-  checklist: ChecklistState;
-  photos: Record<string, { url: string; at: string; by?: string }>;
-  safety_signed_at?: string | null;
-  safety_signed_by?: string | null;
+  ai_analysis?: any;
+  ai_analyzed_at?: string | null;
+  simple_checklist: SimpleChecklistState;
   risk_level: 'green' | 'yellow' | 'red';
+  activity_log: Array<{ at: string; user_id?: string; action: string; [k: string]: any }>;
 }
 
 interface Props {
@@ -57,17 +50,12 @@ interface Props {
 
 const emptyJob = (projectId: string): ScaffoldingJob => ({
   project_id: projectId,
-  measurement: { sides: [0], height: 0, gables: 0 },
   material_spec: [],
   order_status: 'draft',
-  transport: {},
-  assigned_members: [],
-  dismantle: {},
-  documents: [],
-  activity_log: [],
-  checklist: {},
-  photos: {},
+  ai_analysis: {},
+  simple_checklist: {},
   risk_level: 'green',
+  activity_log: [],
 });
 
 export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Props) {
@@ -98,23 +86,15 @@ export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Pr
       const { error } = await supabase.from('scaffolding_jobs' as any).upsert({
         project_id: project.id,
         organization_id: organizationId,
-        measurement: merged.measurement,
         material_spec: merged.material_spec,
         order_status: merged.order_status,
         order_sent_at: merged.order_sent_at,
         order_sent_to: merged.order_sent_to,
         order_confirmed_at: merged.order_confirmed_at,
         order_notes: merged.order_notes,
-        transport: merged.transport,
-        assigned_members: merged.assigned_members,
-        dismantle: merged.dismantle,
-        documents: merged.documents,
-        activity_log: merged.activity_log,
-        checklist: merged.checklist,
-        photos: merged.photos,
-        safety_signed_at: merged.safety_signed_at,
-        safety_signed_by: merged.safety_signed_by,
+        simple_checklist: merged.simple_checklist,
         risk_level: merged.risk_level,
+        activity_log: merged.activity_log,
       }, { onConflict: 'project_id' });
       if (error) throw error;
       setJob(merged);
@@ -126,13 +106,13 @@ export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Pr
 
   const toggleCheck = async (key: string) => {
     if (!job || !user) return;
-    const cur = job.checklist[key]?.checked;
-    const next: ChecklistState = {
-      ...job.checklist,
+    const cur = job.simple_checklist[key]?.checked;
+    const next: SimpleChecklistState = {
+      ...job.simple_checklist,
       [key]: { checked: !cur, at: new Date().toISOString(), by: user.id },
     };
     const log = [...(job.activity_log || []), { at: new Date().toISOString(), user_id: user.id, action: cur ? 'check_off' : 'check_on', key }];
-    await saveJob({ checklist: next, activity_log: log });
+    await saveJob({ simple_checklist: next, activity_log: log });
   };
 
   if (!project) return null;
@@ -154,38 +134,35 @@ export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Pr
           <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
           <>
-            <OverallProgress state={job.checklist} />
-            <Tabs defaultValue="checklist" className="mt-4">
-              <TabsList className="grid grid-cols-3 md:grid-cols-7 h-auto">
-                <TabsTrigger value="checklist" className="text-xs"><ClipboardList className="w-3 h-3 mr-1" />Checklista</TabsTrigger>
-                <TabsTrigger value="material" className="text-xs"><Package className="w-3 h-3 mr-1" />Material</TabsTrigger>
-                <TabsTrigger value="order" className="text-xs"><Mail className="w-3 h-3 mr-1" />Beställning</TabsTrigger>
-                <TabsTrigger value="transport" className="text-xs"><Truck className="w-3 h-3 mr-1" />Transport</TabsTrigger>
-                <TabsTrigger value="team" className="text-xs"><Users className="w-3 h-3 mr-1" />Bemanning</TabsTrigger>
-                <TabsTrigger value="photos" className="text-xs"><ImageIcon className="w-3 h-3 mr-1" />Foton</TabsTrigger>
-                <TabsTrigger value="log" className="text-xs"><Hammer className="w-3 h-3 mr-1" />Logg</TabsTrigger>
+            <OverallProgress state={job.simple_checklist} />
+            <Tabs defaultValue="overview" className="mt-4">
+              <TabsList className="grid grid-cols-3 h-auto">
+                <TabsTrigger value="overview"><ClipboardList className="w-4 h-4 mr-1" />Översikt</TabsTrigger>
+                <TabsTrigger value="ai"><Sparkles className="w-4 h-4 mr-1" />AI-analys</TabsTrigger>
+                <TabsTrigger value="material"><Package className="w-4 h-4 mr-1" />Material & beställning</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="checklist" className="mt-4 space-y-3">
-                {SCAFFOLDING_CHECKLIST.map((section) => (
-                  <ChecklistSectionCard
-                    key={section.id} section={section} state={job.checklist}
-                    onToggle={toggleCheck}
-                  />
-                ))}
-                <RiskCommentSection job={job} onSave={(risk_level, log) => saveJob({ risk_level, activity_log: log })} />
+              <TabsContent value="overview" className="mt-4 space-y-3">
+                <ChecklistCard state={job.simple_checklist} onToggle={toggleCheck} />
+                <RiskCard job={job} onSave={(risk_level, log) => saveJob({ risk_level, activity_log: log })} />
               </TabsContent>
 
-              <TabsContent value="material" className="mt-4">
-                <MaterialAutoSection
-                  job={job}
-                  onSaveMeasurement={(measurement) => saveJob({ measurement })}
-                  onApplySpec={(material_spec) => saveJob({ material_spec })}
+              <TabsContent value="ai" className="mt-4">
+                <AIPhotoAnalysisTab
+                  projectId={project.id}
+                  initialAnalysis={job.ai_analysis}
+                  analyzedAt={job.ai_analyzed_at}
+                  onAnalysisDone={async () => {
+                    const { data } = await supabase.from('scaffolding_jobs' as any).select('*').eq('project_id', project.id).maybeSingle();
+                    if (data) setJob({ ...emptyJob(project.id), ...(data as any) });
+                  }}
+                  onApplyAsSpec={(rows) => saveJob({ material_spec: rows })}
                 />
               </TabsContent>
 
-              <TabsContent value="order" className="mt-4">
-                <MaterialOrderSection
+              <TabsContent value="material" className="mt-4 space-y-3">
+                <MaterialSpecCard job={job} onSave={(material_spec) => saveJob({ material_spec })} />
+                <MaterialOrderCard
                   job={job} projectId={project.id}
                   onSent={async () => {
                     const { data } = await supabase.from('scaffolding_jobs' as any).select('*').eq('project_id', project.id).maybeSingle();
@@ -194,26 +171,6 @@ export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Pr
                   onConfirm={() => saveJob({ order_status: 'confirmed', order_confirmed_at: new Date().toISOString() })}
                 />
               </TabsContent>
-
-              <TabsContent value="transport" className="mt-4">
-                <TransportSection job={job} onSave={(transport) => saveJob({ transport })} />
-              </TabsContent>
-
-              <TabsContent value="team" className="mt-4">
-                <AssemblerAssignmentSection project={project} job={job}
-                  onSave={(assigned_members) => saveJob({ assigned_members })} />
-              </TabsContent>
-
-              <TabsContent value="photos" className="mt-4">
-                <PhotoSection job={job} projectId={project.id}
-                  onSave={(photos) => saveJob({ photos })}
-                  onSignSafety={() => saveJob({ safety_signed_at: new Date().toISOString(), safety_signed_by: user?.id || null })}
-                />
-              </TabsContent>
-
-              <TabsContent value="log" className="mt-4">
-                <ActivityLog job={job} />
-              </TabsContent>
             </Tabs>
           </>
         )}
@@ -221,8 +178,6 @@ export function ScaffolderProjectModal({ project, open, onClose, onChanged }: Pr
     </Dialog>
   );
 }
-
-/* ============ Subkomponenter ============ */
 
 function RiskBadge({ level }: { level: 'green' | 'yellow' | 'red' }) {
   if (level === 'red') return <Badge variant="destructive" className="gap-1"><AlertTriangle className="w-3 h-3" />Akut</Badge>;
@@ -259,38 +214,34 @@ function ProjectInfo({ project }: { project: Project }) {
   );
 }
 
-function OverallProgress({ state }: { state: ChecklistState }) {
-  const pct = progressOverall(state);
+function OverallProgress({ state }: { state: SimpleChecklistState }) {
+  const pct = simpleProgress(state);
   return (
     <div className="mt-3 space-y-1">
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Total framdrift</span><span>{pct}%</span>
+        <span>Framdrift</span><span>{pct}%</span>
       </div>
       <Progress value={pct} />
     </div>
   );
 }
 
-function ChecklistSectionCard({
-  section, state, onToggle,
-}: { section: typeof SCAFFOLDING_CHECKLIST[number]; state: ChecklistState; onToggle: (k: string) => void }) {
-  const pct = progressOfSection(section, state);
+function ChecklistCard({ state, onToggle }: { state: SimpleChecklistState; onToggle: (k: string) => void }) {
   return (
     <Card>
       <CardContent className="p-4 space-y-2">
-        <div className="flex justify-between items-center">
-          <h3 className="font-semibold">{section.title}</h3>
-          <Badge variant={pct === 100 ? 'default' : 'secondary'}>{pct}%</Badge>
-        </div>
-        <Progress value={pct} className="h-1" />
-        <div className="space-y-1 pt-2">
-          {section.items.map((i) => {
+        <h3 className="font-semibold">Checklista</h3>
+        <div className="space-y-1">
+          {SIMPLE_CHECKLIST.map((i) => {
             const c = state[i.key];
             return (
-              <label key={i.key} className="flex items-start gap-2 py-1 cursor-pointer hover:bg-muted/40 rounded px-2">
+              <label key={i.key} className="flex items-start gap-3 py-2 px-2 cursor-pointer hover:bg-muted/40 rounded">
                 <Checkbox checked={!!c?.checked} onCheckedChange={() => onToggle(i.key)} className="mt-0.5" />
-                <span className={`text-sm flex-1 ${c?.checked ? 'line-through text-muted-foreground' : ''}`}>{i.label}</span>
-                {c?.at && <span className="text-xs text-muted-foreground">{format(new Date(c.at), 'd MMM', { locale: sv })}</span>}
+                <div className="flex-1">
+                  <div className={`text-sm font-medium ${c?.checked ? 'line-through text-muted-foreground' : ''}`}>{i.label}</div>
+                  {i.description && <div className="text-xs text-muted-foreground">{i.description}</div>}
+                </div>
+                {c?.at && <span className="text-xs text-muted-foreground shrink-0">{format(new Date(c.at), 'd MMM HH:mm', { locale: sv })}</span>}
               </label>
             );
           })}
@@ -300,19 +251,17 @@ function ChecklistSectionCard({
   );
 }
 
-function RiskCommentSection({
-  job, onSave,
-}: { job: ScaffoldingJob; onSave: (level: 'green' | 'yellow' | 'red', log: any[]) => void }) {
+function RiskCard({ job, onSave }: { job: ScaffoldingJob; onSave: (level: 'green' | 'yellow' | 'red', log: any[]) => void }) {
   return (
     <Card>
       <CardContent className="p-4 space-y-2">
         <Label>Risknivå</Label>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {(['green', 'yellow', 'red'] as const).map((lvl) => (
             <Button key={lvl} size="sm" variant={job.risk_level === lvl ? 'default' : 'outline'}
               onClick={() => onSave(lvl, [...(job.activity_log || []), { at: new Date().toISOString(), action: 'risk_set', level: lvl }])}
               className={job.risk_level === lvl ? (lvl === 'red' ? 'bg-destructive' : lvl === 'yellow' ? 'bg-yellow-500' : 'bg-emerald-600') : ''}>
-              {lvl === 'green' ? 'Grön (OK)' : lvl === 'yellow' ? 'Gul (Snart)' : 'Röd (Akut)'}
+              {lvl === 'green' ? 'Grön (OK)' : lvl === 'yellow' ? 'Gul (Risk)' : 'Röd (Akut)'}
             </Button>
           ))}
         </div>
@@ -321,98 +270,49 @@ function RiskCommentSection({
   );
 }
 
-function MaterialAutoSection({
-  job, onSaveMeasurement, onApplySpec,
-}: {
-  job: ScaffoldingJob;
-  onSaveMeasurement: (m: ScaffoldingJob['measurement']) => void;
-  onApplySpec: (s: ScaffoldingJob['material_spec']) => void;
-}) {
-  const [m, setM] = useState<ScaffoldingInput & { notes?: string }>({
-    sides: job.measurement?.sides?.length ? job.measurement.sides : [0],
-    height: job.measurement?.height || 0,
-    gables: job.measurement?.gables || 0,
-    weatherProtection: job.measurement?.weatherProtection || false,
-    specials: job.measurement?.specials || '',
-    notes: job.measurement?.notes || '',
-  });
-  useEffect(() => {
-    setM({
-      sides: job.measurement?.sides?.length ? job.measurement.sides : [0],
-      height: job.measurement?.height || 0,
-      gables: job.measurement?.gables || 0,
-      weatherProtection: job.measurement?.weatherProtection || false,
-      specials: job.measurement?.specials || '',
-      notes: job.measurement?.notes || '',
-    });
-  }, [job.measurement]);
+function MaterialSpecCard({ job, onSave }: { job: ScaffoldingJob; onSave: (rows: MaterialRow[]) => void }) {
+  const [rows, setRows] = useState<MaterialRow[]>(job.material_spec || []);
+  useEffect(() => setRows(job.material_spec || []), [job.material_spec]);
 
-  const calc = calculateScaffolding(m);
-  const rows = calcToMaterialSpec(calc, m.gables);
+  const update = (i: number, patch: Partial<MaterialRow>) =>
+    setRows(rows.map((r, ix) => (ix === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => setRows(rows.filter((_, ix) => ix !== i));
+  const add = () => setRows([...rows, { id: `row-${Date.now()}`, type: '', quantity: 0, unit: 'st' }]);
 
   return (
-    <div className="space-y-3">
-      <Card><CardContent className="p-4 space-y-3">
-        <h3 className="font-semibold">Mått</h3>
-        <div className="space-y-2">
-          <Label>Husets längder (meter per sida)</Label>
-          {m.sides.map((s, i) => (
-            <div key={i} className="flex gap-2">
-              <Input type="number" value={s || ''} placeholder={`Sida ${i + 1}`}
-                onChange={(e) => {
-                  const v = [...m.sides]; v[i] = Number(e.target.value) || 0; setM({ ...m, sides: v });
-                }} />
-              {m.sides.length > 1 && (
-                <Button variant="ghost" size="icon" onClick={() => setM({ ...m, sides: m.sides.filter((_, ix) => ix !== i) })}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => setM({ ...m, sides: [...m.sides, 0] })}>
-            <Plus className="w-4 h-4 mr-1" />Lägg till sida
-          </Button>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-3">
-          <div><Label>Höjd (m)</Label><Input type="number" value={m.height || ''} onChange={(e) => setM({ ...m, height: Number(e.target.value) || 0 })} /></div>
-          <div><Label>Antal gavlar</Label><Input type="number" value={m.gables || ''} onChange={(e) => setM({ ...m, gables: Number(e.target.value) || 0 })} /></div>
-          <div className="flex items-end gap-2">
-            <Checkbox id="vader" checked={m.weatherProtection} onCheckedChange={(v) => setM({ ...m, weatherProtection: !!v })} />
-            <Label htmlFor="vader">Väderskydd</Label>
-          </div>
-        </div>
-        <div><Label>Specialdelar / anteckning</Label><Textarea rows={2} value={m.specials || ''} onChange={(e) => setM({ ...m, specials: e.target.value })} /></div>
-        <div className="flex justify-end">
-          <Button size="sm" variant="outline" onClick={() => onSaveMeasurement(m)}>Spara mått</Button>
-        </div>
-      </CardContent></Card>
-
-      <Card><CardContent className="p-4 space-y-3">
+    <Card>
+      <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Auto-beräknad materiallista</h3>
-          <span className="text-xs text-muted-foreground">{calc.totalLength} m · {calc.floors} våning(ar) · {calc.totalArea} m²</span>
+          <h3 className="font-semibold">Materialspecifikation</h3>
+          <Badge variant="outline">{rows.length} artiklar</Badge>
         </div>
-        <div className="border rounded overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50"><tr><th className="text-left p-2">Typ</th><th className="text-right p-2">Antal</th><th className="text-left p-2">Enhet</th></tr></thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t"><td className="p-2">{r.type}</td><td className="p-2 text-right font-medium">{r.quantity}</td><td className="p-2 text-muted-foreground">{r.unit}</td></tr>
-              ))}
-            </tbody>
-          </table>
+        <p className="text-xs text-muted-foreground">Använd AI-analysen för att fylla i denna automatiskt, eller redigera manuellt.</p>
+        {rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-4 text-center border-2 border-dashed rounded">
+            Ingen materialspec än. Använd AI-analys eller lägg till manuellt.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {rows.map((r, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                <Input className="col-span-7" placeholder="Artikel" value={r.type} onChange={(e) => update(i, { type: e.target.value })} />
+                <Input className="col-span-2" type="number" placeholder="Antal" value={r.quantity || ''} onChange={(e) => update(i, { quantity: Number(e.target.value) || 0 })} />
+                <Input className="col-span-2" placeholder="Enhet" value={r.unit} onChange={(e) => update(i, { unit: e.target.value })} />
+                <Button variant="ghost" size="icon" className="col-span-1" onClick={() => remove(i)}>×</Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-between">
+          <Button variant="outline" size="sm" onClick={add}>+ Rad</Button>
+          <Button size="sm" onClick={() => onSave(rows)}>Spara spec</Button>
         </div>
-        <div className="flex justify-end gap-2">
-          <Button size="sm" onClick={() => { onSaveMeasurement(m); onApplySpec(rows); toast({ title: 'Materialspec uppdaterad' }); }}>
-            Använd som materialspecifikation
-          </Button>
-        </div>
-      </CardContent></Card>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function MaterialOrderSection({
+function MaterialOrderCard({
   job, projectId, onSent, onConfirm,
 }: { job: ScaffoldingJob; projectId: string; onSent: () => void; onConfirm: () => void }) {
   const [supplierEmail, setSupplierEmail] = useState('');
@@ -438,218 +338,32 @@ function MaterialOrderSection({
   };
 
   return (
-    <Card><CardContent className="p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Badge variant={job.order_status === 'confirmed' ? 'default' : job.order_status === 'sent' ? 'secondary' : 'outline'}>
-          {job.order_status === 'confirmed' ? 'Bekräftad' : job.order_status === 'sent' ? 'Skickad' : 'Utkast'}
-        </Badge>
-        {job.order_sent_at && (
-          <span className="text-xs text-muted-foreground">Skickad {format(new Date(job.order_sent_at), 'd MMM HH:mm', { locale: sv })} till {job.order_sent_to}</span>
-        )}
-      </div>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>Leverantörens e-post</Label><Input type="email" value={supplierEmail} onChange={(e) => setSupplierEmail(e.target.value)} placeholder="order@leverantor.se" /></div>
-        <div><Label>Önskat leveransdatum</Label><Input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} /></div>
-      </div>
-      <div><Label>Övrigt meddelande</Label><Textarea rows={3} value={extra} onChange={(e) => setExtra(e.target.value)} /></div>
-      <div className="flex justify-between flex-wrap gap-2">
-        <Button variant="outline" size="sm" disabled={job.order_status !== 'sent'} onClick={onConfirm}>
-          <CheckCircle2 className="w-4 h-4 mr-1" />Markera bekräftad
-        </Button>
-        <Button size="sm" onClick={send} disabled={sending}>
-          {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-          {job.order_status === 'sent' ? 'Skicka igen' : 'Skicka beställning'}
-        </Button>
-      </div>
-    </CardContent></Card>
-  );
-}
-
-function TransportSection({ job, onSave }: { job: ScaffoldingJob; onSave: (t: any) => void }) {
-  const [t, setT] = useState(job.transport || {});
-  useEffect(() => setT(job.transport || {}), [job.transport]);
-  return (
-    <Card><CardContent className="p-4 space-y-3">
-      <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>Transportör / chaufför</Label><Input value={t.carrier ?? ''} onChange={(e) => setT({ ...t, carrier: e.target.value })} /></div>
-        <div><Label>Leveransdag</Label><Input type="date" value={t.date ?? ''} onChange={(e) => setT({ ...t, date: e.target.value })} /></div>
-        <div><Label>Telefonnummer</Label><Input value={t.phone ?? ''} onChange={(e) => setT({ ...t, phone: e.target.value })} /></div>
-        <div><Label>Kontaktperson på plats</Label><Input value={t.contact ?? ''} onChange={(e) => setT({ ...t, contact: e.target.value })} /></div>
-        <div className="sm:col-span-2"><Label>Google Maps-länk (avställningsplats)</Label><Input value={t.maps_url ?? ''} onChange={(e) => setT({ ...t, maps_url: e.target.value })} placeholder="https://maps.app.goo.gl/..." /></div>
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button size="sm" onClick={() => onSave(t)}>Spara</Button>
-      </div>
-    </CardContent></Card>
-  );
-}
-
-function AssemblerAssignmentSection({
-  project, job, onSave,
-}: { project: Project; job: ScaffoldingJob; onSave: (m: ScaffoldingJob['assigned_members']) => void }) {
-  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; user_id?: string }>>([]);
-  const [assigned, setAssigned] = useState(job.assigned_members || []);
-  useEffect(() => setAssigned(job.assigned_members || []), [job.assigned_members]);
-  useEffect(() => {
-    (async () => {
-      if (!project.scaffoldingTeamId) return;
-      const { data } = await supabase.from('teams').select('members').eq('id', project.scaffoldingTeamId).maybeSingle();
-      const members = ((data as any)?.members as any[]) || [];
-      setTeamMembers(members.map((m) => ({ id: m.id, firstName: m.firstName || m.first_name || '', lastName: m.lastName || m.last_name || '', user_id: m.user_id })));
-    })();
-  }, [project.scaffoldingTeamId]);
-
-  const toggle = (m: typeof teamMembers[number]) => {
-    const exists = assigned.find((a) => a.member_id === m.id);
-    if (exists) setAssigned(assigned.filter((a) => a.member_id !== m.id));
-    else setAssigned([...assigned, { member_id: m.id, user_id: m.user_id, name: `${m.firstName} ${m.lastName}`.trim() }]);
-  };
-  const updField = (member_id: string, patch: any) =>
-    setAssigned(assigned.map((a) => (a.member_id === member_id ? { ...a, ...patch } : a)));
-
-  if (!project.scaffoldingTeamId) {
-    return <Card><CardContent className="p-4 text-sm text-muted-foreground">Inget ställningsteam kopplat till projektet.</CardContent></Card>;
-  }
-  if (teamMembers.length === 0) {
-    return <Card><CardContent className="p-4 text-sm text-muted-foreground">Inga medlemmar i ditt team.</CardContent></Card>;
-  }
-  return (
-    <Card><CardContent className="p-4 space-y-3">
-      <div className="space-y-2">
-        {teamMembers.map((m) => {
-          const a = assigned.find((x) => x.member_id === m.id);
-          return (
-            <div key={m.id} className="grid grid-cols-12 gap-2 items-center border rounded p-2">
-              <Button size="sm" variant={a ? 'default' : 'outline'} className="col-span-4 justify-start" onClick={() => toggle(m)}>
-                {a ? <CheckCircle2 className="w-4 h-4 mr-1" /> : null}{m.firstName} {m.lastName}
-              </Button>
-              {a && (
-                <>
-                  <Input className="col-span-4" type="date" value={a.start_date ?? ''} onChange={(e) => updField(m.id, { start_date: e.target.value })} />
-                  <Input className="col-span-3" type="number" placeholder="Dagar" value={a.days ?? ''} onChange={(e) => updField(m.id, { days: Number(e.target.value) || undefined })} />
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex justify-end"><Button size="sm" onClick={() => onSave(assigned)}>Spara bemanning</Button></div>
-    </CardContent></Card>
-  );
-}
-
-function PhotoSection({
-  job, projectId, onSave, onSignSafety,
-}: {
-  job: ScaffoldingJob; projectId: string;
-  onSave: (p: ScaffoldingJob['photos']) => void;
-  onSignSafety: () => void;
-}) {
-  const { user } = useAuth();
-  const [uploading, setUploading] = useState<string | null>(null);
-  const [signed, setSigned] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    (async () => {
-      const next: Record<string, string> = {};
-      for (const [k, v] of Object.entries(job.photos || {})) {
-        if (v?.url) {
-          const { data } = await supabase.storage.from('worker-checkin-photos').createSignedUrl(v.url, 3600);
-          if (data?.signedUrl) next[k] = data.signedUrl;
-        }
-      }
-      setSigned(next);
-    })();
-  }, [job.photos]);
-
-  const upload = async (key: string, file: File) => {
-    if (!user) return;
-    setUploading(key);
-    try {
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${user.id}/scaffolding/${projectId}/${key}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('worker-checkin-photos').upload(path, file, { contentType: file.type || 'image/jpeg' });
-      if (error) throw error;
-      const photos = { ...(job.photos || {}), [key]: { url: path, at: new Date().toISOString(), by: user.id } };
-      onSave(photos);
-      toast({ title: 'Foto sparat' });
-    } catch (e: any) {
-      toast({ title: 'Uppladdning misslyckades', description: e.message, variant: 'destructive' });
-    } finally { setUploading(null); }
-  };
-
-  const remove = (key: string) => {
-    const next = { ...(job.photos || {}) };
-    delete next[key];
-    onSave(next);
-  };
-
-  const renderGroup = (title: string, items: readonly { key: string; label: string }[]) => (
-    <div className="space-y-2">
-      <h4 className="font-medium text-sm">{title}</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {items.map((p) => {
-          const has = job.photos?.[p.key];
-          return (
-            <div key={p.key} className="border rounded p-2 space-y-1">
-              <div className="text-xs font-medium">{p.label}</div>
-              {has && signed[p.key] ? (
-                <div className="relative">
-                  <img src={signed[p.key]} alt={p.label} className="w-full h-24 object-cover rounded" />
-                  <Button size="icon" variant="secondary" className="absolute top-1 right-1 h-6 w-6" onClick={() => remove(p.key)}><X className="w-3 h-3" /></Button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed rounded cursor-pointer hover:bg-muted/40">
-                  {uploading === p.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4 text-muted-foreground" />}
-                  <span className="text-[10px] text-muted-foreground mt-1">Ladda upp</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(p.key, f); }} />
-                </label>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const allBefore = REQUIRED_PHOTOS.before.every((p) => job.photos?.[p.key]);
-  const allAfter = REQUIRED_PHOTOS.after.every((p) => job.photos?.[p.key]);
-  const canSign = allBefore && allAfter;
-
-  return (
-    <Card><CardContent className="p-4 space-y-4">
-      {renderGroup('Före montering', REQUIRED_PHOTOS.before)}
-      {renderGroup('Efter montering', REQUIRED_PHOTOS.after)}
-      <div className="border-t pt-3 flex items-center justify-between">
-        <div className="text-sm">
-          {job.safety_signed_at ? (
-            <span className="flex items-center gap-1 text-emerald-600 font-medium">
-              <ShieldCheck className="w-4 h-4" />Säkerhetskontroll signerad {format(new Date(job.safety_signed_at), 'd MMM HH:mm', { locale: sv })}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">{canSign ? 'Alla foton uppladdade — du kan signera säkerhetskontrollen.' : 'Ladda upp alla obligatoriska foton för att kunna signera.'}</span>
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">Beställning</h3>
+          <Badge variant={job.order_status === 'confirmed' ? 'default' : job.order_status === 'sent' ? 'secondary' : 'outline'}>
+            {job.order_status === 'confirmed' ? 'Bekräftad' : job.order_status === 'sent' ? 'Skickad' : 'Utkast'}
+          </Badge>
+          {job.order_sent_at && (
+            <span className="text-xs text-muted-foreground">Skickad {format(new Date(job.order_sent_at), 'd MMM HH:mm', { locale: sv })} till {job.order_sent_to}</span>
           )}
         </div>
-        <Button size="sm" disabled={!canSign || !!job.safety_signed_at} onClick={onSignSafety}>
-          <ShieldCheck className="w-4 h-4 mr-1" />Signera säkerhet
-        </Button>
-      </div>
-    </CardContent></Card>
-  );
-}
-
-function ActivityLog({ job }: { job: ScaffoldingJob }) {
-  const log = [...(job.activity_log || [])].reverse();
-  if (log.length === 0) return <Card><CardContent className="p-4 text-sm text-muted-foreground">Inga händelser än.</CardContent></Card>;
-  return (
-    <Card><CardContent className="p-4 space-y-2 text-sm">
-      {log.map((e, i) => (
-        <div key={i} className="flex justify-between border-b last:border-0 pb-1">
-          <span>{e.action} {e.key ? <span className="text-muted-foreground">· {e.key}</span> : null}</span>
-          <span className="text-xs text-muted-foreground">{format(new Date(e.at), 'd MMM HH:mm', { locale: sv })}</span>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div><Label>Leverantörens e-post</Label><Input type="email" value={supplierEmail} onChange={(e) => setSupplierEmail(e.target.value)} placeholder="order@peri.se" /></div>
+          <div><Label>Önskat leveransdatum</Label><Input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} /></div>
         </div>
-      ))}
-    </CardContent></Card>
+        <div><Label>Övrigt meddelande</Label><Textarea rows={3} value={extra} onChange={(e) => setExtra(e.target.value)} /></div>
+        <div className="flex justify-between flex-wrap gap-2">
+          <Button variant="outline" size="sm" disabled={job.order_status !== 'sent'} onClick={onConfirm}>
+            <CheckCircle2 className="w-4 h-4 mr-1" />Markera bekräftad
+          </Button>
+          <Button size="sm" onClick={send} disabled={sending}>
+            {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+            {job.order_status === 'sent' ? 'Skicka igen' : 'Skicka beställning'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

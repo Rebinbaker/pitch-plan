@@ -9,7 +9,7 @@ import { Truck, MapPin as MapPinIcon, AlertTriangle, CheckCircle2 } from 'lucide
 import { supabase } from '@/integrations/supabase/client';
 import { batchGeocodeAddresses } from '@/utils/geocoding';
 import type { Project } from '@/types/project';
-import { progressOverall, ChecklistState } from './scaffoldingChecklist';
+import { simpleProgress, SimpleChecklistState } from './scaffoldingChecklist';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -20,9 +20,8 @@ L.Icon.Default.mergeOptions({
 
 interface JobMeta {
   project_id: string;
-  checklist: ChecklistState;
+  simple_checklist: SimpleChecklistState;
   risk_level: 'green' | 'yellow' | 'red';
-  safety_signed_at: string | null;
 }
 
 interface GeoProject extends Project {
@@ -76,7 +75,7 @@ export function ScaffolderMapView({ projects, onOpen }: Props) {
     (async () => {
       const ids = projects.map((p) => p.id);
       if (ids.length === 0) { setJobs({}); return; }
-      const { data } = await supabase.from('scaffolding_jobs' as any).select('project_id, checklist, risk_level, safety_signed_at').in('project_id', ids);
+      const { data } = await supabase.from('scaffolding_jobs' as any).select('project_id, simple_checklist, risk_level').in('project_id', ids);
       const map: Record<string, JobMeta> = {};
       ((data as any[]) || []).forEach((j) => { map[j.project_id] = j; });
       setJobs(map);
@@ -102,9 +101,9 @@ export function ScaffolderMapView({ projects, onOpen }: Props) {
         const j = jobs[p.id];
         return {
           ...p, lat: c.lat, lng: c.lng,
-          pct: j ? progressOverall(j.checklist || {}) : 0,
+          pct: j ? simpleProgress(j.simple_checklist || {}) : 0,
           risk: j?.risk_level || 'green',
-          safetySigned: !!j?.safety_signed_at,
+          safetySigned: false,
         };
       });
       setGeo(out);
@@ -119,7 +118,7 @@ export function ScaffolderMapView({ projects, onOpen }: Props) {
   const trailerStatus = useMemo(() => {
     const upcoming = trailers.filter((t) => t.status === 'I bruk').map((t) => {
       const assigned = projects.find((p) => p.assignedTrailer === t.id || p.assignedTrailer === t.name);
-      const pct = assigned ? progressOverall(jobs[assigned.id]?.checklist || {}) : 0;
+      const pct = assigned ? simpleProgress(jobs[assigned.id]?.simple_checklist || {}) : 0;
       return { trailer: t, project: assigned, pct };
     }).sort((a, b) => b.pct - a.pct);
     const available = trailers.filter((t) => t.status === 'Tillgänglig');
