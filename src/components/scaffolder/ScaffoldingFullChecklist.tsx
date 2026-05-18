@@ -78,7 +78,7 @@ export function ScaffoldingFullChecklist({ projectId }: { projectId: string }) {
         : { checked: false, note: state[key]?.note },
     };
     setState(next);
-    await supabase.from('scaffolding_jobs').update({ checklist_state: next }).eq('project_id', projectId);
+    await supabase.from('scaffolding_jobs').update({ checklist_state: next as any }).eq('project_id', projectId);
   };
 
   const setNote = async (key: string, note: string) => {
@@ -86,7 +86,7 @@ export function ScaffoldingFullChecklist({ projectId }: { projectId: string }) {
       ...state, [key]: { ...(state[key] || { checked: false }), note },
     };
     setState(next);
-    await supabase.from('scaffolding_jobs').update({ checklist_state: next }).eq('project_id', projectId);
+    await supabase.from('scaffolding_jobs').update({ checklist_state: next as any }).eq('project_id', projectId);
   };
 
   const changeStatus = async (s: string) => {
