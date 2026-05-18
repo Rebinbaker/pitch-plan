@@ -408,6 +408,7 @@ export type Database = {
           name: string
           organization_id: string
           price_sek: number | null
+          rule_mapping: Json
           unit: string
           updated_at: string
         }
@@ -421,6 +422,7 @@ export type Database = {
           name: string
           organization_id: string
           price_sek?: number | null
+          rule_mapping?: Json
           unit?: string
           updated_at?: string
         }
@@ -434,6 +436,7 @@ export type Database = {
           name?: string
           organization_id?: string
           price_sek?: number | null
+          rule_mapping?: Json
           unit?: string
           updated_at?: string
         }
@@ -788,10 +791,14 @@ export type Database = {
           ai_visualization_path: string | null
           ai_visualized_at: string | null
           assigned_members: Json
+          calibration: Json
+          checklist_state: Json
           created_at: string
           dismantle: Json
           documents: Json
           id: string
+          manual_overrides: Json
+          material_lines: Json
           material_spec: Json
           measurement: Json
           order_confirmed_at: string | null
@@ -800,7 +807,9 @@ export type Database = {
           order_sent_to: string | null
           order_status: string
           organization_id: string
+          overlay_state: Json
           project_id: string
+          project_status: string
           risk_level: string
           simple_checklist: Json
           transport: Json
@@ -813,10 +822,14 @@ export type Database = {
           ai_visualization_path?: string | null
           ai_visualized_at?: string | null
           assigned_members?: Json
+          calibration?: Json
+          checklist_state?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
           id?: string
+          manual_overrides?: Json
+          material_lines?: Json
           material_spec?: Json
           measurement?: Json
           order_confirmed_at?: string | null
@@ -825,7 +838,9 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id: string
+          overlay_state?: Json
           project_id: string
+          project_status?: string
           risk_level?: string
           simple_checklist?: Json
           transport?: Json
@@ -838,10 +853,14 @@ export type Database = {
           ai_visualization_path?: string | null
           ai_visualized_at?: string | null
           assigned_members?: Json
+          calibration?: Json
+          checklist_state?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
           id?: string
+          manual_overrides?: Json
+          material_lines?: Json
           material_spec?: Json
           measurement?: Json
           order_confirmed_at?: string | null
@@ -850,11 +869,138 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id?: string
+          overlay_state?: Json
           project_id?: string
+          project_status?: string
           risk_level?: string
           simple_checklist?: Json
           transport?: Json
           updated_at?: string
+        }
+        Relationships: []
+      }
+      scaffolding_measurements: {
+        Row: {
+          comment: string | null
+          confidence: number | null
+          coords: Json
+          created_at: string
+          id: string
+          meters: number | null
+          organization_id: string
+          photo_url: string
+          project_id: string
+          px_length: number | null
+          reference_label: string | null
+          section_id: string | null
+          source: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          confidence?: number | null
+          coords?: Json
+          created_at?: string
+          id?: string
+          meters?: number | null
+          organization_id: string
+          photo_url: string
+          project_id: string
+          px_length?: number | null
+          reference_label?: string | null
+          section_id?: string | null
+          source?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          confidence?: number | null
+          coords?: Json
+          created_at?: string
+          id?: string
+          meters?: number | null
+          organization_id?: string
+          photo_url?: string
+          project_id?: string
+          px_length?: number | null
+          reference_label?: string | null
+          section_id?: string | null
+          source?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scaffolding_measurements_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "scaffolding_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scaffolding_sections: {
+        Row: {
+          anchoring: string | null
+          bridging: Json | null
+          created_at: string
+          eave_height_m: number | null
+          ground_condition: string | null
+          height_m: number | null
+          id: string
+          length_m: number | null
+          lift_height_m: number | null
+          name: string
+          notes: string | null
+          obstacles: Json | null
+          organization_id: string
+          project_id: string
+          sort_order: number
+          updated_at: string
+          width_m: number | null
+          work_levels: number | null
+        }
+        Insert: {
+          anchoring?: string | null
+          bridging?: Json | null
+          created_at?: string
+          eave_height_m?: number | null
+          ground_condition?: string | null
+          height_m?: number | null
+          id?: string
+          length_m?: number | null
+          lift_height_m?: number | null
+          name: string
+          notes?: string | null
+          obstacles?: Json | null
+          organization_id: string
+          project_id: string
+          sort_order?: number
+          updated_at?: string
+          width_m?: number | null
+          work_levels?: number | null
+        }
+        Update: {
+          anchoring?: string | null
+          bridging?: Json | null
+          created_at?: string
+          eave_height_m?: number | null
+          ground_condition?: string | null
+          height_m?: number | null
+          id?: string
+          length_m?: number | null
+          lift_height_m?: number | null
+          name?: string
+          notes?: string | null
+          obstacles?: Json | null
+          organization_id?: string
+          project_id?: string
+          sort_order?: number
+          updated_at?: string
+          width_m?: number | null
+          work_levels?: number | null
         }
         Relationships: []
       }
