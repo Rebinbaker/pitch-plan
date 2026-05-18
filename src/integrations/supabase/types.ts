@@ -397,6 +397,48 @@ export type Database = {
         }
         Relationships: []
       }
+      peri_catalog: {
+        Row: {
+          active: boolean
+          artnr: string
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          price_sek: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          artnr: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          price_sek?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          artnr?: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          price_sek?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -741,8 +783,9 @@ export type Database = {
       scaffolding_jobs: {
         Row: {
           activity_log: Json
+          ai_analysis: Json
+          ai_analyzed_at: string | null
           assigned_members: Json
-          checklist: Json
           created_at: string
           dismantle: Json
           documents: Json
@@ -755,18 +798,17 @@ export type Database = {
           order_sent_to: string | null
           order_status: string
           organization_id: string
-          photos: Json
           project_id: string
           risk_level: string
-          safety_signed_at: string | null
-          safety_signed_by: string | null
+          simple_checklist: Json
           transport: Json
           updated_at: string
         }
         Insert: {
           activity_log?: Json
+          ai_analysis?: Json
+          ai_analyzed_at?: string | null
           assigned_members?: Json
-          checklist?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
@@ -779,18 +821,17 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id: string
-          photos?: Json
           project_id: string
           risk_level?: string
-          safety_signed_at?: string | null
-          safety_signed_by?: string | null
+          simple_checklist?: Json
           transport?: Json
           updated_at?: string
         }
         Update: {
           activity_log?: Json
+          ai_analysis?: Json
+          ai_analyzed_at?: string | null
           assigned_members?: Json
-          checklist?: Json
           created_at?: string
           dismantle?: Json
           documents?: Json
@@ -803,11 +844,9 @@ export type Database = {
           order_sent_to?: string | null
           order_status?: string
           organization_id?: string
-          photos?: Json
           project_id?: string
           risk_level?: string
-          safety_signed_at?: string | null
-          safety_signed_by?: string | null
+          simple_checklist?: Json
           transport?: Json
           updated_at?: string
         }
