@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { ScaffoldingPhotoMeasure } from './ScaffoldingPhotoMeasure';
+import { ScaffoldingSectionsPanel } from './ScaffoldingSectionsPanel';
 
 interface PhotoRef {
   storagePath?: string;   // worker-checkin-photos path
