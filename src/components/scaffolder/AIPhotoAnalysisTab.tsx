@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Upload, X, Image as ImageIcon, Wand2, AlertTriangle, Construction, Download } from 'lucide-react';
+import { Loader2, Sparkles, Upload, X, Image as ImageIcon, Wand2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { ScaffoldingPhotoMeasure } from './ScaffoldingPhotoMeasure';
 
 interface PhotoRef {
   storagePath?: string;   // worker-checkin-photos path
@@ -46,27 +47,8 @@ export function AIPhotoAnalysisTab({ projectId, initialAnalysis, analyzedAt, onA
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | undefined>(initialAnalysis);
   const [loadingProjectPics, setLoadingProjectPics] = useState(false);
-  const [visualizing, setVisualizing] = useState(false);
-  const [vizUrl, setVizUrl] = useState<string | null>(null);
 
   useEffect(() => setAnalysis(initialAnalysis), [initialAnalysis]);
-
-  const visualize = async () => {
-    const first = photos[0]?.signedUrl || photos[0]?.publicUrl;
-    if (!first) { toast({ title: 'Lägg till minst en bild först', variant: 'destructive' }); return; }
-    setVisualizing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('visualize-scaffolding', {
-        body: { project_id: projectId, photo_url: first, analysis, notes: notes || undefined },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setVizUrl((data as any).image_url);
-      toast({ title: 'Visualisering klar', description: 'AI har ritat in ställningen på bilden' });
-    } catch (e: any) {
-      toast({ title: 'Visualisering misslyckades', description: e.message, variant: 'destructive' });
-    } finally { setVisualizing(false); }
-  };
 
   const upload = async (files: FileList) => {
     if (!user) return;
@@ -251,30 +233,16 @@ export function AIPhotoAnalysisTab({ projectId, initialAnalysis, analyzedAt, onA
             {analysis.notes && <p className="text-xs text-muted-foreground italic">{analysis.notes}</p>}
             <p className="text-xs text-muted-foreground">⚠️ AI-uppskattning — granska och justera vid behov innan beställning.</p>
 
-            <div className="border-t pt-3 space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <Label className="text-xs flex items-center gap-1">
-                  <Construction className="w-3 h-3 text-primary" />
-                  Visualisering — AI ritar in ställningen på fotot
-                </Label>
-                <Button size="sm" variant="outline" onClick={visualize} disabled={visualizing || photos.length === 0}>
-                  {visualizing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Construction className="w-4 h-4 mr-1" />}
-                  {vizUrl ? 'Generera om' : 'Visualisera ställning'}
-                </Button>
-              </div>
-              {vizUrl && (
-                <div className="relative border rounded overflow-hidden bg-muted">
-                  <img src={vizUrl} alt="AI-visualiserad ställning" className="w-full max-h-[500px] object-contain" />
-                  <a href={vizUrl} target="_blank" rel="noreferrer"
-                     className="absolute top-2 right-2 bg-background/90 border rounded px-2 py-1 text-xs flex items-center gap-1 hover:bg-background">
-                    <Download className="w-3 h-3" /> Öppna
-                  </a>
-                </div>
-              )}
-              {!vizUrl && photos.length === 0 && (
-                <p className="text-xs text-muted-foreground">Lägg till en bild av huset ovan för att kunna visualisera.</p>
-              )}
-            </div>
+            {photos[0]?.signedUrl || photos[0]?.publicUrl ? (
+              <ScaffoldingPhotoMeasure
+                projectId={projectId}
+                photoUrl={(photos[0]?.signedUrl || photos[0]?.publicUrl) as string}
+                analysis={analysis}
+                notes={notes}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground border-t pt-3">Lägg till en bild av huset ovan för att kunna rita och visualisera ställningen.</p>
+            )}
 
             <div className="flex justify-end">
               <Button onClick={applyAsSpec} disabled={!analysis.materials?.length}>

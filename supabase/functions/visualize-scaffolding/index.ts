@@ -11,6 +11,11 @@ interface Body {
   photo_url: string;
   analysis?: any;
   notes?: string;
+  measurements?: {
+    height_m?: number;
+    length_m?: number;
+    calibration_reference_m?: number;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -48,20 +53,29 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE);
 
-    // Bygg promptbeskrivning baserad på analys
+    // Bygg promptbeskrivning baserad på analys + användarens uppmätta linjer
     const est = body.analysis?.estimated || {};
-    const sides = Array.isArray(est.sides_m) ? est.sides_m : [];
-    const matList = (body.analysis?.materials || []).slice(0, 12).map((m: any) => `${m.qty} st ${m.name}`).join(', ');
+    const m = body.measurements || {};
+    const heightM = m.height_m ?? est.height_m ?? 6;
+    const lengthM = m.length_m ?? (Array.isArray(est.sides_m) ? est.sides_m[0] : undefined) ?? 10;
+    const matList = (body.analysis?.materials || []).slice(0, 12).map((mt: any) => `${mt.qty} st ${mt.name}`).join(', ');
 
     const prompt = `Rita in en realistisk PERI UP fasadställning på huset i bilden — fotorealistisk visualisering.
 
+EXAKTA MÅTT FRÅN ANVÄNDAREN (mycket viktigt — följ dessa proportioner):
+- Ställningens HÖJD från mark till takfot: ${heightM} m
+- Ställningens LÄNGD längs fasaden: ${lengthM} m
+- Total fasadyta som ska täckas: ~${(heightM * lengthM).toFixed(1)} m²
+${m.calibration_reference_m ? `- Skala kalibrerad mot referensmått ${m.calibration_reference_m} m i bilden.` : ''}
+
 KRAV:
-- Behåll huset, omgivningen, ljus och perspektiv exakt som i originalbilden.
-- Lägg till en komplett ställning runt fasaden ${sides.length ? `(uppskattade sidor: ${sides.map((s: number, i: number) => `sida ${i+1} ${s}m`).join(', ')})` : ''} med höjd ca ${est.height_m || 6}m.
-- Vertikala ramar/spiror, horisontella bommar, diagonalstag (kryss), arbetsplan i metall/trä, fotlister, räcken/handledare på översta planet, fotplattor på marken, en trappsektion för uppgång, och förankringar till fasaden.
+- Behåll huset, omgivningen, ljus, perspektiv och kameravinkel exakt som i originalbilden.
+- Bygg ställningen som en sammanhängande modul med flera arbetsplan (cirka var 2 m i höjd).
+- Vertikala ramar/spiror, horisontella bommar, diagonala kryssstag, arbetsplan i metall/trä, fotlister, räcken/handledare på översta planet, fotplattor på marken, en trappsektion för uppgång, och förankringar in i fasaden.
 - Färger: typisk PERI silvergrå/galvad stål med gula/orange detaljer på räcken och fotlister.
+- Placera ställningen tätt mot fasaden (max 30 cm avstånd) och låt den följa husets längd exakt — inte längre, inte kortare.
 - Visa material som motsvarar: ${matList || 'standard PERI UP komponenter'}.
-- Undvik människor. Inga texter eller pilar i bilden.
+- Undvik människor. Inga texter, mått, pilar eller streck i den färdiga bilden.
 ${body.notes ? `\nExtra info: ${body.notes}` : ''}`;
 
     // Lovable AI gateway — image edit
