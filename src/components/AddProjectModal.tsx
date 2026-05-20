@@ -146,11 +146,22 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
     }
   }, [project, isEditing, form]);
 
-  // Clear seller selection when region changes
+  // Clear seller selection only when the user actively changes region
+  // (not on initial mount, so pre-filled sellers from CRM are preserved
+  // even if the name doesn't yet match a team member).
+  const prevRegionRef = React.useRef<string | undefined>(undefined);
   React.useEffect(() => {
+    if (prevRegionRef.current === undefined) {
+      prevRegionRef.current = selectedRegion;
+      return;
+    }
+    if (prevRegionRef.current === selectedRegion) return;
+    prevRegionRef.current = selectedRegion;
+
     const currentSeller = form.getValues('responsibleSeller');
-    const isSellerValidForRegion = availableSellers.some(seller => `${seller.firstName} ${seller.lastName}` === currentSeller);
-    
+    const isSellerValidForRegion = availableSellers.some(
+      seller => `${seller.firstName} ${seller.lastName}` === currentSeller
+    );
     if (currentSeller && !isSellerValidForRegion) {
       form.setValue('responsibleSeller', '');
     }
@@ -379,6 +390,12 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                        <SelectContent>
+                         {field.value &&
+                           !availableSellers.some(
+                             (s) => `${s.firstName} ${s.lastName}` === field.value
+                           ) && (
+                             <SelectItem value={field.value}>{field.value}</SelectItem>
+                           )}
                          {availableSellers.length > 0 ? (
                            availableSellers.map((seller) => (
                              <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
@@ -386,9 +403,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                              </SelectItem>
                            ))
                          ) : (
-                           <SelectItem value="no-sellers-available" disabled>
-                             Inga säljare tillgängliga för {selectedRegion}
-                           </SelectItem>
+                           !field.value && (
+                             <SelectItem value="no-sellers-available" disabled>
+                               Inga säljare tillgängliga för {selectedRegion}
+                             </SelectItem>
+                           )
                          )}
                        </SelectContent>
                     </Select>
