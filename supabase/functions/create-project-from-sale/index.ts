@@ -245,6 +245,7 @@ Deno.serve(async (req) => {
       address,
       customer_phone,
       responsible_seller,
+      responsible_booker,
       region,
       rot_status,
       organization_id,
@@ -260,6 +261,7 @@ Deno.serve(async (req) => {
       quotePdfUrl,
       quote,
     } = body;
+
 
     const topLevelKeys = Object.keys(body || {});
     const quoteKeys = quote && typeof quote === 'object' ? Object.keys(quote as Record<string, unknown>) : [];
