@@ -386,6 +386,8 @@ Deno.serve(async (req) => {
         address: address || null,
         customer_phone: customer_phone || null,
         responsible_seller: responsible_seller || null,
+        responsible_booker: responsible_booker || null,
+
         region: region || null,
         rot_status: rot_status || null,
         organization_id,
