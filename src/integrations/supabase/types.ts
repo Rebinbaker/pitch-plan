@@ -493,6 +493,7 @@ export type Database = {
           notes: string | null
           organization_id: string
           region: string | null
+          responsible_booker: string | null
           responsible_seller: string | null
           rot_status: string | null
           scaffolding_responsible: string | null
@@ -526,6 +527,7 @@ export type Database = {
           notes?: string | null
           organization_id: string
           region?: string | null
+          responsible_booker?: string | null
           responsible_seller?: string | null
           rot_status?: string | null
           scaffolding_responsible?: string | null
@@ -559,6 +561,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           region?: string | null
+          responsible_booker?: string | null
           responsible_seller?: string | null
           rot_status?: string | null
           scaffolding_responsible?: string | null

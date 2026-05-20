@@ -56,6 +56,8 @@ export const useSupabaseStorage = () => {
           customerName: project.customer_name || '',
           customerPhone: project.customer_phone || '',
           responsibleSeller: project.responsible_seller || '',
+          responsibleBooker: project.responsible_booker || '',
+
           constructionTeam: project.construction_team || '',
           scaffoldingTeamId: project.scaffolding_team_id || '',
           constructionStartWeek: project.construction_start_week || '',
@@ -306,6 +308,10 @@ export const useSupabaseStorage = () => {
   const updateProject = async (updatedProject: Project) => {
     console.log('updateProject called for:', updatedProject.id, 'user:', user?.id, 'migrationStatus:', migrationStatus);
     try {
+      // Detect a transition into "ånger" so we can notify SalesChamp
+      const previousStatus = supabaseProjects.find(p => p.id === updatedProject.id)?.status;
+      const becameAnger = updatedProject.status === 'ånger' && previousStatus !== 'ånger';
+
       if (user && migrationStatus === 'completed') {
         console.log('updateProject: Using Supabase storage');
         // Helper function to convert empty strings to null for date fields
@@ -324,6 +330,8 @@ export const useSupabaseStorage = () => {
             customer_name: updatedProject.customerName,
             customer_phone: updatedProject.customerPhone,
             responsible_seller: updatedProject.responsibleSeller,
+            responsible_booker: updatedProject.responsibleBooker || null,
+
             construction_team: updatedProject.constructionTeam,
             scaffolding_team_id: updatedProject.scaffoldingTeamId || null,
             construction_start_week: updatedProject.constructionStartWeek,
@@ -358,11 +366,38 @@ export const useSupabaseStorage = () => {
       } else {
         await localStorageHook.updateProject(updatedProject);
       }
-      
+
+      // Fire-and-log: notify SalesChamp on transition to "ånger"
+      if (becameAnger) {
+        try {
+          const { error: notifyError } = await supabase.functions.invoke('notify-saleschamp-status', {
+            body: {
+              project_id: updatedProject.id,
+              address: updatedProject.address,
+              customer_name: updatedProject.customerName,
+              status: 'ånger',
+            },
+          });
+          if (notifyError) {
+            console.error('Failed to notify SalesChamp (ånger):', notifyError);
+            toast({
+              variant: 'destructive',
+              title: 'SalesChamp-notis misslyckades',
+              description: 'Statusändringen sparades men kunde inte skickas till SalesChamp.',
+            });
+          } else {
+            console.log('SalesChamp notified about ånger for project', updatedProject.id);
+          }
+        } catch (e) {
+          console.error('Unexpected error notifying SalesChamp:', e);
+        }
+      }
+
       toast({
         title: "Projekt uppdaterat",
         description: `${updatedProject.name} har uppdaterats framgångsrikt.`,
       });
+
     } catch (error) {
       console.error('Error updating project:', error);
       toast({
@@ -393,6 +428,8 @@ export const useSupabaseStorage = () => {
             customer_name: newProject.customerName,
             customer_phone: newProject.customerPhone,
             responsible_seller: newProject.responsibleSeller,
+            responsible_booker: newProject.responsibleBooker || null,
+
             construction_team: newProject.constructionTeam,
             scaffolding_team_id: newProject.scaffoldingTeamId || null,
             construction_start_week: newProject.constructionStartWeek,
