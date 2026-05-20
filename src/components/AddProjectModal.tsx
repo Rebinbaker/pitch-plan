@@ -390,6 +390,12 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                         </SelectTrigger>
                       </FormControl>
                        <SelectContent>
+                         {field.value &&
+                           !availableSellers.some(
+                             (s) => `${s.firstName} ${s.lastName}` === field.value
+                           ) && (
+                             <SelectItem value={field.value}>{field.value}</SelectItem>
+                           )}
                          {availableSellers.length > 0 ? (
                            availableSellers.map((seller) => (
                              <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
@@ -397,9 +403,11 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                              </SelectItem>
                            ))
                          ) : (
-                           <SelectItem value="no-sellers-available" disabled>
-                             Inga säljare tillgängliga för {selectedRegion}
-                           </SelectItem>
+                           !field.value && (
+                             <SelectItem value="no-sellers-available" disabled>
+                               Inga säljare tillgängliga för {selectedRegion}
+                             </SelectItem>
+                           )
                          )}
                        </SelectContent>
                     </Select>
