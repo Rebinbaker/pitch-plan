@@ -366,11 +366,38 @@ export const useSupabaseStorage = () => {
       } else {
         await localStorageHook.updateProject(updatedProject);
       }
-      
+
+      // Fire-and-log: notify SalesChamp on transition to "ånger"
+      if (becameAnger) {
+        try {
+          const { error: notifyError } = await supabase.functions.invoke('notify-saleschamp-status', {
+            body: {
+              project_id: updatedProject.id,
+              address: updatedProject.address,
+              customer_name: updatedProject.customerName,
+              status: 'ånger',
+            },
+          });
+          if (notifyError) {
+            console.error('Failed to notify SalesChamp (ånger):', notifyError);
+            toast({
+              variant: 'destructive',
+              title: 'SalesChamp-notis misslyckades',
+              description: 'Statusändringen sparades men kunde inte skickas till SalesChamp.',
+            });
+          } else {
+            console.log('SalesChamp notified about ånger for project', updatedProject.id);
+          }
+        } catch (e) {
+          console.error('Unexpected error notifying SalesChamp:', e);
+        }
+      }
+
       toast({
         title: "Projekt uppdaterat",
         description: `${updatedProject.name} har uppdaterats framgångsrikt.`,
       });
+
     } catch (error) {
       console.error('Error updating project:', error);
       toast({
