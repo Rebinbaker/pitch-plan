@@ -63,6 +63,8 @@ export interface Project {
   customerName: string;
   customerPhone: string;
   responsibleSeller: string;
+  responsibleBooker?: string;
+
   constructionTeam?: string; // Made optional since it will be set via checklist
   scaffoldingTeamId?: string; // ID of the assigned scaffolding (Ställningsmontör) team
   startDate: string; // Legacy field - keeping for backwards compatibility
