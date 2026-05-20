@@ -308,6 +308,10 @@ export const useSupabaseStorage = () => {
   const updateProject = async (updatedProject: Project) => {
     console.log('updateProject called for:', updatedProject.id, 'user:', user?.id, 'migrationStatus:', migrationStatus);
     try {
+      // Detect a transition into "ånger" so we can notify SalesChamp
+      const previousStatus = supabaseProjects.find(p => p.id === updatedProject.id)?.status;
+      const becameAnger = updatedProject.status === 'ånger' && previousStatus !== 'ånger';
+
       if (user && migrationStatus === 'completed') {
         console.log('updateProject: Using Supabase storage');
         // Helper function to convert empty strings to null for date fields
@@ -326,6 +330,8 @@ export const useSupabaseStorage = () => {
             customer_name: updatedProject.customerName,
             customer_phone: updatedProject.customerPhone,
             responsible_seller: updatedProject.responsibleSeller,
+            responsible_booker: updatedProject.responsibleBooker || null,
+
             construction_team: updatedProject.constructionTeam,
             scaffolding_team_id: updatedProject.scaffoldingTeamId || null,
             construction_start_week: updatedProject.constructionStartWeek,
