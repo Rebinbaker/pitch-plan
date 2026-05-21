@@ -269,12 +269,13 @@ Deno.serve(async (req) => {
     const responsible_booker =
       body.responsible_booker ?? body.responsibleBooker ?? body.booker ?? body.booker_name ?? body.bookerName ?? body.booking_agent ?? body.bookingAgent ?? null;
 
-
+    const construction_team =
+      body.construction_team ?? body.constructionTeam ?? body.team ?? body.team_name ?? body.teamName ?? body.bygglag ?? body.crew ?? body.crew_name ?? body.assigned_team ?? body.assignedTeam ?? null;
 
     const topLevelKeys = Object.keys(body || {});
     const quoteKeys = quote && typeof quote === 'object' ? Object.keys(quote as Record<string, unknown>) : [];
     console.log('CRM payload keys:', topLevelKeys);
-    console.log('Resolved fields:', { customer_phone, responsible_seller, responsible_booker });
+    console.log('Resolved fields:', { customer_phone, responsible_seller, responsible_booker, construction_team });
     if (quoteKeys.length > 0) {
       console.log('CRM quote payload keys:', quoteKeys);
     }
@@ -396,6 +397,8 @@ Deno.serve(async (req) => {
         customer_phone: customer_phone || null,
         responsible_seller: responsible_seller || null,
         responsible_booker: responsible_booker || null,
+        construction_team: construction_team || null,
+
 
         region: region || null,
         rot_status: rot_status || null,
