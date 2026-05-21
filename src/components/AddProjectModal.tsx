@@ -383,36 +383,37 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ansvarig säljare</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Välj säljare">
-                            {field.value || undefined}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                       <SelectContent>
-                         {field.value &&
-                           !availableSellers.some(
-                             (s) => `${s.firstName} ${s.lastName}` === field.value
-                           ) && (
-                             <SelectItem value={field.value}>{field.value}</SelectItem>
-                           )}
-                         {availableSellers.length > 0 ? (
-                           availableSellers.map((seller) => (
-                             <SelectItem key={seller.id} value={`${seller.firstName} ${seller.lastName}`}>
-                               {seller.firstName} {seller.lastName}
-                             </SelectItem>
-                           ))
-                         ) : (
-                           !field.value && (
-                             <SelectItem value="no-sellers-available" disabled>
-                               Inga säljare tillgängliga för {selectedRegion}
-                             </SelectItem>
-                           )
-                         )}
-                       </SelectContent>
-                    </Select>
+                    {(() => {
+                      const sellerNames = availableSellers.map(s => `${s.firstName} ${s.lastName}`);
+                      const options = Array.from(new Set([
+                        ...(field.value ? [field.value] : []),
+                        ...sellerNames,
+                      ]));
+                      return (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Välj säljare">
+                                {field.value || undefined}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {options.length > 0 ? (
+                              options.map((name) => (
+                                <SelectItem key={name} value={name}>
+                                  {name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no-sellers-available" disabled>
+                                Inga säljare tillgängliga för {selectedRegion}
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      );
+                    })()}
                     <FormMessage />
                   </FormItem>
                 )}
