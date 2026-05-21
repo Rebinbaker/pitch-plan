@@ -243,9 +243,6 @@ Deno.serve(async (req) => {
     const {
       customer_name,
       address,
-      customer_phone,
-      responsible_seller,
-      responsible_booker,
       region,
       rot_status,
       organization_id,
@@ -261,6 +258,17 @@ Deno.serve(async (req) => {
       quotePdfUrl,
       quote,
     } = body;
+
+    // Accept multiple aliases from CRM (snake_case, camelCase, short variants)
+    const customer_phone =
+      body.customer_phone ?? body.customerPhone ?? body.phone ?? body.phone_number ?? body.phoneNumber ?? body.mobile ?? body.mobile_phone ?? body.mobilePhone ?? body.customer?.phone ?? body.customer?.phone_number ?? null;
+
+    const responsible_seller =
+      body.responsible_seller ?? body.responsibleSeller ?? body.seller ?? body.seller_name ?? body.sellerName ?? body.salesperson ?? body.sales_person ?? body.salesPerson ?? body.agent ?? body.agent_name ?? null;
+
+    const responsible_booker =
+      body.responsible_booker ?? body.responsibleBooker ?? body.booker ?? body.booker_name ?? body.bookerName ?? body.booking_agent ?? body.bookingAgent ?? null;
+
 
 
     const topLevelKeys = Object.keys(body || {});
