@@ -397,6 +397,8 @@ Deno.serve(async (req) => {
         customer_phone: customer_phone || null,
         responsible_seller: responsible_seller || null,
         responsible_booker: responsible_booker || null,
+        construction_team: construction_team || null,
+
 
         region: region || null,
         rot_status: rot_status || null,
