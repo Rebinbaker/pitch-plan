@@ -386,7 +386,9 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Välj säljare" />
+                          <SelectValue placeholder="Välj säljare">
+                            {field.value || undefined}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                        <SelectContent>
