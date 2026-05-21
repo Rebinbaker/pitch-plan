@@ -385,17 +385,14 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                     <FormLabel>Ansvarig säljare</FormLabel>
                     {(() => {
                       const sellerNames = availableSellers.map(s => `${s.firstName} ${s.lastName}`);
-                      const options = Array.from(new Set([
-                        ...(field.value ? [field.value] : []),
-                        ...sellerNames,
-                      ]));
+                      const merged = new Set(sellerNames);
+                      if (field.value) merged.add(field.value);
+                      const options = Array.from(merged).sort((a, b) => a.localeCompare(b, 'sv'));
                       return (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Välj säljare">
-                                {field.value || undefined}
-                              </SelectValue>
+                              <SelectValue placeholder="Välj säljare" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
