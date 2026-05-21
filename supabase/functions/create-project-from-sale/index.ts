@@ -274,6 +274,7 @@ Deno.serve(async (req) => {
     const topLevelKeys = Object.keys(body || {});
     const quoteKeys = quote && typeof quote === 'object' ? Object.keys(quote as Record<string, unknown>) : [];
     console.log('CRM payload keys:', topLevelKeys);
+    console.log('Resolved fields:', { customer_phone, responsible_seller, responsible_booker });
     if (quoteKeys.length > 0) {
       console.log('CRM quote payload keys:', quoteKeys);
     }
