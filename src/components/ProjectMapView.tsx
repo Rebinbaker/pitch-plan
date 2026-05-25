@@ -277,9 +277,29 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
   const analysis = useMemo(() => analyzeAllProjects(projects), [projects]);
 
   const getWorkPhaseProgress = (project: Project): number => {
-    if (!project.workPhases || project.workPhases.length === 0) return 0;
-    const completed = project.workPhases.filter(p => p.completed).length;
-    return Math.round((completed / project.workPhases.length) * 100);
+    const checklist = project.checklist || [];
+    const workPhases = project.workPhases || [];
+
+    const checklistDone = checklist
+      .filter(i => i.completed)
+      .reduce((s, i) => s + (i.weight || 0), 0);
+    const phasesDone = workPhases
+      .filter(p => p.completed)
+      .reduce((s, p) => s + (p.weight || 0), 0);
+
+    const checklistTotal = checklist.reduce((s, i) => s + (i.weight || 0), 0);
+    const phasesTotal = workPhases.reduce((s, p) => s + (p.weight || 0), 0);
+    const total = checklistTotal + phasesTotal;
+
+    if (total <= 0) {
+      // Fallback: pure work-phase count if no weights configured
+      if (workPhases.length === 0) return project.completionPercentage || 0;
+      const completed = workPhases.filter(p => p.completed).length;
+      return Math.round((completed / workPhases.length) * 100);
+    }
+
+    const done = checklistDone + phasesDone;
+    return done === total ? 100 : Math.round((done / total) * 100);
   };
 
   const positions: [number, number][] = geocodedProjects.map(p => [p.lat, p.lng]);
