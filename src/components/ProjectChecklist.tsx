@@ -963,8 +963,11 @@ Tack!`);
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
             if (isBookScaffolding) {
-              // Scaffolding is complete when a trailer is assigned (auto-complete)
-              isItemComplete = hasTrailerAssigned;
+              // Scaffolding is complete when trailer assigned AND a status is chosen
+              // (and if "on the way", an arrival date is set)
+              const status = item.scaffoldingStatus;
+              const dateOk = status !== 'on_the_way' || !!item.scaffoldingArrivalDate;
+              isItemComplete = hasTrailerAssigned && !!status && dateOk;
             } else if (isScheduleTeam) {
               isItemComplete = item.completed && hasTeamAssigned;
             } else if (isAvvaratMaterial) {
