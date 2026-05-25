@@ -262,7 +262,27 @@ export function ProjectMapView({ projects, trailers = [], teams = [], onViewDeta
           return { ...project, lat: coords.lat, lng: coords.lng };
         });
 
-        setGeocodedProjects(positionedProjects);
+        // Jitter projects that share identical coordinates so every pin
+        // stays visible on the map (no marker ever hides under another).
+        const coordCounts = new Map<string, number>();
+        const dedupedProjects = positionedProjects.map(project => {
+          const key = `${project.lat.toFixed(5)},${project.lng.toFixed(5)}`;
+          const index = coordCounts.get(key) ?? 0;
+          coordCounts.set(key, index + 1);
+
+          if (index === 0) return project;
+
+          // Spiral offset (~25–60 m per step) around the original point.
+          const angle = (index * 137.508) * (Math.PI / 180);
+          const radius = 0.0004 * Math.ceil(index / 6);
+          return {
+            ...project,
+            lat: project.lat + Math.cos(angle) * radius,
+            lng: project.lng + Math.sin(angle) * radius,
+          };
+        });
+
+        setGeocodedProjects(dedupedProjects);
       } finally {
         if (!cancelled) setLoading(false);
       }
