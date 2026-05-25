@@ -312,7 +312,7 @@ export const useSupabaseStorage = () => {
       const previousStatus = supabaseProjects.find(p => p.id === updatedProject.id)?.status;
       const becameAnger = updatedProject.status === 'ånger' && previousStatus !== 'ånger';
 
-      if (user && migrationStatus === 'completed') {
+      if (user && organizationId && migrationStatus === 'completed') {
         console.log('updateProject: Using Supabase storage');
         // Helper function to convert empty strings to null for date fields
         const formatDateField = (dateValue: string | undefined | null): string | null => {
@@ -322,7 +322,7 @@ export const useSupabaseStorage = () => {
           return dateValue;
         };
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('projects' as any)
           .update({
             name: updatedProject.name,
@@ -338,8 +338,8 @@ export const useSupabaseStorage = () => {
             rot_status: updatedProject.rotStatus,
             status: updatedProject.status,
             notes: updatedProject.notes,
-            assigned_trailer: updatedProject.assignedTrailer,
-            scaffolding_responsible: updatedProject.scaffoldingResponsible,
+            assigned_trailer: updatedProject.assignedTrailer || null,
+            scaffolding_responsible: updatedProject.scaffoldingResponsible || null,
             start_date: formatDateField(updatedProject.startDate),
             deadline: formatDateField(updatedProject.deadline),
             estimated_work_days: updatedProject.estimatedWorkDays,
@@ -355,9 +355,14 @@ export const useSupabaseStorage = () => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', updatedProject.id)
-          .eq('user_id', user.id);
+          .eq('organization_id', organizationId)
+          .select('id')
+          .maybeSingle();
         
         if (error) throw error;
+        if (!data) {
+          throw new Error(`Project update matched no rows for project ${updatedProject.id}`);
+        }
         
         // Update local state instead of reloading to prevent redirect
         setSupabaseProjects(prev => 

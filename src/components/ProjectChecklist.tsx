@@ -169,6 +169,67 @@ export function ProjectChecklist({
 
   const canMarkAsCompleted = completionPercentage === 100 && !hasIncompleteLeftoverMaterial;
 
+  const buildUpdatedScaffoldingProject = (
+    projectToUpdate: Project,
+    itemId: string,
+    updates: {
+      assignedTrailer?: string;
+      clearAssignedTrailer?: boolean;
+      scaffoldingResponsible?: string;
+      scaffoldingStatus?: 'on_the_way' | 'on_site_unbuilt' | 'built_ready';
+      scaffoldingArrivalDate?: string;
+      clearScaffoldingArrivalDate?: boolean;
+    }
+  ): Project => {
+    const nextAssignedTrailer = updates.clearAssignedTrailer
+      ? undefined
+      : (updates.assignedTrailer ?? projectToUpdate.assignedTrailer);
+    const nextScaffoldingResponsible = updates.scaffoldingResponsible ?? projectToUpdate.scaffoldingResponsible;
+
+    const nextChecklist = projectToUpdate.checklist.map((checkItem) => {
+      if (checkItem.id !== itemId) return checkItem;
+
+      const nextStatus = updates.scaffoldingStatus ?? checkItem.scaffoldingStatus;
+      const nextArrivalDate = updates.clearScaffoldingArrivalDate
+        ? undefined
+        : (updates.scaffoldingArrivalDate ?? checkItem.scaffoldingArrivalDate);
+      const dateOk = nextStatus !== 'on_the_way' || !!nextArrivalDate;
+      const shouldComplete = !!nextAssignedTrailer && !!nextStatus && dateOk;
+
+      return {
+        ...checkItem,
+        scaffoldingStatus: nextStatus,
+        scaffoldingArrivalDate: nextArrivalDate,
+        completed: shouldComplete,
+        completedAt: shouldComplete ? new Date().toISOString().split('T')[0] : undefined,
+      };
+    });
+
+    return {
+      ...projectToUpdate,
+      assignedTrailer: nextAssignedTrailer,
+      scaffoldingResponsible: nextScaffoldingResponsible,
+      checklist: nextChecklist,
+      completionPercentage: calculateChecklistCompletion(nextChecklist),
+    };
+  };
+
+  const calculateChecklistCompletion = (updatedChecklist: ChecklistItem[]) => {
+    const checklistDone = updatedChecklist
+      .filter((checkItem) => checkItem.completed)
+      .reduce((sum, checkItem) => sum + (checkItem.weight || 0), 0);
+    const phasesDone = (project?.workPhases || [])
+      .filter((phase) => phase.completed)
+      .reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const checklistTotal = updatedChecklist.reduce((sum, checkItem) => sum + (checkItem.weight || 0), 0);
+    const phasesTotal = (project?.workPhases || []).reduce((sum, phase) => sum + (phase.weight || 0), 0);
+    const total = checklistTotal + phasesTotal;
+
+    return total > 0
+      ? (checklistDone + phasesDone === total ? 100 : Math.round(((checklistDone + phasesDone) / total) * 100))
+      : 0;
+  };
+
   // WhatsApp helper functions
   const generateWhatsAppURL = (project: Project, customName?: string) => {
     const groupName = customName || project.address;
@@ -1106,23 +1167,13 @@ Tack!`);
                           <span className="text-xs text-muted-foreground">Tilldela släpvagn:</span>
                         </div>
                           <Select 
-                            value={project.assignedTrailer || ''} 
+                            value={project.assignedTrailer || 'none'} 
                             onValueChange={(trailerId) => {
-                              if (trailerId === 'none') {
-                                // Just remove the assignment, don't change trailer status yet
-                                const updatedProject = {
-                                  ...project,
-                                  assignedTrailer: undefined,
-                                };
-                                onUpdateProject(updatedProject);
-                              } else {
-                                // Just assign the trailer, don't change status until checkbox is ticked
-                                const updatedProject = {
-                                  ...project,
-                                  assignedTrailer: trailerId,
-                                };
-                                onUpdateProject(updatedProject);
-                              }
+                              const updatedProject = buildUpdatedScaffoldingProject(project, item.id, {
+                                assignedTrailer: trailerId === 'none' ? undefined : trailerId,
+                                clearAssignedTrailer: trailerId === 'none',
+                              });
+                              onUpdateProject(updatedProject);
                             }}
                           >
                           <SelectTrigger className="h-8 text-xs">
@@ -1161,38 +1212,24 @@ Tack!`);
                              placeholder="Ange ansvarig person"
                              value={project.scaffoldingResponsible || ''}
                              onChange={(e) => {
-                               const updatedProject = {
-                                 ...project,
-                                 scaffoldingResponsible: e.target.value,
-                               };
+                                const updatedProject = buildUpdatedScaffoldingProject(project, item.id, {
+                                  scaffoldingResponsible: e.target.value,
+                                });
                                onUpdateProject(updatedProject);
                                
                                // If both trailer and responsible person are set, mark as complete and update trailer status
-                               if (project.assignedTrailer && e.target.value && !item.completed && onUpdateTrailer) {
-                                 const selectedTrailer = trailers.find(t => t.id === project.assignedTrailer);
+                                if (updatedProject.assignedTrailer && e.target.value && !item.completed && onUpdateTrailer) {
+                                  const selectedTrailer = trailers.find(t => t.id === updatedProject.assignedTrailer);
                                  if (selectedTrailer) {
                                    // Update trailer to "I bruk"
                                    onUpdateTrailer({
                                      ...selectedTrailer,
                                      status: 'I bruk',
-                                     assignedProject: project.name,
-                                     location: project.address || undefined,
+                                      assignedProject: updatedProject.name,
+                                      location: updatedProject.address || undefined,
                                      moverNote: `Ansvarig: ${e.target.value}`,
                                      lastUpdated: new Date().toISOString()
                                    });
-                                   
-                                   // Mark checklist item as complete
-                                   const updatedChecklist = checklist.map(checkItem => {
-                                     if (checkItem.id === item.id) {
-                                       return {
-                                         ...checkItem,
-                                         completed: true,
-                                         completedAt: new Date().toISOString().split('T')[0],
-                                       };
-                                     }
-                                     return checkItem;
-                                   });
-                                   onChecklistUpdate(updatedChecklist);
                                    
                                    toast({
                                      title: "Ställningsvagn bokad",
@@ -1212,18 +1249,11 @@ Tack!`);
                              value={item.scaffoldingStatus || ''}
                              onValueChange={(val) => {
                                const newStatus = val as 'on_the_way' | 'on_site_unbuilt' | 'built_ready';
-                               const updatedChecklist = checklist.map((c) => {
-                                 if (c.id !== item.id) return c;
-                                 const dateOk = newStatus !== 'on_the_way' || !!c.scaffoldingArrivalDate;
-                                 const shouldComplete = !!project.assignedTrailer && dateOk;
-                                 return {
-                                   ...c,
-                                   scaffoldingStatus: newStatus,
-                                   completed: shouldComplete,
-                                   completedAt: shouldComplete ? new Date().toISOString().split('T')[0] : c.completedAt,
-                                 };
-                               });
-                               onChecklistUpdate(updatedChecklist);
+                                const updatedProject = buildUpdatedScaffoldingProject(project, item.id, {
+                                  scaffoldingStatus: newStatus,
+                                  clearScaffoldingArrivalDate: newStatus !== 'on_the_way',
+                                });
+                                onUpdateProject(updatedProject);
                              }}
                            >
                              <SelectTrigger className="h-8 text-xs">
@@ -1244,18 +1274,10 @@ Tack!`);
                                  className="h-7 text-xs"
                                  value={item.scaffoldingArrivalDate || ''}
                                  onChange={(e) => {
-                                   const date = e.target.value;
-                                   const updatedChecklist = checklist.map((c) => {
-                                     if (c.id !== item.id) return c;
-                                     const shouldComplete = !!project.assignedTrailer && !!date;
-                                     return {
-                                       ...c,
-                                       scaffoldingArrivalDate: date,
-                                       completed: shouldComplete,
-                                       completedAt: shouldComplete ? new Date().toISOString().split('T')[0] : c.completedAt,
-                                     };
-                                   });
-                                   onChecklistUpdate(updatedChecklist);
+                                    const updatedProject = buildUpdatedScaffoldingProject(project, item.id, {
+                                      scaffoldingArrivalDate: e.target.value || undefined,
+                                    });
+                                    onUpdateProject(updatedProject);
                                  }}
                                />
                              </div>
