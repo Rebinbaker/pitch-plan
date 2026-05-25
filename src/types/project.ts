@@ -123,6 +123,8 @@ export interface ChecklistItem {
   containerConfirmed?: boolean; // Flag to track container booking confirmation (hemtag)
   containerOrderConfirmed?: boolean; // Flag to track container order confirmation (boka)
   accommodationConfirmed?: boolean; // Flag to track that accommodation has been booked
+  scaffoldingStatus?: 'on_the_way' | 'on_site_unbuilt' | 'built_ready'; // Scaffolding arrival/build status
+  scaffoldingArrivalDate?: string; // Expected arrival date (ISO yyyy-mm-dd) when status is 'on_the_way'
 }
 
 export interface WorkPhaseItem {

@@ -963,8 +963,11 @@ Tack!`);
             // Determine if item is complete based on special conditions
             let isItemComplete = item.completed;
             if (isBookScaffolding) {
-              // Scaffolding is complete when a trailer is assigned (auto-complete)
-              isItemComplete = hasTrailerAssigned;
+              // Scaffolding is complete when trailer assigned AND a status is chosen
+              // (and if "on the way", an arrival date is set)
+              const status = item.scaffoldingStatus;
+              const dateOk = status !== 'on_the_way' || !!item.scaffoldingArrivalDate;
+              isItemComplete = hasTrailerAssigned && !!status && dateOk;
             } else if (isScheduleTeam) {
               isItemComplete = item.completed && hasTeamAssigned;
             } else if (isAvvaratMaterial) {
@@ -1201,8 +1204,66 @@ Tack!`);
                              }}
                            />
                          </div>
+
+                         {/* Scaffolding arrival/build status */}
+                         <div className="space-y-1 pt-2 border-t border-border/50">
+                           <Label className="text-xs">Status på ställningarna:</Label>
+                           <Select
+                             value={item.scaffoldingStatus || ''}
+                             onValueChange={(val) => {
+                               const newStatus = val as 'on_the_way' | 'on_site_unbuilt' | 'built_ready';
+                               const updatedChecklist = checklist.map((c) => {
+                                 if (c.id !== item.id) return c;
+                                 const dateOk = newStatus !== 'on_the_way' || !!c.scaffoldingArrivalDate;
+                                 const shouldComplete = !!project.assignedTrailer && dateOk;
+                                 return {
+                                   ...c,
+                                   scaffoldingStatus: newStatus,
+                                   completed: shouldComplete,
+                                   completedAt: shouldComplete ? new Date().toISOString().split('T')[0] : c.completedAt,
+                                 };
+                               });
+                               onChecklistUpdate(updatedChecklist);
+                             }}
+                           >
+                             <SelectTrigger className="h-8 text-xs">
+                               <SelectValue placeholder="Välj status..." />
+                             </SelectTrigger>
+                             <SelectContent className="bg-background border border-border shadow-lg z-50">
+                               <SelectItem value="on_the_way">På väg</SelectItem>
+                               <SelectItem value="on_site_unbuilt">På plats – ej uppbyggda</SelectItem>
+                               <SelectItem value="built_ready">Uppbyggda och klara</SelectItem>
+                             </SelectContent>
+                           </Select>
+
+                           {item.scaffoldingStatus === 'on_the_way' && (
+                             <div className="space-y-1 pt-1">
+                               <Label className="text-xs">Ankomstdatum:</Label>
+                               <Input
+                                 type="date"
+                                 className="h-7 text-xs"
+                                 value={item.scaffoldingArrivalDate || ''}
+                                 onChange={(e) => {
+                                   const date = e.target.value;
+                                   const updatedChecklist = checklist.map((c) => {
+                                     if (c.id !== item.id) return c;
+                                     const shouldComplete = !!project.assignedTrailer && !!date;
+                                     return {
+                                       ...c,
+                                       scaffoldingArrivalDate: date,
+                                       completed: shouldComplete,
+                                       completedAt: shouldComplete ? new Date().toISOString().split('T')[0] : c.completedAt,
+                                     };
+                                   });
+                                   onChecklistUpdate(updatedChecklist);
+                                 }}
+                               />
+                             </div>
+                           )}
+                         </div>
                        </div>
                       )}
+                      
                       
                     {/* Enhanced WhatsApp Integration */}
                      {isWhatsApp && project && !item.whatsappConfirmed && (
