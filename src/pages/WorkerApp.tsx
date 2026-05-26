@@ -100,7 +100,10 @@ const WorkerAppInner = () => {
     return () => clearInterval(i);
   }, [openCheckIn]);
 
-  const loadAll = async () => {
+  // GPS geofence tracker (continuous pings while checked in)
+  const geofence = useGeofenceTracker(openCheckIn?.id || null);
+
+
     if (!user || !organizationId) return;
     setLoading(true);
     try {
