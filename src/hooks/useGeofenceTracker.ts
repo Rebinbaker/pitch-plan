@@ -15,13 +15,41 @@ interface GeofenceState {
   insideRadius: boolean;
   distanceM: number | null;
   radiusM: number;
-  awaySinceMs: number | null; // timestamp when left
+  awaySinceMs: number | null;
   currentAwaySeconds: number;
   absences: AbsencePeriod[];
   error: string | null;
+  queuedPings: number;
+}
+
+interface QueuedPing {
+  check_in_id: string;
+  lat: number;
+  lng: number;
+  accuracy: number;
+  is_mocked: boolean;
+  recorded_at: string;
 }
 
 const PING_INTERVAL_MS = 60_000;
+const QUEUE_KEY = (checkInId: string) => `geo_ping_queue_${checkInId}`;
+const MAX_QUEUE = 500; // ~8h at 1/min
+
+const readQueue = (checkInId: string): QueuedPing[] => {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY(checkInId));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeQueue = (checkInId: string, q: QueuedPing[]) => {
+  try {
+    const trimmed = q.length > MAX_QUEUE ? q.slice(-MAX_QUEUE) : q;
+    localStorage.setItem(QUEUE_KEY(checkInId), JSON.stringify(trimmed));
+  } catch {}
+};
 
 export const useGeofenceTracker = (checkInId: string | null) => {
   const [state, setState] = useState<GeofenceState>({
@@ -32,23 +60,82 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     currentAwaySeconds: 0,
     absences: [],
     error: null,
+    queuedPings: 0,
   });
   const watchIdRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; acc: number; mocked: boolean } | null>(null);
+  const flushingRef = useRef(false);
+
+  const enqueue = (checkIn: string, p: QueuedPing) => {
+    const q = readQueue(checkIn);
+    q.push(p);
+    writeQueue(checkIn, q);
+    setState(prev => ({ ...prev, queuedPings: q.length }));
+  };
+
+  const flushQueue = async (checkIn: string) => {
+    if (flushingRef.current) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    const q = readQueue(checkIn);
+    if (q.length === 0) return;
+    flushingRef.current = true;
+    try {
+      const { data, error } = await supabase.functions.invoke('process-location-ping', {
+        body: { pings: q },
+      });
+      if (error) throw error;
+      writeQueue(checkIn, []);
+      setState(prev => {
+        const latest = (data as any)?.latest;
+        if (!latest) return { ...prev, queuedPings: 0, error: null };
+        const inside = !!latest.inside_radius;
+        const wasInside = prev.insideRadius;
+        let awaySinceMs = prev.awaySinceMs;
+        if (!inside && wasInside) awaySinceMs = Date.now();
+        if (inside) awaySinceMs = null;
+        return {
+          ...prev,
+          queuedPings: 0,
+          error: null,
+          insideRadius: inside,
+          distanceM: latest.distance_m ?? prev.distanceM,
+          radiusM: latest.radius_m ?? prev.radiusM,
+          awaySinceMs,
+        };
+      });
+      loadAbsences();
+    } catch (e: any) {
+      console.warn('flush failed, will retry', e?.message);
+      setState(prev => ({ ...prev, error: e.message }));
+    } finally {
+      flushingRef.current = false;
+    }
+  };
 
   const sendPing = async (pos: { lat: number; lng: number; acc: number; mocked: boolean }) => {
     if (!checkInId) return;
+    const payload: QueuedPing = {
+      check_in_id: checkInId,
+      lat: pos.lat,
+      lng: pos.lng,
+      accuracy: pos.acc,
+      is_mocked: pos.mocked,
+      recorded_at: new Date().toISOString(),
+    };
+
+    // If offline or queue has backlog -> enqueue and try to flush
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    const existing = readQueue(checkInId);
+    if (offline || existing.length > 0) {
+      enqueue(checkInId, payload);
+      flushQueue(checkInId);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('process-location-ping', {
-        body: {
-          check_in_id: checkInId,
-          lat: pos.lat,
-          lng: pos.lng,
-          accuracy: pos.acc,
-          is_mocked: pos.mocked,
-          recorded_at: new Date().toISOString(),
-        },
+        body: payload,
       });
       if (error) throw error;
       if (data) {
@@ -67,11 +154,11 @@ export const useGeofenceTracker = (checkInId: string | null) => {
             error: null,
           };
         });
-        // refresh absences list
         loadAbsences();
       }
     } catch (e: any) {
-      console.error('ping err', e);
+      console.warn('ping failed -> queuing', e?.message);
+      enqueue(checkInId, payload);
       setState(prev => ({ ...prev, error: e.message }));
     }
   };
@@ -89,6 +176,12 @@ export const useGeofenceTracker = (checkInId: string | null) => {
   useEffect(() => {
     if (!checkInId) return;
     loadAbsences();
+    // initialize queued count + try a flush on mount
+    setState(prev => ({ ...prev, queuedPings: readQueue(checkInId).length }));
+    flushQueue(checkInId);
+
+    const onOnline = () => flushQueue(checkInId);
+    window.addEventListener('online', onOnline);
 
     const isNative = Capacitor.isNativePlatform();
     let bgWatcherId: string | null = null;
@@ -99,7 +192,6 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     };
 
     if (isNative) {
-      // Native: background geolocation works with screen off
       (async () => {
         try {
           const pkg = '@capacitor-community/background-geolocation';
@@ -140,7 +232,6 @@ export const useGeofenceTracker = (checkInId: string | null) => {
         }
       })();
     } else {
-      // Web fallback: only works while tab is open
       if (!navigator.geolocation) {
         setState(prev => ({ ...prev, error: 'GPS stöds inte i denna webbläsare' }));
         return;
@@ -162,6 +253,8 @@ export const useGeofenceTracker = (checkInId: string | null) => {
 
     intervalRef.current = window.setInterval(() => {
       if (lastPosRef.current) sendPing(lastPosRef.current);
+      // also retry flush periodically in case "online" event was missed
+      flushQueue(checkInId);
     }, PING_INTERVAL_MS);
 
     const tickInterval = window.setInterval(() => {
@@ -172,6 +265,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }, 1000);
 
     return () => {
+      window.removeEventListener('online', onOnline);
       if (watchIdRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       clearInterval(tickInterval);

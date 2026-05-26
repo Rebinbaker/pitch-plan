@@ -487,8 +487,11 @@ export type Database = {
           customer_phone: string | null
           deadline: string | null
           estimated_work_days: number | null
+          geocoded_at: string | null
           geofence_radius_m: number
           id: string
+          latitude: number | null
+          longitude: number | null
           material_order: Json | null
           name: string
           notes: string | null
@@ -522,8 +525,11 @@ export type Database = {
           customer_phone?: string | null
           deadline?: string | null
           estimated_work_days?: number | null
+          geocoded_at?: string | null
           geofence_radius_m?: number
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           material_order?: Json | null
           name: string
           notes?: string | null
@@ -557,8 +563,11 @@ export type Database = {
           customer_phone?: string | null
           deadline?: string | null
           estimated_work_days?: number | null
+          geocoded_at?: string | null
           geofence_radius_m?: number
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           material_order?: Json | null
           name?: string
           notes?: string | null
