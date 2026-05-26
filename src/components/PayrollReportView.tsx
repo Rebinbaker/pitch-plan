@@ -200,22 +200,24 @@ const PayrollReportView = () => {
                   <TableHead>Namn</TableHead>
                   <TableHead>Arbetslag</TableHead>
                   <TableHead className="text-right">Pass</TableHead>
-                  <TableHead className="text-right">Timmar</TableHead>
+                  <TableHead className="text-right">Nettotim</TableHead>
+                  <TableHead className="text-right">Avdrag (min)</TableHead>
                   <TableHead className="text-right">Timlön</TableHead>
                   <TableHead className="text-right">Summa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
                 ) : summaries.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
                 ) : summaries.map(s => (
                   <TableRow key={s.user_id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>{s.team_name ? <Badge variant="secondary">{s.team_name}</Badge> : '—'}</TableCell>
                     <TableCell className="text-right">{s.sessions}</TableCell>
                     <TableCell className="text-right">{s.hours.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.absence_min > 0 ? Math.round(s.absence_min) : '—'}</TableCell>
                     <TableCell className="text-right">{s.hourly_rate} kr/h</TableCell>
                     <TableCell className="text-right font-bold">{Math.round(s.wage).toLocaleString('sv-SE')} kr</TableCell>
                   </TableRow>
