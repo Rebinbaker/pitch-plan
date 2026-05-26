@@ -14,6 +14,9 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker';
+import { WorkerAbsenceList } from '@/components/WorkerAbsenceList';
+import { AlertTriangle } from 'lucide-react';
 
 interface AssignedJob {
   project_id: string;
