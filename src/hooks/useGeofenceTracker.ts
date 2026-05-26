@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
+import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
 
 interface AbsencePeriod {
   id: string;
@@ -194,9 +195,6 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     if (isNative) {
       (async () => {
         try {
-          const pkg = '@capacitor-community/background-geolocation';
-          const mod: any = await import(/* @vite-ignore */ pkg);
-          const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
           bgWatcherId = await BackgroundGeolocation.addWatcher(
             {
               backgroundMessage: 'Tidrapportering aktiv – platsen spåras',

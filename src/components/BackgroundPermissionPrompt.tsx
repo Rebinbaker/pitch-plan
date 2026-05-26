@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { MapPin, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
 
 const STORAGE_KEY = 'bg_location_permission_prompted_v1';
 
@@ -29,9 +30,6 @@ export const BackgroundPermissionPrompt = () => {
   const requestPermission = async () => {
     setRequesting(true);
     try {
-      const mod: any = await import(/* @vite-ignore */ '@capacitor-community/background-geolocation');
-      const BackgroundGeolocation = mod.BackgroundGeolocation ?? mod.default;
-
       // Adding a watcher with requestPermissions:true triggers the native
       // permission dialog (iOS shows "Allow While Using" first; user must then
       // upgrade to "Always" in Settings — we explain that below).
