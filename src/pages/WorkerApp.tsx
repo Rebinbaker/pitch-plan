@@ -431,6 +431,10 @@ const WorkerAppInner = () => {
         </Link>
       )}
 
+      <DeviceBindingGate binding={deviceBinding} />
+
+
+
 
       {openCheckIn && live && (
         <div className="mx-4 mt-4 p-4 rounded-lg bg-primary text-primary-foreground shadow-lg">
