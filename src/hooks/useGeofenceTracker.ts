@@ -149,6 +149,20 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }
   };
 
+  const handleServerResponse = (resp: any) => {
+    if (!resp) return;
+    if (resp.notify_warning && !warningShownRef.current) {
+      warningShownRef.current = true;
+      showLocalWarning(
+        'Du är fortfarande utanför arbetsområdet',
+        'Om du inte återvänder inom 30 minuter avslutas arbetspasset automatiskt.'
+      );
+    }
+    if (resp.auto_checked_out) {
+      setState(prev => ({ ...prev, autoCheckedOut: true, autoCheckoutAt: resp.auto_checkout_at ?? null }));
+    }
+  };
+
   const sendPing = async (pos: { lat: number; lng: number; acc: number; mocked: boolean }) => {
     if (!checkInId) return;
     const payload: QueuedPing = {
@@ -158,9 +172,9 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       accuracy: pos.acc,
       is_mocked: pos.mocked,
       recorded_at: new Date().toISOString(),
+      device_id: deviceIdRef.current ?? undefined,
     };
 
-    // If offline or queue has backlog -> enqueue and try to flush
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     const existing = readQueue(checkInId);
     if (offline || existing.length > 0) {
@@ -170,9 +184,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('process-location-ping', {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke('process-location-ping', { body: payload });
       if (error) throw error;
       if (data) {
         setState(prev => {
@@ -180,7 +192,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
           const wasInside = prev.insideRadius;
           let awaySinceMs = prev.awaySinceMs;
           if (!inside && wasInside) awaySinceMs = Date.now();
-          if (inside) awaySinceMs = null;
+          if (inside) { awaySinceMs = null; warningShownRef.current = false; }
           return {
             ...prev,
             insideRadius: inside,
@@ -190,6 +202,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
             error: null,
           };
         });
+        handleServerResponse(data);
         loadAbsences();
       }
     } catch (e: any) {
@@ -197,6 +210,16 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       enqueue(checkInId, payload);
       setState(prev => ({ ...prev, error: e.message }));
     }
+  };
+
+  const pollRandomVerification = async () => {
+    if (!checkInId) return;
+    try {
+      const { data } = await supabase.functions.invoke('schedule-random-verification', {
+        body: { check_in_id: checkInId },
+      });
+      setState(prev => ({ ...prev, pendingVerification: (data as any)?.pending ?? null }));
+    } catch (e) { console.warn('rv poll fail', e); }
   };
 
   const loadAbsences = async () => {
