@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.pitchplan',
   appName: 'Lokala Hantverkarna',
   webDir: 'dist',
-  server: {
-    url: 'https://2044ec5b-cc4a-420f-94f2-3f05879412b5.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
