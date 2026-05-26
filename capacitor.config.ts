@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.2044ec5bcc4a420f94f23f05879412b5',
+  appId: 'app.lovable.pitchplan',
   appName: 'Lokala Hantverkarna',
   webDir: 'dist',
   server: {
