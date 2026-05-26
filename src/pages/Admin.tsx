@@ -45,6 +45,10 @@ const Admin: React.FC = () => {
         <AdminPanel />
 
         <div className="mt-6">
+          <SecurityAnomaliesView />
+        </div>
+
+        <div className="mt-6">
           <PeriCatalogUpload />
         </div>
       </div>
