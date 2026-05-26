@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ScaffolderDashboard } from '@/components/scaffolder/ScaffolderDashboard';
 import { ScaffolderTimeTracking } from '@/components/scaffolder/ScaffolderTimeTracking';
+import { BackButton } from '@/components/BackButton';
 
 const ScaffolderAppInner = () => {
   const { user, signOut } = useAuth();
