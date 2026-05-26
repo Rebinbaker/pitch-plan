@@ -12,6 +12,7 @@ import WorkerApp from "./pages/WorkerApp";
 import ScaffolderApp from "./pages/ScaffolderApp";
 import NotFound from "./pages/NotFound";
 import DownloadApp from "./pages/DownloadApp";
+import { BackgroundPermissionPrompt } from "@/components/BackgroundPermissionPrompt";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <BackgroundPermissionPrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
