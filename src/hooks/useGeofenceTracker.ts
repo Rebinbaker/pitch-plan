@@ -102,7 +102,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       // Native: background geolocation works with screen off
       (async () => {
         try {
-          const { BackgroundGeolocation } = await import('@capacitor-community/background-geolocation');
+          const { BackgroundGeolocation } = await import('@capacitor-community/background-geolocation') as any;
           bgWatcherId = await BackgroundGeolocation.addWatcher(
             {
               backgroundMessage: 'Tidrapportering aktiv – platsen spåras',
