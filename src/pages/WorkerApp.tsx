@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker';
 import { WorkerAbsenceList } from '@/components/WorkerAbsenceList';
 import { AlertTriangle } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 interface AssignedJob {
   project_id: string;
