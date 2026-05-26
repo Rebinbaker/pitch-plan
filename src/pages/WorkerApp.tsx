@@ -14,6 +14,9 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker';
+import { WorkerAbsenceList } from '@/components/WorkerAbsenceList';
+import { AlertTriangle } from 'lucide-react';
 
 interface AssignedJob {
   project_id: string;
@@ -96,6 +99,9 @@ const WorkerAppInner = () => {
     const i = setInterval(() => setTick(t => t + 1), 30_000);
     return () => clearInterval(i);
   }, [openCheckIn]);
+
+  // GPS geofence tracker (continuous pings while checked in)
+  const geofence = useGeofenceTracker(openCheckIn?.id || null);
 
   const loadAll = async () => {
     if (!user || !organizationId) return;
@@ -265,8 +271,34 @@ const WorkerAppInner = () => {
       const pos = await getPosition();
       const checkInAt = new Date(openCheckIn.check_in_at);
       const now = new Date();
-      const duration = (now.getTime() - checkInAt.getTime()) / 3_600_000;
-      const wage = Math.round(duration * (openCheckIn.hourly_rate_snapshot || 0) * 100) / 100;
+      const grossHours = (now.getTime() - checkInAt.getTime()) / 3_600_000;
+
+      // Compute absence: sum of minutes from non-approved periods (default = deducted)
+      const { data: absences } = await supabase
+        .from('worker_absence_periods')
+        .select('left_at, returned_at, duration_minutes, status')
+        .eq('check_in_id', openCheckIn.id);
+
+      let absenceMinutes = 0;
+      (absences || []).forEach((a: any) => {
+        if (a.status === 'approved') return;
+        if (a.duration_minutes != null) {
+          absenceMinutes += Number(a.duration_minutes);
+        } else if (a.left_at && !a.returned_at) {
+          // still open at checkout — count until now
+          absenceMinutes += Math.max(0, (now.getTime() - new Date(a.left_at).getTime()) / 60000);
+        }
+      });
+
+      const netHours = Math.max(0, grossHours - absenceMinutes / 60);
+      const wage = Math.round(netHours * (openCheckIn.hourly_rate_snapshot || 0) * 100) / 100;
+
+      // close any open absence
+      await supabase
+        .from('worker_absence_periods')
+        .update({ returned_at: now.toISOString() })
+        .eq('check_in_id', openCheckIn.id)
+        .is('returned_at', null);
 
       const { error } = await supabase
         .from('worker_check_ins')
@@ -274,13 +306,19 @@ const WorkerAppInner = () => {
           check_out_at: now.toISOString(),
           check_out_lat: pos.coords.latitude,
           check_out_lng: pos.coords.longitude,
-          duration_hours: Math.round(duration * 100) / 100,
+          duration_hours: Math.round(netHours * 100) / 100,
+          gross_hours: Math.round(grossHours * 100) / 100,
+          absence_minutes: Math.round(absenceMinutes),
+          net_hours: Math.round(netHours * 100) / 100,
           wage_amount: wage,
         })
         .eq('id', openCheckIn.id);
       if (error) throw error;
 
-      toast({ title: 'Utcheckad', description: `${duration.toFixed(2)}h — ${wage} kr` });
+      toast({
+        title: 'Utcheckad',
+        description: `Brutto ${grossHours.toFixed(2)}h – Avdrag ${Math.round(absenceMinutes)} min = ${netHours.toFixed(2)}h • ${wage} kr`,
+      });
       setOpenCheckIn(null);
       loadAll();
     } catch (e: any) {
@@ -289,6 +327,7 @@ const WorkerAppInner = () => {
       setWorking(null);
     }
   };
+
 
   const live = useMemo(() => {
     if (!openCheckIn) return null;
@@ -359,6 +398,36 @@ const WorkerAppInner = () => {
           </div>
         </div>
       )}
+
+      {openCheckIn && !geofence.insideRadius && (
+        <div className="mx-4 mt-3 p-4 rounded-lg bg-destructive text-destructive-foreground shadow-lg animate-pulse">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            <div className="font-bold">Utanför arbetsplatsen</div>
+          </div>
+          <div className="text-3xl font-mono font-bold mt-2">
+            {formatAwayTimer(geofence.currentAwaySeconds)}
+          </div>
+          <div className="text-xs opacity-90 mt-1">
+            {geofence.distanceM != null && `${Math.round(geofence.distanceM)} m från arbetsplatsen (radie ${geofence.radiusM} m). `}
+            Denna tid dras av från din lön om chefen inte godkänner.
+          </div>
+        </div>
+      )}
+
+      {openCheckIn && geofence.insideRadius && geofence.distanceM != null && (
+        <div className="mx-4 mt-3 px-3 py-2 rounded text-xs bg-green-50 text-green-700 border border-green-200 flex items-center gap-2">
+          <MapPin className="w-3 h-3" />
+          På arbetsplatsen ({Math.round(geofence.distanceM)} m, radie {geofence.radiusM} m)
+        </div>
+      )}
+
+      {openCheckIn && geofence.absences.length > 0 && (
+        <div className="mx-4 mt-3">
+          <WorkerAbsenceList absences={geofence.absences} onUpdated={geofence.refresh} />
+        </div>
+      )}
+
 
       <div className="p-4">
         <Tabs defaultValue="jobs">

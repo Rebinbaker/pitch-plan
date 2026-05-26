@@ -22,6 +22,9 @@ interface CheckInRow {
   check_in_at: string;
   check_out_at: string | null;
   duration_hours: number | null;
+  gross_hours: number | null;
+  absence_minutes: number | null;
+  net_hours: number | null;
   wage_amount: number | null;
   hourly_rate_snapshot: number;
 }
@@ -31,6 +34,7 @@ interface WorkerSummary {
   name: string;
   team_name: string | null;
   hours: number;
+  absence_min: number;
   wage: number;
   sessions: number;
   hourly_rate: number;
@@ -71,7 +75,7 @@ const PayrollReportView = () => {
       const [{ data: checkIns, error: e1 }, { data: teams, error: e2 }] = await Promise.all([
         supabase
           .from('worker_check_ins')
-          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, wage_amount, hourly_rate_snapshot')
+          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, gross_hours, absence_minutes, net_hours, wage_amount, hourly_rate_snapshot')
           .eq('organization_id', organizationId)
           .gte('check_in_at', fromIso)
           .lte('check_in_at', toIso)
@@ -104,17 +108,20 @@ const PayrollReportView = () => {
     rows.forEach(r => {
       const info = memberLookup[r.user_id];
       const key = r.user_id;
-      const existing = map.get(key) || {
+      const existing: WorkerSummary = map.get(key) || {
         user_id: r.user_id,
         name: info?.name || 'Okänd byggare',
         team_name: info?.team || null,
         hours: 0,
+        absence_min: 0,
         wage: 0,
         sessions: 0,
         hourly_rate: r.hourly_rate_snapshot,
       };
-      existing.hours += r.duration_hours || 0;
-      existing.wage += r.wage_amount || 0;
+      const hrs = r.net_hours ?? r.duration_hours ?? 0;
+      existing.hours += Number(hrs);
+      existing.absence_min += Number(r.absence_minutes || 0);
+      existing.wage += Number(r.wage_amount || 0);
       existing.sessions += 1;
       map.set(key, existing);
     });
@@ -193,22 +200,24 @@ const PayrollReportView = () => {
                   <TableHead>Namn</TableHead>
                   <TableHead>Arbetslag</TableHead>
                   <TableHead className="text-right">Pass</TableHead>
-                  <TableHead className="text-right">Timmar</TableHead>
+                  <TableHead className="text-right">Nettotim</TableHead>
+                  <TableHead className="text-right">Avdrag (min)</TableHead>
                   <TableHead className="text-right">Timlön</TableHead>
                   <TableHead className="text-right">Summa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
                 ) : summaries.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
                 ) : summaries.map(s => (
                   <TableRow key={s.user_id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>{s.team_name ? <Badge variant="secondary">{s.team_name}</Badge> : '—'}</TableCell>
                     <TableCell className="text-right">{s.sessions}</TableCell>
                     <TableCell className="text-right">{s.hours.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.absence_min > 0 ? Math.round(s.absence_min) : '—'}</TableCell>
                     <TableCell className="text-right">{s.hourly_rate} kr/h</TableCell>
                     <TableCell className="text-right font-bold">{Math.round(s.wage).toLocaleString('sv-SE')} kr</TableCell>
                   </TableRow>

@@ -15,6 +15,7 @@ import { sv } from 'date-fns/locale';
 import TimeEntryForm from './TimeEntryForm';
 import TimeReportsView from './TimeReportsView';
 import PayrollReportView from './PayrollReportView';
+import AbsenceApprovalView from './AbsenceApprovalView';
 
 const TimeTrackingView = memo(() => {
   console.log('TimeTrackingView re-rendered');
@@ -287,11 +288,12 @@ const TimeTrackingView = memo(() => {
       </div>
 
       <Tabs defaultValue="timer" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="timer">Timer & Registrering</TabsTrigger>
           <TabsTrigger value="entries">Senaste registreringar</TabsTrigger>
           <TabsTrigger value="reports">Rapporter</TabsTrigger>
           <TabsTrigger value="payroll">Lön byggare</TabsTrigger>
+          <TabsTrigger value="absences">Frånvaro</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timer" className="space-y-4">
@@ -358,6 +360,10 @@ const TimeTrackingView = memo(() => {
 
         <TabsContent value="payroll">
           <PayrollReportView />
+        </TabsContent>
+
+        <TabsContent value="absences">
+          <AbsenceApprovalView />
         </TabsContent>
       </Tabs>
     </div>

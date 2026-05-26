@@ -487,6 +487,7 @@ export type Database = {
           customer_phone: string | null
           deadline: string | null
           estimated_work_days: number | null
+          geofence_radius_m: number
           id: string
           material_order: Json | null
           name: string
@@ -521,6 +522,7 @@ export type Database = {
           customer_phone?: string | null
           deadline?: string | null
           estimated_work_days?: number | null
+          geofence_radius_m?: number
           id?: string
           material_order?: Json | null
           name: string
@@ -555,6 +557,7 @@ export type Database = {
           customer_phone?: string | null
           deadline?: string | null
           estimated_work_days?: number | null
+          geofence_radius_m?: number
           id?: string
           material_order?: Json | null
           name?: string
@@ -1415,8 +1418,61 @@ export type Database = {
           },
         ]
       }
+      worker_absence_periods: {
+        Row: {
+          check_in_id: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          left_at: string
+          organization_id: string
+          reason: string | null
+          receipt_url: string | null
+          returned_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          left_at: string
+          organization_id: string
+          reason?: string | null
+          receipt_url?: string | null
+          returned_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          left_at?: string
+          organization_id?: string
+          reason?: string | null
+          receipt_url?: string | null
+          returned_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       worker_check_ins: {
         Row: {
+          absence_minutes: number
+          auto_closed: boolean
           check_in_at: string
           check_in_lat: number | null
           check_in_lng: number | null
@@ -1427,8 +1483,10 @@ export type Database = {
           created_at: string
           distance_km: number | null
           duration_hours: number | null
+          gross_hours: number | null
           hourly_rate_snapshot: number
           id: string
+          net_hours: number | null
           notes: string | null
           organization_id: string
           project_id: string
@@ -1440,6 +1498,8 @@ export type Database = {
           wage_amount: number | null
         }
         Insert: {
+          absence_minutes?: number
+          auto_closed?: boolean
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
@@ -1450,8 +1510,10 @@ export type Database = {
           created_at?: string
           distance_km?: number | null
           duration_hours?: number | null
+          gross_hours?: number | null
           hourly_rate_snapshot?: number
           id?: string
+          net_hours?: number | null
           notes?: string | null
           organization_id: string
           project_id: string
@@ -1463,6 +1525,8 @@ export type Database = {
           wage_amount?: number | null
         }
         Update: {
+          absence_minutes?: number
+          auto_closed?: boolean
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
@@ -1473,8 +1537,10 @@ export type Database = {
           created_at?: string
           distance_km?: number | null
           duration_hours?: number | null
+          gross_hours?: number | null
           hourly_rate_snapshot?: number
           id?: string
+          net_hours?: number | null
           notes?: string | null
           organization_id?: string
           project_id?: string
@@ -1484,6 +1550,51 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wage_amount?: number | null
+        }
+        Relationships: []
+      }
+      worker_location_pings: {
+        Row: {
+          accuracy_m: number | null
+          check_in_id: string
+          created_at: string
+          distance_m: number | null
+          id: string
+          inside_radius: boolean
+          is_mocked: boolean
+          lat: number
+          lng: number
+          organization_id: string
+          recorded_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          check_in_id: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          inside_radius?: boolean
+          is_mocked?: boolean
+          lat: number
+          lng: number
+          organization_id: string
+          recorded_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          check_in_id?: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          inside_radius?: boolean
+          is_mocked?: boolean
+          lat?: number
+          lng?: number
+          organization_id?: string
+          recorded_at?: string
+          user_id?: string
         }
         Relationships: []
       }
