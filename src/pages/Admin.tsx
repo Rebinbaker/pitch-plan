@@ -4,6 +4,7 @@ import { AdminPanel } from '@/components/AdminPanel';
 import { PeriCatalogUpload } from '@/components/admin/PeriCatalogUpload';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { BackButton } from '@/components/BackButton';
 
 const Admin: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
