@@ -20,6 +20,9 @@ import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker'
 import { WorkerAbsenceList } from '@/components/WorkerAbsenceList';
 import { AlertTriangle } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
+import { useDeviceBinding } from '@/hooks/useDeviceBinding';
+import { DeviceBindingGate } from '@/components/DeviceBindingGate';
+import { RandomVerificationPrompt } from '@/components/RandomVerificationPrompt';
 
 interface AssignedJob {
   project_id: string;
