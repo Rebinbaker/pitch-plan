@@ -288,7 +288,7 @@ const TimeTrackingView = memo(() => {
       </div>
 
       <Tabs defaultValue="timer" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="timer">Timer & Registrering</TabsTrigger>
           <TabsTrigger value="entries">Senaste registreringar</TabsTrigger>
           <TabsTrigger value="reports">Rapporter</TabsTrigger>
