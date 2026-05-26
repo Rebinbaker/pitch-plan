@@ -90,11 +90,18 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     absences: [],
     error: null,
     queuedPings: 0,
+    autoCheckedOut: false,
+    autoCheckoutAt: null,
+    pendingVerification: null,
+    deviceId: null,
   });
   const watchIdRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const rvIntervalRef = useRef<number | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; acc: number; mocked: boolean } | null>(null);
   const flushingRef = useRef(false);
+  const deviceIdRef = useRef<string | null>(null);
+  const warningShownRef = useRef(false);
 
   const enqueue = (checkIn: string, p: QueuedPing) => {
     const q = readQueue(checkIn);
