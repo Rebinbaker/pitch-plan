@@ -23,6 +23,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
       layoutName: "launch_screen",
       useDialog: true,
+    },
+    BackgroundGeolocation: {
+      // notification configured at runtime via addWatcher
     }
   }
 };
