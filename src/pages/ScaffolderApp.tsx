@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { ScaffolderDashboard } from '@/components/scaffolder/ScaffolderDashboard';
 import { ScaffolderTimeTracking } from '@/components/scaffolder/ScaffolderTimeTracking';
+import { BackButton } from '@/components/BackButton';
 
 const ScaffolderAppInner = () => {
   const { user, signOut } = useAuth();
@@ -12,9 +13,12 @@ const ScaffolderAppInner = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-card border-b px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold">Ställning-app</h1>
-          <p className="text-xs text-muted-foreground">{user?.email}</p>
+        <div className="flex items-center gap-2">
+          <BackButton to="/" label="" />
+          <div>
+            <h1 className="text-lg font-bold">Ställning-app</h1>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
         </div>
         <Button variant="ghost" size="sm" onClick={signOut}>
           <LogOut className="w-4 h-4" />
