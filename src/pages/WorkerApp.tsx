@@ -655,6 +655,12 @@ const WorkerAppInner = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RandomVerificationPrompt
+        pending={pendingVerification}
+        deviceId={deviceBinding.deviceId}
+        onComplete={() => setPendingVerification(null)}
+      />
     </div>
   );
 };
