@@ -22,6 +22,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <BackgroundPermissionPrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
