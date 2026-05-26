@@ -601,6 +601,66 @@ export type Database = {
           },
         ]
       }
+      random_presence_verifications: {
+        Row: {
+          check_in_id: string
+          completed_at: string | null
+          created_at: string
+          device_id: string | null
+          distance_from_project_m: number | null
+          expires_at: string
+          failure_reason: string | null
+          gps_accuracy: number | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          organization_id: string
+          project_id: string
+          selfie_url: string | null
+          status: string
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_id: string
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          distance_from_project_m?: number | null
+          expires_at: string
+          failure_reason?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          organization_id: string
+          project_id: string
+          selfie_url?: string | null
+          status?: string
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_id?: string
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          distance_from_project_m?: number | null
+          expires_at?: string
+          failure_reason?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          organization_id?: string
+          project_id?: string
+          selfie_url?: string | null
+          status?: string
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           created_at: string
@@ -1297,6 +1357,57 @@ export type Database = {
           },
         ]
       }
+      user_devices: {
+        Row: {
+          app_version: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          device_id: string
+          device_name: string | null
+          id: string
+          last_seen_at: string | null
+          organization_id: string
+          platform: string
+          registered_at: string
+          revoked_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          device_id: string
+          device_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          organization_id: string
+          platform?: string
+          registered_at?: string
+          revoked_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          device_id?: string
+          device_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          organization_id?: string
+          platform?: string
+          registered_at?: string
+          revoked_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1429,6 +1540,7 @@ export type Database = {
       }
       worker_absence_periods: {
         Row: {
+          auto_checkout_triggered: boolean
           check_in_id: string
           created_at: string
           duration_minutes: number | null
@@ -1443,8 +1555,10 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          warning_sent_at: string | null
         }
         Insert: {
+          auto_checkout_triggered?: boolean
           check_in_id: string
           created_at?: string
           duration_minutes?: number | null
@@ -1459,8 +1573,10 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          warning_sent_at?: string | null
         }
         Update: {
+          auto_checkout_triggered?: boolean
           check_in_id?: string
           created_at?: string
           duration_minutes?: number | null
@@ -1475,12 +1591,14 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          warning_sent_at?: string | null
         }
         Relationships: []
       }
       worker_check_ins: {
         Row: {
           absence_minutes: number
+          auto_checkout_triggered_at: string | null
           auto_closed: boolean
           check_in_at: string
           check_in_lat: number | null
@@ -1489,7 +1607,9 @@ export type Database = {
           check_out_at: string | null
           check_out_lat: number | null
           check_out_lng: number | null
+          checkout_reason: string
           created_at: string
+          device_id: string | null
           distance_km: number | null
           duration_hours: number | null
           gross_hours: number | null
@@ -1508,6 +1628,7 @@ export type Database = {
         }
         Insert: {
           absence_minutes?: number
+          auto_checkout_triggered_at?: string | null
           auto_closed?: boolean
           check_in_at?: string
           check_in_lat?: number | null
@@ -1516,7 +1637,9 @@ export type Database = {
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null
+          checkout_reason?: string
           created_at?: string
+          device_id?: string | null
           distance_km?: number | null
           duration_hours?: number | null
           gross_hours?: number | null
@@ -1535,6 +1658,7 @@ export type Database = {
         }
         Update: {
           absence_minutes?: number
+          auto_checkout_triggered_at?: string | null
           auto_closed?: boolean
           check_in_at?: string
           check_in_lat?: number | null
@@ -1543,7 +1667,9 @@ export type Database = {
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null
+          checkout_reason?: string
           created_at?: string
+          device_id?: string | null
           distance_km?: number | null
           duration_hours?: number | null
           gross_hours?: number | null
@@ -1635,6 +1761,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_device_approved: {
+        Args: { _device_id: string; _user_id: string }
         Returns: boolean
       }
       is_organization_member: {
