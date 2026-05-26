@@ -20,6 +20,9 @@ import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker'
 import { WorkerAbsenceList } from '@/components/WorkerAbsenceList';
 import { AlertTriangle } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
+import { useDeviceBinding } from '@/hooks/useDeviceBinding';
+import { DeviceBindingGate } from '@/components/DeviceBindingGate';
+import { RandomVerificationPrompt } from '@/components/RandomVerificationPrompt';
 
 interface AssignedJob {
   project_id: string;
@@ -105,6 +108,7 @@ const WorkerAppInner = () => {
 
   // GPS geofence tracker (continuous pings while checked in)
   const geofence = useGeofenceTracker(openCheckIn?.id || null);
+  const deviceBinding = useDeviceBinding();
 
   const loadAll = async () => {
     if (!user || !organizationId) return;
@@ -200,6 +204,10 @@ const WorkerAppInner = () => {
   const startCheckInFlow = (job: AssignedJob) => {
     if (openCheckIn) {
       toast({ title: 'Du har en pågående incheckning', description: 'Checka ut först.', variant: 'destructive' });
+      return;
+    }
+    if (deviceBinding.status !== 'approved') {
+      toast({ title: 'Enheten är inte godkänd', description: 'Din chef måste godkänna enheten innan du kan checka in.', variant: 'destructive' });
       return;
     }
     setPendingJob(job);

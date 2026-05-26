@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
+import { getDeviceInfo } from '@/lib/deviceId';
 
 interface AbsencePeriod {
   id: string;
@@ -10,6 +11,12 @@ interface AbsencePeriod {
   duration_minutes: number | null;
   reason: string | null;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+interface PendingVerification {
+  id: string;
+  triggered_at: string;
+  expires_at: string;
 }
 
 interface GeofenceState {
@@ -21,6 +28,10 @@ interface GeofenceState {
   absences: AbsencePeriod[];
   error: string | null;
   queuedPings: number;
+  autoCheckedOut: boolean;
+  autoCheckoutAt: string | null;
+  pendingVerification: PendingVerification | null;
+  deviceId: string | null;
 }
 
 interface QueuedPing {
@@ -30,11 +41,28 @@ interface QueuedPing {
   accuracy: number;
   is_mocked: boolean;
   recorded_at: string;
+  device_id?: string;
 }
 
 const PING_INTERVAL_MS = 60_000;
+const RV_POLL_INTERVAL_MS = 60_000;
 const QUEUE_KEY = (checkInId: string) => `geo_ping_queue_${checkInId}`;
 const MAX_QUEUE = 500; // ~8h at 1/min
+
+const showLocalWarning = async (title: string, body: string) => {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const { LocalNotifications } = await import('@capacitor/local-notifications');
+      await LocalNotifications.requestPermissions();
+      await LocalNotifications.schedule({
+        notifications: [{ id: Date.now() % 100000, title, body }],
+      });
+    } else if ('Notification' in window) {
+      if (Notification.permission === 'default') await Notification.requestPermission();
+      if (Notification.permission === 'granted') new Notification(title, { body });
+    }
+  } catch (e) { console.warn('notif fail', e); }
+};
 
 const readQueue = (checkInId: string): QueuedPing[] => {
   try {
@@ -62,11 +90,18 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     absences: [],
     error: null,
     queuedPings: 0,
+    autoCheckedOut: false,
+    autoCheckoutAt: null,
+    pendingVerification: null,
+    deviceId: null,
   });
   const watchIdRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const rvIntervalRef = useRef<number | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; acc: number; mocked: boolean } | null>(null);
   const flushingRef = useRef(false);
+  const deviceIdRef = useRef<string | null>(null);
+  const warningShownRef = useRef(false);
 
   const enqueue = (checkIn: string, p: QueuedPing) => {
     const q = readQueue(checkIn);
@@ -114,6 +149,20 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }
   };
 
+  const handleServerResponse = (resp: any) => {
+    if (!resp) return;
+    if (resp.notify_warning && !warningShownRef.current) {
+      warningShownRef.current = true;
+      showLocalWarning(
+        'Du är fortfarande utanför arbetsområdet',
+        'Om du inte återvänder inom 30 minuter avslutas arbetspasset automatiskt.'
+      );
+    }
+    if (resp.auto_checked_out) {
+      setState(prev => ({ ...prev, autoCheckedOut: true, autoCheckoutAt: resp.auto_checkout_at ?? null }));
+    }
+  };
+
   const sendPing = async (pos: { lat: number; lng: number; acc: number; mocked: boolean }) => {
     if (!checkInId) return;
     const payload: QueuedPing = {
@@ -123,9 +172,9 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       accuracy: pos.acc,
       is_mocked: pos.mocked,
       recorded_at: new Date().toISOString(),
+      device_id: deviceIdRef.current ?? undefined,
     };
 
-    // If offline or queue has backlog -> enqueue and try to flush
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     const existing = readQueue(checkInId);
     if (offline || existing.length > 0) {
@@ -135,9 +184,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('process-location-ping', {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke('process-location-ping', { body: payload });
       if (error) throw error;
       if (data) {
         setState(prev => {
@@ -145,7 +192,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
           const wasInside = prev.insideRadius;
           let awaySinceMs = prev.awaySinceMs;
           if (!inside && wasInside) awaySinceMs = Date.now();
-          if (inside) awaySinceMs = null;
+          if (inside) { awaySinceMs = null; warningShownRef.current = false; }
           return {
             ...prev,
             insideRadius: inside,
@@ -155,6 +202,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
             error: null,
           };
         });
+        handleServerResponse(data);
         loadAbsences();
       }
     } catch (e: any) {
@@ -162,6 +210,16 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       enqueue(checkInId, payload);
       setState(prev => ({ ...prev, error: e.message }));
     }
+  };
+
+  const pollRandomVerification = async () => {
+    if (!checkInId) return;
+    try {
+      const { data } = await supabase.functions.invoke('schedule-random-verification', {
+        body: { check_in_id: checkInId },
+      });
+      setState(prev => ({ ...prev, pendingVerification: (data as any)?.pending ?? null }));
+    } catch (e) { console.warn('rv poll fail', e); }
   };
 
   const loadAbsences = async () => {
@@ -177,9 +235,17 @@ export const useGeofenceTracker = (checkInId: string | null) => {
   useEffect(() => {
     if (!checkInId) return;
     loadAbsences();
-    // initialize queued count + try a flush on mount
     setState(prev => ({ ...prev, queuedPings: readQueue(checkInId).length }));
     flushQueue(checkInId);
+
+    // Init device id
+    (async () => {
+      try {
+        const info = await getDeviceInfo();
+        deviceIdRef.current = info.deviceId;
+        setState(prev => ({ ...prev, deviceId: info.deviceId }));
+      } catch (e) { console.warn('device id fail', e); }
+    })();
 
     const onOnline = () => flushQueue(checkInId);
     window.addEventListener('online', onOnline);
@@ -196,53 +262,24 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       (async () => {
         try {
           bgWatcherId = await BackgroundGeolocation.addWatcher(
-            {
-              backgroundMessage: 'Tidrapportering aktiv – platsen spåras',
-              backgroundTitle: 'Incheckad på arbetsplats',
-              requestPermissions: true,
-              stale: false,
-              distanceFilter: 10,
-            },
+            { backgroundMessage: 'Tidrapportering aktiv – platsen spåras', backgroundTitle: 'Incheckad på arbetsplats', requestPermissions: true, stale: false, distanceFilter: 10 },
             (location, error) => {
-              if (error) {
-                console.warn('bg geo err', error);
-                setState(prev => ({ ...prev, error: error.message }));
-                return;
-              }
+              if (error) { setState(prev => ({ ...prev, error: error.message })); return; }
               if (location) {
-                const pos = {
-                  lat: location.latitude,
-                  lng: location.longitude,
-                  acc: location.accuracy,
-                  mocked: (location as any).simulated === true,
-                };
+                const pos = { lat: location.latitude, lng: location.longitude, acc: location.accuracy, mocked: (location as any).simulated === true };
                 onPos(pos);
                 sendPing(pos);
               }
             }
           );
-          cleanupNative = () => {
-            if (bgWatcherId) BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
-          };
-        } catch (e: any) {
-          console.error('bg geo init failed', e);
-          setState(prev => ({ ...prev, error: e.message }));
-        }
+          cleanupNative = () => { if (bgWatcherId) BackgroundGeolocation.removeWatcher({ id: bgWatcherId }); };
+        } catch (e: any) { setState(prev => ({ ...prev, error: e.message })); }
       })();
     } else {
-      if (!navigator.geolocation) {
-        setState(prev => ({ ...prev, error: 'GPS stöds inte i denna webbläsare' }));
-        return;
-      }
-      const onWebPos = (pos: GeolocationPosition) =>
-        onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy });
+      if (!navigator.geolocation) { setState(prev => ({ ...prev, error: 'GPS stöds inte i denna webbläsare' })); return; }
+      const onWebPos = (pos: GeolocationPosition) => onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy });
       const onErr = (err: GeolocationPositionError) => console.warn('geo err', err);
-
-      watchIdRef.current = navigator.geolocation.watchPosition(onWebPos, onErr, {
-        enableHighAccuracy: true,
-        maximumAge: 30_000,
-        timeout: 30_000,
-      });
+      watchIdRef.current = navigator.geolocation.watchPosition(onWebPos, onErr, { enableHighAccuracy: true, maximumAge: 30_000, timeout: 30_000 });
       navigator.geolocation.getCurrentPosition((p) => {
         onWebPos(p);
         sendPing({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, mocked: false });
@@ -251,9 +288,11 @@ export const useGeofenceTracker = (checkInId: string | null) => {
 
     intervalRef.current = window.setInterval(() => {
       if (lastPosRef.current) sendPing(lastPosRef.current);
-      // also retry flush periodically in case "online" event was missed
       flushQueue(checkInId);
     }, PING_INTERVAL_MS);
+
+    rvIntervalRef.current = window.setInterval(pollRandomVerification, RV_POLL_INTERVAL_MS);
+    pollRandomVerification();
 
     const tickInterval = window.setInterval(() => {
       setState(prev => {
@@ -266,13 +305,19 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       window.removeEventListener('online', onOnline);
       if (watchIdRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
+      if (rvIntervalRef.current !== null) clearInterval(rvIntervalRef.current);
       clearInterval(tickInterval);
       if (cleanupNative) cleanupNative();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkInId]);
 
-  return { ...state, refresh: loadAbsences };
+  const clearPendingVerification = () => {
+    setState(prev => ({ ...prev, pendingVerification: null }));
+    pollRandomVerification();
+  };
+
+  return { ...state, refresh: loadAbsences, clearPendingVerification };
 };
 
 export const formatAwayTimer = (seconds: number): string => {
