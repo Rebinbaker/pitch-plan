@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -374,6 +376,19 @@ const WorkerAppInner = () => {
           <LogOut className="w-4 h-4" />
         </Button>
       </header>
+
+      {!Capacitor.isNativePlatform() && (
+        <Link to="/download" className="block mx-4 mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/20 transition">
+          <div className="flex items-center gap-3">
+            <Download className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold">Ladda ner appen för bakgrunds-GPS</div>
+              <div className="text-xs text-muted-foreground">I webbläsaren stoppas GPS när du stänger fliken. Tryck här →</div>
+            </div>
+          </div>
+        </Link>
+      )}
+
 
       {openCheckIn && live && (
         <div className="mx-4 mt-4 p-4 rounded-lg bg-primary text-primary-foreground shadow-lg">

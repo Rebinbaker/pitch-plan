@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import WorkerApp from "./pages/WorkerApp";
 import ScaffolderApp from "./pages/ScaffolderApp";
 import NotFound from "./pages/NotFound";
+import DownloadApp from "./pages/DownloadApp";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             } />
             <Route path="/worker" element={<WorkerApp />} />
             <Route path="/scaffolder" element={<ScaffolderApp />} />
+            <Route path="/download" element={<DownloadApp />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
