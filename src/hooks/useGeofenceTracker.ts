@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
+import { getDeviceInfo } from '@/lib/deviceId';
 
 interface AbsencePeriod {
   id: string;
@@ -10,6 +11,12 @@ interface AbsencePeriod {
   duration_minutes: number | null;
   reason: string | null;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+interface PendingVerification {
+  id: string;
+  triggered_at: string;
+  expires_at: string;
 }
 
 interface GeofenceState {
@@ -21,6 +28,10 @@ interface GeofenceState {
   absences: AbsencePeriod[];
   error: string | null;
   queuedPings: number;
+  autoCheckedOut: boolean;
+  autoCheckoutAt: string | null;
+  pendingVerification: PendingVerification | null;
+  deviceId: string | null;
 }
 
 interface QueuedPing {
@@ -30,11 +41,28 @@ interface QueuedPing {
   accuracy: number;
   is_mocked: boolean;
   recorded_at: string;
+  device_id?: string;
 }
 
 const PING_INTERVAL_MS = 60_000;
+const RV_POLL_INTERVAL_MS = 60_000;
 const QUEUE_KEY = (checkInId: string) => `geo_ping_queue_${checkInId}`;
 const MAX_QUEUE = 500; // ~8h at 1/min
+
+const showLocalWarning = async (title: string, body: string) => {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const { LocalNotifications } = await import('@capacitor/local-notifications');
+      await LocalNotifications.requestPermissions();
+      await LocalNotifications.schedule({
+        notifications: [{ id: Date.now() % 100000, title, body }],
+      });
+    } else if ('Notification' in window) {
+      if (Notification.permission === 'default') await Notification.requestPermission();
+      if (Notification.permission === 'granted') new Notification(title, { body });
+    }
+  } catch (e) { console.warn('notif fail', e); }
+};
 
 const readQueue = (checkInId: string): QueuedPing[] => {
   try {
