@@ -206,6 +206,10 @@ const WorkerAppInner = () => {
       toast({ title: 'Du har en pågående incheckning', description: 'Checka ut först.', variant: 'destructive' });
       return;
     }
+    if (deviceBinding.status !== 'approved') {
+      toast({ title: 'Enheten är inte godkänd', description: 'Din chef måste godkänna enheten innan du kan checka in.', variant: 'destructive' });
+      return;
+    }
     setPendingJob(job);
     setPhotoFile(null);
     setPhotoPreview(null);
