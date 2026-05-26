@@ -271,8 +271,34 @@ const WorkerAppInner = () => {
       const pos = await getPosition();
       const checkInAt = new Date(openCheckIn.check_in_at);
       const now = new Date();
-      const duration = (now.getTime() - checkInAt.getTime()) / 3_600_000;
-      const wage = Math.round(duration * (openCheckIn.hourly_rate_snapshot || 0) * 100) / 100;
+      const grossHours = (now.getTime() - checkInAt.getTime()) / 3_600_000;
+
+      // Compute absence: sum of minutes from non-approved periods (default = deducted)
+      const { data: absences } = await supabase
+        .from('worker_absence_periods')
+        .select('left_at, returned_at, duration_minutes, status')
+        .eq('check_in_id', openCheckIn.id);
+
+      let absenceMinutes = 0;
+      (absences || []).forEach((a: any) => {
+        if (a.status === 'approved') return;
+        if (a.duration_minutes != null) {
+          absenceMinutes += Number(a.duration_minutes);
+        } else if (a.left_at && !a.returned_at) {
+          // still open at checkout — count until now
+          absenceMinutes += Math.max(0, (now.getTime() - new Date(a.left_at).getTime()) / 60000);
+        }
+      });
+
+      const netHours = Math.max(0, grossHours - absenceMinutes / 60);
+      const wage = Math.round(netHours * (openCheckIn.hourly_rate_snapshot || 0) * 100) / 100;
+
+      // close any open absence
+      await supabase
+        .from('worker_absence_periods')
+        .update({ returned_at: now.toISOString() })
+        .eq('check_in_id', openCheckIn.id)
+        .is('returned_at', null);
 
       const { error } = await supabase
         .from('worker_check_ins')
@@ -280,13 +306,19 @@ const WorkerAppInner = () => {
           check_out_at: now.toISOString(),
           check_out_lat: pos.coords.latitude,
           check_out_lng: pos.coords.longitude,
-          duration_hours: Math.round(duration * 100) / 100,
+          duration_hours: Math.round(netHours * 100) / 100,
+          gross_hours: Math.round(grossHours * 100) / 100,
+          absence_minutes: Math.round(absenceMinutes),
+          net_hours: Math.round(netHours * 100) / 100,
           wage_amount: wage,
         })
         .eq('id', openCheckIn.id);
       if (error) throw error;
 
-      toast({ title: 'Utcheckad', description: `${duration.toFixed(2)}h — ${wage} kr` });
+      toast({
+        title: 'Utcheckad',
+        description: `Brutto ${grossHours.toFixed(2)}h – Avdrag ${Math.round(absenceMinutes)} min = ${netHours.toFixed(2)}h • ${wage} kr`,
+      });
       setOpenCheckIn(null);
       loadAll();
     } catch (e: any) {
@@ -295,6 +327,7 @@ const WorkerAppInner = () => {
       setWorking(null);
     }
   };
+
 
   const live = useMemo(() => {
     if (!openCheckIn) return null;
