@@ -22,6 +22,9 @@ interface CheckInRow {
   check_in_at: string;
   check_out_at: string | null;
   duration_hours: number | null;
+  gross_hours: number | null;
+  absence_minutes: number | null;
+  net_hours: number | null;
   wage_amount: number | null;
   hourly_rate_snapshot: number;
 }
@@ -31,6 +34,7 @@ interface WorkerSummary {
   name: string;
   team_name: string | null;
   hours: number;
+  absence_min: number;
   wage: number;
   sessions: number;
   hourly_rate: number;
