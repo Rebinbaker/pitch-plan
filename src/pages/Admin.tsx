@@ -36,6 +36,7 @@ const Admin: React.FC = () => {
     <div className="min-h-screen bg-gradient-primary p-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
+          <BackButton to="/" className="text-white hover:text-white hover:bg-white/10 mb-3" />
           <h1 className="text-3xl font-bold text-white mb-2">Administratörsområde</h1>
           <p className="text-white/80">Hantera användare och systeminställningar</p>
         </div>
