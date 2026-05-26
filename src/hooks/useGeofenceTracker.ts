@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
 
 interface AbsencePeriod {
   id: string;
@@ -89,45 +90,78 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     if (!checkInId) return;
     loadAbsences();
 
-    if (!navigator.geolocation) {
-      setState(prev => ({ ...prev, error: 'GPS stöds inte i denna webbläsare' }));
-      return;
-    }
+    const isNative = Capacitor.isNativePlatform();
+    let bgWatcherId: string | null = null;
+    let cleanupNative: (() => void) | null = null;
 
-    const onPos = (pos: GeolocationPosition) => {
-      lastPosRef.current = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        acc: pos.coords.accuracy,
-        mocked: false,
-      };
-    };
-    const onErr = (err: GeolocationPositionError) => {
-      console.warn('geo err', err);
+    const onPos = (p: { lat: number; lng: number; acc: number; mocked?: boolean }) => {
+      lastPosRef.current = { lat: p.lat, lng: p.lng, acc: p.acc, mocked: !!p.mocked };
     };
 
-    watchIdRef.current = navigator.geolocation.watchPosition(onPos, onErr, {
-      enableHighAccuracy: true,
-      maximumAge: 30_000,
-      timeout: 30_000,
-    });
+    if (isNative) {
+      // Native: background geolocation works with screen off
+      (async () => {
+        try {
+          const { BackgroundGeolocation } = await import('@capacitor-community/background-geolocation') as any;
+          bgWatcherId = await BackgroundGeolocation.addWatcher(
+            {
+              backgroundMessage: 'Tidrapportering aktiv – platsen spåras',
+              backgroundTitle: 'Incheckad på arbetsplats',
+              requestPermissions: true,
+              stale: false,
+              distanceFilter: 10,
+            },
+            (location, error) => {
+              if (error) {
+                console.warn('bg geo err', error);
+                setState(prev => ({ ...prev, error: error.message }));
+                return;
+              }
+              if (location) {
+                const pos = {
+                  lat: location.latitude,
+                  lng: location.longitude,
+                  acc: location.accuracy,
+                  mocked: (location as any).simulated === true,
+                };
+                onPos(pos);
+                sendPing(pos);
+              }
+            }
+          );
+          cleanupNative = () => {
+            if (bgWatcherId) BackgroundGeolocation.removeWatcher({ id: bgWatcherId });
+          };
+        } catch (e: any) {
+          console.error('bg geo init failed', e);
+          setState(prev => ({ ...prev, error: e.message }));
+        }
+      })();
+    } else {
+      // Web fallback: only works while tab is open
+      if (!navigator.geolocation) {
+        setState(prev => ({ ...prev, error: 'GPS stöds inte i denna webbläsare' }));
+        return;
+      }
+      const onWebPos = (pos: GeolocationPosition) =>
+        onPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy });
+      const onErr = (err: GeolocationPositionError) => console.warn('geo err', err);
 
-    // initial ping
-    navigator.geolocation.getCurrentPosition((p) => {
-      onPos(p);
-      sendPing({
-        lat: p.coords.latitude,
-        lng: p.coords.longitude,
-        acc: p.coords.accuracy,
-        mocked: false,
+      watchIdRef.current = navigator.geolocation.watchPosition(onWebPos, onErr, {
+        enableHighAccuracy: true,
+        maximumAge: 30_000,
+        timeout: 30_000,
       });
-    }, onErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 30_000 });
+      navigator.geolocation.getCurrentPosition((p) => {
+        onWebPos(p);
+        sendPing({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy, mocked: false });
+      }, onErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 30_000 });
+    }
 
     intervalRef.current = window.setInterval(() => {
       if (lastPosRef.current) sendPing(lastPosRef.current);
     }, PING_INTERVAL_MS);
 
-    // 1s tick for away-timer display
     const tickInterval = window.setInterval(() => {
       setState(prev => {
         if (!prev.awaySinceMs) return prev.currentAwaySeconds === 0 ? prev : { ...prev, currentAwaySeconds: 0 };
@@ -136,9 +170,10 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     }, 1000);
 
     return () => {
-      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+      if (watchIdRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       clearInterval(tickInterval);
+      if (cleanupNative) cleanupNative();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkInId]);
