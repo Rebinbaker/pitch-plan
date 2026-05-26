@@ -110,6 +110,36 @@ const WorkerAppInner = () => {
   const geofence = useGeofenceTracker(openCheckIn?.id || null);
   const deviceBinding = useDeviceBinding();
 
+  // Random presence verification polling
+  const [pendingVerification, setPendingVerification] = useState<{ id: string; triggered_at: string; expires_at: string } | null>(null);
+
+  useEffect(() => {
+    if (!openCheckIn || !user) {
+      setPendingVerification(null);
+      return;
+    }
+    const poll = async () => {
+      try {
+        await supabase.functions.invoke('schedule-random-verification', {
+          body: { check_in_id: openCheckIn.id },
+        });
+      } catch (e) { /* ignore */ }
+      const { data } = await (supabase as any)
+        .from('random_presence_verifications')
+        .select('id, triggered_at, expires_at, status')
+        .eq('check_in_id', openCheckIn.id)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('triggered_at', { ascending: false })
+        .limit(1);
+      const row = data?.[0];
+      setPendingVerification(row ? { id: row.id, triggered_at: row.triggered_at, expires_at: row.expires_at } : null);
+    };
+    poll();
+    const i = setInterval(poll, 60_000);
+    return () => clearInterval(i);
+  }, [openCheckIn?.id, user?.id]);
+
   const loadAll = async () => {
     if (!user || !organizationId) return;
     setLoading(true);
