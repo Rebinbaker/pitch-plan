@@ -1,78 +1,134 @@
 ## Mål
 
-Göra tidrapporteringen fuskfri: byggarens lön baseras på **nettotid inom 50 m från projektets adress**. Lämnar de radien startar en borta-timer direkt vid första GPS-pingen utanför. Tiden dras av från lönen om inte chefen godkänner frånvaron i efterhand.
+Bygga tre säkerhetslager ovanpå nuvarande check-in/geofence-system:
+1. **Intelligent auto-checkout** efter 2 h utanför zonen, med retroaktiv sluttid.
+2. **Random presence verification** (1 ggr/dag, selfie + GPS).
+3. **Device binding** – ett godkänt arbetstelefon per användare.
 
-## Så här fungerar det för användaren
+Plus en **säkerhetsavvikelse-vy** för admin.
 
-**Byggaren (mobil):**
-1. Checkar in som idag (foto + GPS).
-2. Appen pingar GPS var 60:e sekund i bakgrunden via Capacitor Geolocation.
-3. Sekunden de går utanför 50 m → röd banner "🔴 Utanför arbetsplats – 00:04:12" + lokal notis.
-4. När de kommer tillbaka stoppas borta-timern och en frånvaroperiod sparas (start, slut, längd, GPS-spår).
-5. Vid utcheckning visas: Brutto 8:12 h – Frånvaro 0:47 h = **Lönegrundande 7:25 h**.
-6. Byggaren kan motivera varje frånvaroperiod ("Hämtade material på XL Bygg") med valfritt kvittofoto.
+---
 
-**Chefen (admin):**
-1. Ny flik "Frånvaroperioder" i lönerapporten — lista per byggare/dag med GPS-karta för perioden.
-2. Knappar **Godkänn** (tiden återförs) / **Avvisa** (avdraget kvarstår). Bulk-godkänn per dag finns.
-3. Tills chefen godkänner är perioden **avdragen** från lönen (default).
+## 1. Databas (en migration)
 
-## Teknisk plan
+### Ändra `worker_check_ins`
+- `checkout_reason TEXT` (`manual` | `auto_checkout_outside_geofence` | `admin_override`)
+- `auto_checkout_triggered_at TIMESTAMPTZ`
+- `device_id TEXT`
 
-**1. Databas (migration)**
+### Ändra `worker_absence_periods`
+- `auto_checkout_triggered BOOLEAN DEFAULT false`
+- `warning_sent_at TIMESTAMPTZ` (för 90-min pushen)
 
-- `worker_location_pings` — `check_in_id, recorded_at, lat, lng, accuracy_m, distance_m, inside_radius, is_mocked`. Index på `(check_in_id, recorded_at)`.
-- `worker_absence_periods` — `check_in_id, user_id, organization_id, left_at, returned_at, duration_minutes, reason, receipt_url, status ('pending'|'approved'|'rejected'), reviewed_by, reviewed_at`.
-- `worker_check_ins`: lägg till `gross_hours`, `absence_minutes`, `net_hours`, `auto_closed`.
-- `projects`: lägg till `geofence_radius_m` (default 50).
-- RLS: byggare ser/skapar egna pings & absences; org-medlemmar läser; admin uppdaterar status. GRANTs enligt mall.
+### Ny tabell `random_presence_verifications`
+Kolumner: `id, user_id, organization_id, check_in_id, project_id, triggered_at, expires_at (triggered_at + 5 min), completed_at, status ('pending'|'passed'|'missed'|'failed'), selfie_url, gps_lat, gps_lng, gps_accuracy, distance_from_project_m, failure_reason, device_id, created_at`.
+RLS: byggare ser/skapar/uppdaterar egna, org-medlemmar läser, admin uppdaterar status.
 
-**2. Edge function `process-location-ping`**
+### Ny tabell `user_devices`
+Kolumner: `id, user_id, organization_id, device_id, device_name, platform ('ios'|'android'|'web'), app_version, registered_at, approved_at, revoked_at, status ('pending'|'approved'|'revoked'), last_seen_at, approved_by`.
+Unique partial index: en `approved` device per user. RLS: byggare ser/skapar egna, admin allt, org-medlemmar läser inom org.
 
-- Tar emot `{check_in_id, lat, lng, accuracy, is_mocked, recorded_at}`.
-- Hämtar projektets koordinat + radie, räknar Haversine-avstånd serverside (klienten kan inte fuska).
-- Skriver ping. Om `inside_radius` växlar → öppnar/stänger absence period.
-- Auto-stänger check-in efter 12 h utan ping.
-- Blockar `is_mocked = true` (markerar perioden som `rejected` automatiskt).
+### Hjälpfunktion
+`public.is_device_approved(_user_id uuid, _device_id text) RETURNS boolean` (security definer) – används i edge functions och i UI-guards.
 
-**3. Mobil-klient (Capacitor)**
+GRANTs för alla nya tabeller enligt mall.
 
-- `@capacitor/geolocation` med `watchPosition` (60 s intervall, high accuracy).
-- Background mode via `@capacitor-community/background-geolocation` så det funkar med skärmen släckt.
-- Hook `useGeofenceTracker(checkInId)` som pingar edge function + visar röd banner när utanför.
-- Lokal notis vid utträde ("Du är utanför arbetsplatsen – timern räknar nu av tid").
+---
 
-**4. UI-ändringar**
+## 2. Edge functions
 
-- **WorkerCheckInView**: röd "utanför arbetsplats"-banner med live-timer, lista över dagens frånvaroperioder med motivera-knapp.
-- **Utcheckningsdialog**: visar Brutto / Frånvaro / Netto + uppmaning att motivera ej-motiverade perioder.
-- **PayrollReportView**: summera `net_hours` istället för `duration_hours`, ny kolumn "Avdrag (min)", expanderbar rad per check-in med periodlista.
-- **Ny vy `AbsenceApprovalView`**: chefens godkännandekö med mini-karta (Leaflet) över GPS-spåret.
-- **ProjectEditDialog**: nytt fält "Geofence-radie (m)" default 50.
+### Uppdatera `process-location-ping`
+- Skicka `device_id` med varje ping. Om inte approved → skriv ping men flagga sessionen med en avvikelse + skicka 401-liknande svar som klienten loggar.
+- När en absence-period öppnas och har varat **90 min** utan `warning_sent_at`: sätt `warning_sent_at = now()` och returnera `notify_warning: true` till klienten (klienten skickar lokal notis).
+- När en absence-period varat **120 min**:
+  - Sätt `worker_check_ins.check_out_at = absence.left_at`, beräkna `gross_hours`, `net_hours`, `checkout_reason='auto_checkout_outside_geofence'`, `auto_checkout_triggered_at=now()`, `auto_closed=true`.
+  - Markera absence-perioden `auto_checkout_triggered=true`, `returned_at=left_at`, `duration_minutes=0` (för att undvika dubbelavdrag – tiden finns redan utanför check_out_at).
+  - Returnera `auto_checked_out: true` till klienten.
 
-**5. Lönelogik**
+### Ny edge function `schedule-random-verification`
+- Anropas av klienten (eller cron) en gång per minut när en aktiv session finns.
+- Plockar aktiva check-ins äldre än 60 min, kollar att det inte redan finns en `random_presence_verifications` för dagens session, slumpar med liten sannolikhet så att den i snitt landar mellan 90 min in och 60 min före förväntat slut.
+- Skapar en `pending`-rad med `expires_at = now() + 5 min` och returnerar den. Klienten visar pushnotis + öppnar kameran.
 
-```text
-gross_hours    = (check_out - check_in)
-absence_min    = SUM(duration) WHERE status != 'approved'
-net_hours      = gross_hours - absence_min/60
-wage_amount    = net_hours * hourly_rate_snapshot
-```
+### Ny edge function `submit-random-verification`
+- Tar emot `verification_id, selfie_base64, lat, lng, accuracy, device_id`.
+- Validerar device, laddar upp selfie till `worker-checkin-photos`, räknar avstånd serverside, sätter `passed`/`failed`/`missed` (efter `expires_at`).
+- Vid `missed`/`failed`: skapar admin-notification (`type='security_anomaly'`).
 
-Räknas om i realtid när chef godkänner/avvisar period.
+### Ny edge function `register-device`
+- Body: `device_id, device_name, platform, app_version`.
+- Första enheten: status `approved`, registered + approved_at = now().
+- Ny enhet när en `approved` redan finns: status `pending`, skapa admin-notification.
+- Returnerar enhetens status så klienten kan visa rätt UI.
 
-## Genomförandeordning
+### Ny edge function `approve-device` (admin)
+- Sätter ny enhet `approved`, gamla aktiva `revoked`.
 
-1. Migration (tabeller + RLS + GRANTs + radie-fält).
-2. Edge function `process-location-ping` + tester.
-3. Mobil: installera Capacitor geolocation-plugins, bygg `useGeofenceTracker`.
-4. UI: banner + utcheckningsdialog + frånvarolista i `WorkerCheckInView`.
-5. Admin: `AbsenceApprovalView` + uppdatera `PayrollReportView` till `net_hours`.
-6. Lägg till "Geofence-radie"-fält i projektredigering.
+---
 
-## Att tänka på
+## 3. Frontend (React + Capacitor)
 
-- **Befintliga check-ins** påverkas inte — `net_hours` faller tillbaka på `duration_hours` när inga pings finns.
-- **Capacitor krävs** för bakgrunds-GPS. I webbläsaren funkar det bara när fliken är öppen (visa varning).
-- **Batteri**: 60 s intervall + `distanceFilter: 20m` håller förbrukningen rimlig.
-- **GPS-drift på 50 m**: accuracy > 30 m räknas inte som "utanför" för att undvika falska larm trots "direkt vid första ping"-regeln (annars triggar drift hela tiden). Detta är teknisk nödvändighet — säg till om du vill skippa det.
+### `src/lib/deviceId.ts`
+Wrapper kring `@capacitor/device` (`Device.getId()`) med web-fallback (UUID i localStorage).
+
+### `src/hooks/useDeviceBinding.ts`
+- Vid app-start: hämta device_id, anropa `register-device`, spara status i context.
+- Exponera `{ status, isApproved, deviceId }`.
+
+### `src/components/DeviceBindingGate.tsx`
+- Visas över check-in-UI när status ≠ approved.
+- Texter: "Denna telefon registreras…" eller "Ny enhet upptäckt. Din chef måste godkänna…".
+
+### Uppdatera `useGeofenceTracker.ts`
+- Skicka alltid `device_id` med ping.
+- När edge function svarar `notify_warning: true` → lokal notis "Du är fortfarande utanför arbetsområdet…".
+- När `auto_checked_out: true` → stäng UI för aktiv session, visa info-banner "Passet avslutades automatiskt kl XX:YY".
+- Polla `schedule-random-verification` var 60 s när session aktiv och äldre än 60 min.
+
+### Ny `src/components/RandomVerificationPrompt.tsx`
+- Triggas av hooken när en pending verification finns.
+- Visar fullscreen modal som direkt öppnar kameran (Capacitor Camera). Efter selfie → hämta GPS → anropa `submit-random-verification`. Countdown 5 min.
+
+### Worker UI-texter
+Enkla, vänliga: "Bekräfta att du är på plats", "Passet avslutades automatiskt eftersom du var utanför arbetsområdet i 2 timmar". Inga ord som "fusk" eller "misstänkt".
+
+### Admin
+
+#### Ny vy `src/components/admin/SecurityAnomaliesView.tsx`
+Lista med flikar/filter:
+- Auto-checkouts (länkad till check-in + karta över pings)
+- Missed/failed random verifications
+- Väntande device approvals (knappar: godkänn/neka)
+- Mock-GPS detected
+- Device mismatch
+
+Varje rad: användare, projekt, tid, typ, status, mini-karta (Leaflet, återanvänd patterns), åtgärdsknappar.
+
+#### Återöppna pass
+Knapp i auto-checkout-detalj: kallar liten edge function `reopen-check-in` (eller direkt DB-update via RLS-admin-policy) som nollställer `check_out_at`, `checkout_reason='admin_override'`, anteckning sparas.
+
+---
+
+## 4. Lön
+
+`PayrollReportView` använder redan `net_hours`. Eftersom auto-checkout sätter `check_out_at` retroaktivt till `left_at` och **inte** skapar avdrag för samma intervall, blir lönen automatiskt korrekt. Ingen ny logik behövs förutom att verifiera att absences efter `check_out_at` inte räknas.
+
+---
+
+## 5. Genomförandeordning
+
+1. Migration (kolumner + 2 tabeller + helper-funktion + grants/RLS).
+2. Edge functions: uppdatera `process-location-ping`, lägga till 4 nya.
+3. Frontend: device-id-helper, device binding gate, uppdatera geofence-hook.
+4. Random verification modal + polling.
+5. Admin `SecurityAnomaliesView` + routing.
+6. Manuell test: simulera auto-checkout, ny-enhet-flöde, missed verification.
+
+---
+
+## Tekniska anmärkningar
+
+- **Pushnotiser**: använd Capacitor `LocalNotifications` (redan beroende via background-geo). Servern kan inte push:a utan FCM/APNs setup – vi nöjer oss med lokala notiser triggade av polling-svar. Detta dokumenteras i `NATIVE_BUILD_CHECKLIST.md`.
+- **Device-id på web**: random UUID i localStorage. Säkrare native via `Device.getId()`.
+- **Inga dubbla avdrag**: när auto-checkout triggas sätts absence-perioden `auto_checkout_triggered=true` och `duration_minutes=0` så `net_hours = gross_hours` (där gross redan är förkortat).
+- **`pg_cron`** används inte – `schedule-random-verification` anropas från klienten medan sessionen är aktiv. Detta håller systemet enkelt och fungerar utan extra infrastruktur.
