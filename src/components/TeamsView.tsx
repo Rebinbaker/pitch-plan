@@ -470,6 +470,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     lastName: '',
     department: CHEF_DEPARTMENTS[0] as string,
     email: '',
+    password: '',
     phone: ''
   });
 
