@@ -12,6 +12,10 @@ import WorkerApp from "./pages/WorkerApp";
 import ScaffolderApp from "./pages/ScaffolderApp";
 import NotFound from "./pages/NotFound";
 import DownloadApp from "./pages/DownloadApp";
+import ChefStallning from "./pages/ChefStallning";
+import ChefContainer from "./pages/ChefContainer";
+import ChefBygg from "./pages/ChefBygg";
+import { RoleRouter } from "@/components/RoleRouter";
 import { BackgroundPermissionPrompt } from "@/components/BackgroundPermissionPrompt";
 
 const queryClient = new QueryClient();
@@ -34,9 +38,18 @@ const App = () => (
             <Route path="/worker" element={<WorkerApp />} />
             <Route path="/scaffolder" element={<ScaffolderApp />} />
             <Route path="/download" element={<DownloadApp />} />
+            <Route path="/chef/stallning" element={
+              <ProtectedRoute><ChefStallning /></ProtectedRoute>
+            } />
+            <Route path="/chef/container" element={
+              <ProtectedRoute><ChefContainer /></ProtectedRoute>
+            } />
+            <Route path="/chef/bygg" element={
+              <ProtectedRoute><ChefBygg /></ProtectedRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <RoleRouter />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
