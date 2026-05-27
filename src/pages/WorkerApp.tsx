@@ -23,6 +23,7 @@ import { BackButton } from '@/components/BackButton';
 import { useDeviceBinding } from '@/hooks/useDeviceBinding';
 import { DeviceBindingGate } from '@/components/DeviceBindingGate';
 import { RandomVerificationPrompt } from '@/components/RandomVerificationPrompt';
+import { ManualVerificationPrompt } from '@/components/ManualVerificationPrompt';
 
 interface AssignedJob {
   project_id: string;
