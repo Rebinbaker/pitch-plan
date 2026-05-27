@@ -627,7 +627,20 @@ const WorkerAppInner = () => {
                       </div>
                       <div className="text-right">
                         <div className="font-bold">{(h.duration_hours || 0).toFixed(2)}h</div>
-                        <div className="text-xs text-muted-foreground">{Math.round(h.wage_amount || 0)} kr</div>
+                        <div className="text-xs text-muted-foreground">{Math.round(h.wage_amount || 0)} kr totalt</div>
+                      </div>
+                    </div>
+                    {/* Breakdown row */}
+                    <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/40">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Vanlig tid</div>
+                        <div className="text-sm font-medium">{(h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8)).toFixed(2)}h</div>
+                        <div className="text-xs">{Math.round(h.regular_pay || 0)} kr</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Övertid</div>
+                        <div className="text-sm font-medium text-orange-600">{(h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8)).toFixed(2)}h</div>
+                        <div className="text-xs text-orange-600">{Math.round(h.overtime_pay || 0)} kr</div>
                       </div>
                     </div>
                   </CardContent>
