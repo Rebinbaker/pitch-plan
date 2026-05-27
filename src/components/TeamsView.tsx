@@ -21,7 +21,7 @@ import {
 import { Users, Phone, Briefcase, Star, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { TeamDetailModal } from './team/TeamDetailModal';
 import { AddTeamMemberModal } from './team/AddTeamMemberModal';
-import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
+import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember, CHEF_DEPARTMENTS } from '@/types/team';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface TeamsViewProps {
