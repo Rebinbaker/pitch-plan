@@ -179,6 +179,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       is_mocked: pos.mocked,
       recorded_at: new Date().toISOString(),
       device_id: deviceIdRef.current ?? undefined,
+      motion_activity: motionTracker.current(),
     };
 
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
