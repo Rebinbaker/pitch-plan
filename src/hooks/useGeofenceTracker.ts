@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
 import { getDeviceInfo } from '@/lib/deviceId';
+import { motionTracker } from '@/lib/motionActivity';
 
 interface AbsencePeriod {
   id: string;
@@ -31,6 +32,7 @@ interface GeofenceState {
   autoCheckedOut: boolean;
   autoCheckoutAt: string | null;
   pendingVerification: PendingVerification | null;
+  pendingManualVerification: PendingVerification | null;
   deviceId: string | null;
 }
 
@@ -42,12 +44,15 @@ interface QueuedPing {
   is_mocked: boolean;
   recorded_at: string;
   device_id?: string;
+  motion_activity?: string;
 }
 
 const PING_INTERVAL_MS = 60_000;
 const RV_POLL_INTERVAL_MS = 60_000;
+const MPV_POLL_INTERVAL_MS = 30_000;
+const STATIONARY_ANALYZE_MS = 10 * 60_000;
 const QUEUE_KEY = (checkInId: string) => `geo_ping_queue_${checkInId}`;
-const MAX_QUEUE = 500; // ~8h at 1/min
+const MAX_QUEUE = 500;
 
 const showLocalWarning = async (title: string, body: string) => {
   try {
