@@ -132,7 +132,13 @@ const processPing = async (admin: any, userId: string, payload: PingPayload) => 
       const leftAtMs = new Date(leftAt).getTime();
       const grossHours = Math.max(0, (leftAtMs - checkInAtMs) / 3_600_000);
       const netHours = grossHours; // absence is collapsed: duration = 0
-      const wage = Math.round(netHours * Number(checkIn.hourly_rate_snapshot || 0) * 100) / 100;
+      const regularRate = Number(checkIn.hourly_rate_snapshot || 0);
+      const overtimeRate = Number((checkIn as any).overtime_hourly_rate_snapshot ?? regularRate);
+      const regularHours = Math.min(netHours, 8);
+      const overtimeHours = Math.max(0, netHours - 8);
+      const regularPay = Math.round(regularHours * regularRate * 100) / 100;
+      const overtimePay = Math.round(overtimeHours * overtimeRate * 100) / 100;
+      const wage = Math.round((regularPay + overtimePay) * 100) / 100;
 
       await admin.from("worker_check_ins").update({
         check_out_at: leftAt,
@@ -142,6 +148,10 @@ const processPing = async (admin: any, userId: string, payload: PingPayload) => 
         absence_minutes: 0,
         net_hours: Math.round(netHours * 100) / 100,
         duration_hours: Math.round(netHours * 100) / 100,
+        regular_hours: Math.round(regularHours * 100) / 100,
+        overtime_hours: Math.round(overtimeHours * 100) / 100,
+        regular_pay: regularPay,
+        overtime_pay: overtimePay,
         wage_amount: wage,
         auto_closed: true,
         checkout_reason: "auto_checkout_outside_geofence",
