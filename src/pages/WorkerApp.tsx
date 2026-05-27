@@ -406,10 +406,12 @@ const WorkerAppInner = () => {
     // eslint-disable-next-line
   }, [openCheckIn, tick]);
 
-  const todayTotal = useMemo(() => {
-    const today = new Date().toDateString();
-    const sum = history
-      .filter(h => new Date(h.check_in_at).toDateString() === today)
+  const sumRange = (from: Date, to: Date) => {
+    return history
+      .filter(h => {
+        const d = new Date(h.check_in_at);
+        return d >= from && d <= to;
+      })
       .reduce((acc, h) => {
         const regH = h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8);
         const otH = h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8);
@@ -424,8 +426,36 @@ const WorkerAppInner = () => {
           overtime_pay: acc.overtime_pay + otP,
         };
       }, { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, regular_pay: 0, overtime_pay: 0 });
-    return sum;
+  };
+
+  const todayTotal = useMemo(() => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    return sumRange(start, end);
   }, [history]);
+
+  const weekTotal = useMemo(() => {
+    const now = new Date();
+    return sumRange(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
+  }, [history]);
+
+  const monthTotal = useMemo(() => {
+    const now = new Date();
+    return sumRange(startOfMonth(now), endOfMonth(now));
+  }, [history]);
+
+  // Primary salary info (uses first job's salary/rate as reference)
+  const salaryInfo = useMemo(() => {
+    const j = jobs.find(x => x.monthly_salary) || jobs[0];
+    if (!j) return null;
+    return {
+      monthly_salary: j.monthly_salary,
+      hourly_rate: j.hourly_rate,
+      overtime_hourly_rate: j.overtime_hourly_rate,
+    };
+  }, [jobs]);
+
+  const isoWeek = getISOWeek(new Date());
 
   if (redirectToScaffolder) {
     return <Navigate to="/scaffolder" replace />;
