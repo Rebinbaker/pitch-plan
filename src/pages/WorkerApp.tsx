@@ -295,6 +295,7 @@ const WorkerAppInner = () => {
         check_in_lng: pos.coords.longitude,
         distance_km: distanceKm,
         hourly_rate_snapshot: job.hourly_rate,
+        overtime_hourly_rate_snapshot: job.overtime_hourly_rate || job.hourly_rate,
         check_in_photo_url: path,
       }).select().single();
 
