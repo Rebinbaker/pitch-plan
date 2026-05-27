@@ -5,14 +5,44 @@ export const CHEF_DEPARTMENTS = [
   'Byggledare',
   'Ställningschef',
   'Containeransvarig',
-  'Tak',
-  'Ställning',
-  'Försäljning',
-  'Logistik',
-  'Material',
-  'Ekonomi',
-  'Projektledning'
 ] as const;
+
+export type ChefDepartment = typeof CHEF_DEPARTMENTS[number];
+
+export const CHEF_RESPONSIBILITIES: Record<ChefDepartment, string[]> = {
+  'Produktionscontroller': [
+    'Övervaka alla projekt',
+    'Koordinera',
+    'Riskflaggor',
+    'Kundkontakt',
+    'Deadlines',
+    'Eskaleringar',
+    'Se ALLT live',
+  ],
+  'Byggledare': [
+    'Tekniska beslut',
+    'Material',
+    'Kvalitetskontroll',
+    'Egenkontroller',
+    'Besiktning',
+    'Tekniska avvikelser',
+  ],
+  'Ställningschef': [
+    'Planera ställningar',
+    'PERI',
+    'Ritningar',
+    'Montering',
+    'Retur',
+    'Schema för ställningslag',
+  ],
+  'Containeransvarig': [
+    'Containerbokning',
+    'Hämtningar',
+    'Sortering',
+    'Avfallskontroll',
+    'Containerkostnader',
+  ],
+};
 export type AvailabilityStatus = 'Tillgänglig' | 'Upptagen' | 'Begränsad';
 
 export interface TeamMember {
