@@ -1,125 +1,106 @@
+
 ## Mål
 
-Bygga vidare på befintlig app så att varje roll får sin egen filtrerade vy av samma projektdata — med identisk design, UX, kortstruktur och komponenter som Olivers huvudvy. Alla uppdateringar skrivs till samma `projects`-rad och syns live hos Oliver.
+Återanvända Olivers befintliga huvudvy (`ProjectDashboard` + `ProjectDetailModal` + `ProjectCard`) för alla chef-roller. Samma design, kort, modaler, flikar, badges och färger — enda skillnaden är **vilken data** och **vilka actions** som visas/är skrivbara. Allt skriver till samma `projects`-rad så Olivers vy uppdateras live.
 
-## 1. Roller & behörigheter
+## 1. Roller
 
-Utöka `app_role` enum (DB) och `UserRole` (frontend) med fyra nya roller:
-- `production_controller` (Oliver) — ser allt, kan redigera allt
+Utöka `app_role` enum + `UserRole`-typen:
+- `production_controller` (Oliver) — ser allt, kan allt (samma som admin)
 - `scaffolding_manager` (Ställningschef)
 - `container_manager` (Containeransvarig)
 - `construction_manager` (Byggledare / materialansvarig)
-- `construction_team` (Bygglag) — finns delvis redan som `worker`
 
-Roll sätts via Chef-teamet som redan skapas i `TeamsView` (titel = ansvarsområde). När en chef skapas kopplas `auth.users` → `user_roles` automatiskt via edge function (samma mönster som `create-worker-account`).
+Roll sätts via Chef-teamet i `TeamsView` — titel ("Ställningschef", "Containeransvarig", "Byggledare") mappas till systemroll när inloggning skapas.
 
-## 2. Routing & login-flow
+## 2. Routing
 
-I `App.tsx` lägger vi till en `RoleRouter` på `/`:
-- `admin` / `production_controller` → nuvarande `Index` (Olivers huvudvy, oförändrad)
+I `App.tsx` lägger jag in en `RoleRouter`-wrapper på `/`:
+- `admin` / `production_controller` → nuvarande `Index` (oförändrad)
 - `scaffolding_manager` → `/chef/stallning`
 - `container_manager` → `/chef/container`
 - `construction_manager` → `/chef/bygg`
-- `construction_team` / `worker` → `/worker` (finns)
+- `worker` → `/worker` (finns redan)
 
-Alla chef-vyer renderar **samma** `ProjectDashboard`-komponent men med:
-- en `roleFilter`-prop som filtrerar projektlistan
-- en `roleScope`-prop som styr vilka fält/flikar/actions som visas i `ProjectDetailModal`
+Varje chef-route renderar **samma `Index`-sida** men med en `roleScope`-context som filtrerar projektlistan och styr vilka flikar/actions som visas i modalen. Inga nya kort, inga nya modaler — bara villkorad rendering inuti de befintliga.
 
-Detta garanterar 100 % design-paritet — inga nya kort, modaler eller komponenter.
+## 3. Data — använder befintliga JSONB-fält
 
-## 3. Datamodell — fält som behövs på `projects`
+Migrationen som redan körts har:
+- `projects.scaffolding_status` jsonb
+- `projects.container_status` jsonb
+- `projects.construction_status` jsonb
+- `projects.activity_log` jsonb (finns redan)
+- `projects.completion_percentage`, `work_phases`, `material_order`, `checklist` (finns redan)
 
-Tabellen har redan `material_order`, `accommodation_booking`, `activity_log`, `checklist`, `work_phases`, `completion_percentage`, `status`. Vi lägger till JSONB-kolumner för rollspecifika statusar:
+Inga nya kolumner behövs. Varje roll skriver bara till sitt eget JSONB-fält + appendar i `activity_log`.
 
-- `scaffolding_status` — `{ planned, drawing_done, supplier, assemblers[], assembly_date, ordered_at, en_route_at, assembled_at, dismantle_booked_at, dismantled_at, comment, files[] }`
-- `container_status` — `{ booked_at, type, supplier, delivery_date, delivered_at, pickup_booked_at, picked_up_at, sorting, extra_cost, comment, files[] }`
-- `construction_status` — `{ material_ordered_at, material_delivered_at, tech_comments[], deviations[], tech_plan_approved_at, self_checks_reviewed_at, final_inspection_passed_at, files[] }`
-- `team_daily_status` — `{ entries: [{ date, user_id, phase_updates[], photos[], material_shortage, problems, weather_blocker, note, day_done_at }] }`
-- `risk_flags` — `{ id, type, severity, raised_at, resolved_at }[]` (genereras automatiskt, se §6)
+## 4. Rollscope i `ProjectDashboard` & `ProjectDetailModal`
 
-Varje uppdatering skriver också en post i `activity_log` med `user_id`, `role`, `field`, `old`, `new`, `timestamp`, `comment`.
+En ny prop `roleScope?: 'all' | 'scaffolding' | 'container' | 'construction'`:
 
-## 4. Rollvyer (samma `ProjectDashboard`)
+**Dashboard-filter:**
+- `scaffolding` → projekt där ställning behövs (har `scaffolding_team_id` eller checklist innehåller ställningspost)
+- `container` → projekt som behöver container (checklist eller `container_status` initierad)
+- `construction` → alla aktiva projekt (material berör alla)
+- `all` → ingen filtrering (Oliver/admin)
 
-### Ställningschef
-- Filtrerar `projects` där `scaffolding_team_id IS NOT NULL` eller där ställning behövs.
-- I modal: bara fliken **Ställning** med actions: planera, ritning, leverantör (PERI), tilldela montörer, datum, statusknapparna *Beställd / På väg / Monterad / Nedmontering bokad / Nedmonterad*, kommentar, fil-upload.
+**Modal-flikar:** existerande flikar visas/döljs efter scope. Övriga fält renderas read-only så chefen ser kontext (planerad byggstart, väder, kund, adress) men kan bara redigera sin del.
 
-### Containeransvarig
-- Filtrerar projekt där `container`-fält efterfrågas i checklist eller `container_status` finns.
-- Flik **Container**: boka, typ (från memory: '10 Kubikare' / '20 Kubikare'), leverantör, leveransdatum, *Beställd / Levererad / Hämtning bokad / Hämtad*, sortering, extra kostnad, kommentar, filer.
+**Actions per scope:**
+- Ställning: planera, ritning, leverantör (PERI), tilldela montörer, datum, statusknappar (Beställd / På väg / Monterad / Nedmontering bokad / Nedmonterad), kommentar, filuppladdning
+- Container: boka, typ ('10 Kubikare'/'20 Kubikare' — befintlig constraint), leverantör, leveransdatum, statusknappar, sortering, extra kostnad, kommentar, filer
+- Bygg: materialbeställning, materiallista, Beställt/Levererat, tekniska kommentarer, avvikelse, godkänn teknisk plan, egenkontroller, slutbesiktning, filer
 
-### Byggledare
-- Ser alla aktiva projekt (material berör alla).
-- Flikar **Material**, **Teknik**, **Egenkontroll**, **Besiktning** med actions enligt spec.
+## 5. Live-sync till Olivers vy
 
-### Bygglag
-- Filtrerar projekt där `auth.uid()` finns i `teams.members` för projektets `construction_team`.
-- Flik **Mitt arbete**: arbetsmoment-checkbox per fas (skriver `work_phases`), foto-upload, knappar *Materialbrist / Problem / Väderhinder*, dagsstatus-textfält, *Dagens arbete klart*.
+Aktiverar Supabase Realtime på `projects`. I `ProjectDashboard` lägger jag in en `useEffect` med `supabase.channel('projects').on('postgres_changes', …)` som mergear inkommande rader in i lokal state. Eftersom alla roller skriver till samma rad uppdateras Olivers kort, progressbar och badges direkt utan reload.
 
-### Oliver (oförändrad)
-- Ser alla flikar och alla actions. Får dessutom en ny **Mina uppgifter / Riskflaggor**-panel överst på dashboarden.
+## 6. Aktivitetslogg
 
-## 5. Live-uppdatering till Olivers vy
+En hjälpfunktion `logActivity(projectId, { user, role, field, oldValue, newValue, comment })` som varje rollvy anropar i samma update-call (appendar till `activity_log` JSONB). `ActivityLogView` renderar redan loggen — jag lägger bara till roll-badge.
 
-- Aktivera Supabase Realtime på `projects` (redan möjligt — vi enablar replikering).
-- I `ProjectDashboard` lägger vi till en `useEffect` med `supabase.channel('projects').on('postgres_changes', …)` som uppdaterar lokal state vid INSERT/UPDATE.
-- Eftersom alla roller skriver till samma rad reflekteras ändringar omedelbart i Olivers kort, progressbar och badges.
+## 7. Skapa chef-inloggningar
 
-## 6. Riskflaggor (cron / on-read)
+Edge function `create-chef-account` (kopia av befintliga `create-worker-account`) som tar email + password + titel och:
+1. Skapar auth-användare
+2. Mappar titel → systemroll
+3. Lägger raden i `user_roles`
+4. Lägger till user_id på Chef-teamets medlem
 
-En edge function `compute-risk-flags` körs schemalagt (var 15:e min) och uppdaterar `risk_flags`-kolumnen enligt reglerna:
-- Ställning ej monterad < 24h före `start_date`
-- Material ej beställt < 48h före `start_date`
-- Container ej bokad < 24h före `start_date`
-- Inga foton från bygglag på 24h
-- `work_phases` orörda på 24h
-- Passerat `deadline`
-- Alla arbetsmoment klara men ingen `final_inspection_passed_at`
+Knapp "Skapa inloggning" på Chef-kortet i `TeamsView`.
 
-Flaggorna renderas som badges på `ProjectCard` (befintlig komponent — ny variant `risk`) och i Olivers KPI-panel.
+## Filer som ändras / skapas
 
-## 7. Aktivitetslogg
+**Skapas:**
+- `src/components/RoleRouter.tsx`
+- `src/contexts/RoleScopeContext.tsx`
+- `src/pages/ChefStallning.tsx`, `ChefContainer.tsx`, `ChefBygg.tsx` (tunna wrappers runt `Index` som sätter scope)
+- `supabase/functions/create-chef-account/index.ts`
 
-En hjälpfunktion `logActivity(projectId, change)` används av alla rollvyer. Skriver till `projects.activity_log` (befintlig JSONB). Visas redan i `ActivityLogView` — vi utökar bara renderingen att visa roll-badge.
-
-## Tekniska detaljer
-
-**DB-migration:**
-- Lägg till kolumner ovan på `projects`
-- Lägg till enum-värden i `app_role`
-- Uppdatera `has_role`-baserade RLS — projekt kan redan läsas/skrivas av alla org-medlemmar, så ingen RLS-ändring krävs för basscenariot. Bygglagets filtrering sker i frontend + `is_project_scaffolder`-motsvarighet för construction.
-- Lägg till `is_project_construction_team(uuid, uuid)` security-definer-funktion analogt med befintlig `is_project_scaffolder`.
-
-**Frontend-filer som ändras:**
-- `src/App.tsx` — ny `RoleRouter`
-- `src/hooks/useUserRole.ts` — utöka `UserRole`-typen
-- `src/components/ProjectDashboard.tsx` — `roleFilter` + `roleScope` props, realtime-subscription
-- `src/components/ProjectDetailModal.tsx` — visa flikar/actions baserat på `roleScope`
-- `src/components/ProjectCard.tsx` — rendera risk-badges
-- `src/components/TeamsView.tsx` — när Chef skapas, anropa edge function för att skapa auth-user med rätt roll
-- Nya tunna wrappers: `pages/ChefScaffolding.tsx`, `pages/ChefContainer.tsx`, `pages/ChefConstruction.tsx` (var och en bara `<ProjectDashboard roleScope="…" />`)
-
-**Edge functions:**
-- `create-chef-account` (kopia av `create-worker-account` med dynamisk roll)
-- `compute-risk-flags` (cron)
+**Ändras:**
+- `src/App.tsx` — `RoleRouter` på `/` + tre chef-routes
+- `src/hooks/useUserRole.ts` — utöka `UserRole`
+- `src/components/ProjectDashboard.tsx` — `roleScope`-filter + realtime-subscription
+- `src/components/ProjectDetailModal.tsx` — visa flikar/actions efter scope, övrigt read-only
+- `src/components/ProjectCard.tsx` — oförändrat (badges drivs redan av samma data)
+- `src/components/TeamsView.tsx` — "Skapa inloggning"-knapp på Chef
+- DB-migration: lägg till enum-värden + (om saknas) JSONB-kolumner
 
 ## Vad jag INTE rör
 
 - Designsystem, färger, spacing, befintliga komponenter
-- Worker-app, Scaffolder-app (separata flöden som redan finns)
-- Auth-flöden, organisation/medlemskap
-- Befintlig affärslogik i `ProjectDashboard`
+- Worker-app, Scaffolder-app (egna flöden som redan finns)
+- Olivers/admins vy — exakt som idag
+- Affärslogik i `ProjectDashboard` utöver filter + realtime
 
 ## Leveransordning
 
-1. DB-migration (roller + kolumner + helper-funktion)
-2. Edge function för chef-konton + koppla i `TeamsView`
-3. `RoleRouter` + chef-pages
-4. `roleScope`-prop genom `ProjectDashboard` → `ProjectDetailModal`
-5. Realtime-subscription
-6. Risk-flag edge function + badge-rendering
-7. Bygglagets vy (filtrering på `members`)
+1. DB-migration (roller + ev. saknade kolumner)
+2. `RoleScopeContext` + `RoleRouter` + chef-pages
+3. `roleScope`-prop genom `ProjectDashboard` → `ProjectDetailModal`
+4. Realtime-subscription
+5. Edge function + "Skapa inloggning"-knapp i `TeamsView`
+6. Aktivitetslogg-hjälpare + roll-badge
 
 Vill du att jag kör hela ordningen i ett svep, eller börjar med steg 1–3 så du kan testa rollroutingen innan resten?
