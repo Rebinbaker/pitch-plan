@@ -404,10 +404,20 @@ const WorkerAppInner = () => {
     const today = new Date().toDateString();
     const sum = history
       .filter(h => new Date(h.check_in_at).toDateString() === today)
-      .reduce((acc, h) => ({
-        hours: acc.hours + (h.duration_hours || 0),
-        wage: acc.wage + (h.wage_amount || 0),
-      }), { hours: 0, wage: 0 });
+      .reduce((acc, h) => {
+        const regH = h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8);
+        const otH = h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8);
+        const regP = h.regular_pay != null ? h.regular_pay : regH * (h.hourly_rate_snapshot || 0);
+        const otP = h.overtime_pay != null ? h.overtime_pay : otH * (h.overtime_hourly_rate_snapshot || h.hourly_rate_snapshot || 0);
+        return {
+          hours: acc.hours + (h.duration_hours || 0),
+          regular_hours: acc.regular_hours + regH,
+          overtime_hours: acc.overtime_hours + otH,
+          wage: acc.wage + (h.wage_amount || 0),
+          regular_pay: acc.regular_pay + regP,
+          overtime_pay: acc.overtime_pay + otP,
+        };
+      }, { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, regular_pay: 0, overtime_pay: 0 });
     return sum;
   }, [history]);
 
