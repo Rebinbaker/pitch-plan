@@ -555,11 +555,11 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium">Teamnamn</label>
+          <label className="text-sm font-medium">{teamType === 'Chef' ? 'Namn / titel' : 'Teamnamn'}</label>
           <Input
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
-            placeholder="t.ex. Team Alpha"
+            placeholder={teamType === 'Chef' ? 't.ex. Takchef Stockholm' : 't.ex. Team Alpha'}
             required
           />
         </div>
