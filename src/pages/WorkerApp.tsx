@@ -883,43 +883,46 @@ const WorkerAppInner = () => {
       <Dialog open={!!pendingJob} onOpenChange={(o) => !o && closePhotoDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Verifiera incheckning med foto</DialogTitle>
+            <DialogTitle>Verifiera incheckning med selfie</DialogTitle>
           </DialogHeader>
           {pendingJob && (
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
-                Ta ett foto från arbetsplatsen — t.ex. taket, ställningen eller skylten. Detta sparas som verifikation.
+                Ta en selfie där ditt ansikte syns tydligt. Bilden tas direkt med frontkameran och sparas som verifikation — du kan inte ladda upp en befintlig bild.
               </div>
-              <div className="rounded-lg border bg-muted/30 p-2 flex items-center justify-center min-h-[200px]">
+              <div className="rounded-lg border bg-muted/30 overflow-hidden flex items-center justify-center min-h-[260px] relative">
                 {photoPreview ? (
                   <div className="relative w-full">
-                    <img src={photoPreview} alt="Förhandsvisning" className="w-full max-h-[300px] object-contain rounded" />
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute top-2 right-2 h-7 w-7"
-                      onClick={() => { setPhotoFile(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <img src={photoPreview} alt="Selfie" className="w-full max-h-[320px] object-contain rounded" />
+                  </div>
+                ) : cameraError ? (
+                  <div className="text-center text-sm text-destructive p-4">
+                    {cameraError}
                   </div>
                 ) : (
-                  <div className="text-center text-muted-foreground text-sm py-8">
-                    Inget foto valt än
-                  </div>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full max-h-[320px] object-cover rounded"
+                    style={{ transform: 'scaleX(-1)' }}
+                  />
                 )}
               </div>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={onPhotoSelected}
-              />
-              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                <Camera className="w-4 h-4 mr-2" /> {photoPreview ? 'Ta nytt foto' : 'Ta foto'}
-              </Button>
+              {photoPreview ? (
+                <Button variant="outline" className="w-full" onClick={retakeSelfie}>
+                  <Camera className="w-4 h-4 mr-2" /> Ta om selfie
+                </Button>
+              ) : cameraError ? (
+                <Button variant="outline" className="w-full" onClick={startCamera}>
+                  <Camera className="w-4 h-4 mr-2" /> Försök igen
+                </Button>
+              ) : (
+                <Button className="w-full" onClick={captureSelfie} disabled={!cameraReady}>
+                  <Camera className="w-4 h-4 mr-2" /> {cameraReady ? 'Ta selfie' : 'Startar kamera…'}
+                </Button>
+              )}
             </div>
           )}
           <DialogFooter className="gap-2">
