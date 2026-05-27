@@ -156,28 +156,57 @@ const WorkerAppInner = () => {
     if (!user || !organizationId) return;
     setLoading(true);
     try {
-      // find teams where this user is a member
+      // find teams where this user is a member (by user_id OR by email fallback)
       const { data: teams, error: teamsErr } = await (supabase as any)
         .from('teams')
         .select('id, name, type, members, leader, organization_id')
         .eq('organization_id', organizationId);
       if (teamsErr) throw teamsErr;
 
+      const userEmail = (user.email || '').toLowerCase();
+      const memberMatches = (m: any) => {
+        if (!m) return false;
+        if (m.user_id === user.id) return true;
+        const le = (m.login_email || '').toLowerCase();
+        const em = (m.email || '').toLowerCase();
+        return !!userEmail && (le === userEmail || em === userEmail);
+      };
+
       const myAllTeams = (teams || []).filter((t: any) => {
         const members = Array.isArray(t.members) ? t.members : [];
-        return members.some((m: any) => m?.user_id === user.id);
+        return members.some(memberMatches);
       });
+
+      // Self-heal: auto-link user_id on members matched only by email
+      for (const t of myAllTeams) {
+        const members = Array.isArray(t.members) ? t.members : [];
+        let changed = false;
+        const updated = members.map((m: any) => {
+          if (memberMatches(m) && m.user_id !== user.id) {
+            changed = true;
+            return { ...m, user_id: user.id, login_email: m.login_email || user.email };
+          }
+          return m;
+        });
+        if (changed) {
+          await (supabase as any).from('teams').update({ members: updated }).eq('id', t.id);
+          t.members = updated;
+        }
+      }
+
       // If user is ONLY in scaffolding teams, redirect to scaffolder app
       if (myAllTeams.length > 0 && myAllTeams.every((t: any) => t.type === 'Ställningsmontör')) {
         setRedirectToScaffolder(true);
         return;
       }
 
-      const myTeams = (teams || []).map(t => {
-        const members = Array.isArray(t.members) ? (t.members as any[]) : [];
-        const me = members.find(m => m?.user_id === user.id);
-        return me ? { team: t, me } : null;
-      }).filter(Boolean) as { team: any; me: any }[];
+      const myTeams = myAllTeams
+        .filter((t: any) => t.type !== 'Ställningsmontör')
+        .map((t: any) => {
+          const members = Array.isArray(t.members) ? (t.members as any[]) : [];
+          const me = members.find(memberMatches);
+          return me ? { team: t, me } : null;
+        }).filter(Boolean) as { team: any; me: any }[];
 
       if (myTeams.length === 0) {
         setJobs([]);
