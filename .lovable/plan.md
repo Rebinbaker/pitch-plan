@@ -1,134 +1,160 @@
-## Mål
+# Stationary Device Detection + Manual Verification
 
-Bygga tre säkerhetslager ovanpå nuvarande check-in/geofence-system:
-1. **Intelligent auto-checkout** efter 2 h utanför zonen, med retroaktiv sluttid.
-2. **Random presence verification** (1 ggr/dag, selfie + GPS).
-3. **Device binding** – ett godkänt arbetstelefon per användare.
-
-Plus en **säkerhetsavvikelse-vy** för admin.
+Ett intelligence/risk-system ovanpå nuvarande geofence. Inga automatiska konsekvenser för lön eller pass — bara flaggor, risk score och möjlighet för admin att trigga snabb verifiering.
 
 ---
 
 ## 1. Databas (en migration)
 
-### Ändra `worker_check_ins`
-- `checkout_reason TEXT` (`manual` | `auto_checkout_outside_geofence` | `admin_override`)
-- `auto_checkout_triggered_at TIMESTAMPTZ`
-- `device_id TEXT`
+### Ny tabell `stationary_device_flags`
+- `id, check_in_id, user_id, organization_id, project_id`
+- `risk_level` text ('medium' | 'high')
+- `started_at, ended_at` timestamptz
+- `duration_minutes` numeric
+- `total_movement_m` numeric
+- `gps_variance_m` numeric
+- `avg_accuracy_m` numeric
+- `accelerometer_activity` text ('none' | 'low' | 'normal' | 'unknown')
+- `last_verification_at` timestamptz
+- `status` text ('open' | 'verified_after_manual_check' | 'legitimate' | 'ignored' | 'escalated')
+- `admin_comment` text
+- `reviewed_by, reviewed_at`
+- `created_at`
 
-### Ändra `worker_absence_periods`
-- `auto_checkout_triggered BOOLEAN DEFAULT false`
-- `warning_sent_at TIMESTAMPTZ` (för 90-min pushen)
+### Ny tabell `manual_presence_verifications`
+Samma form som `random_presence_verifications` men separat:
+- `id, flag_id, check_in_id, user_id, organization_id, project_id`
+- `requested_by` uuid (admin)
+- `triggered_at, expires_at` (triggered_at + 5 min)
+- `completed_at, status` ('pending' | 'passed' | 'missed' | 'failed')
+- `selfie_url, gps_lat, gps_lng, gps_accuracy, distance_from_project_m`
+- `failure_reason, device_id, created_at`
 
-### Ny tabell `random_presence_verifications`
-Kolumner: `id, user_id, organization_id, check_in_id, project_id, triggered_at, expires_at (triggered_at + 5 min), completed_at, status ('pending'|'passed'|'missed'|'failed'), selfie_url, gps_lat, gps_lng, gps_accuracy, distance_from_project_m, failure_reason, device_id, created_at`.
-RLS: byggare ser/skapar/uppdaterar egna, org-medlemmar läser, admin uppdaterar status.
+### Ny tabell `user_risk_scores`
+- `id, user_id (unique), organization_id`
+- `score` integer default 0
+- `last_event_at, updated_at`
+- (events loggas i `risk_score_events`)
 
-### Ny tabell `user_devices`
-Kolumner: `id, user_id, organization_id, device_id, device_name, platform ('ios'|'android'|'web'), app_version, registered_at, approved_at, revoked_at, status ('pending'|'approved'|'revoked'), last_seen_at, approved_by`.
-Unique partial index: en `approved` device per user. RLS: byggare ser/skapar egna, admin allt, org-medlemmar läser inom org.
+### Ny tabell `risk_score_events`
+- `id, user_id, organization_id, event_type, delta, reason, related_flag_id, related_verification_id, created_at`
 
-### Hjälpfunktion
-`public.is_device_approved(_user_id uuid, _device_id text) RETURNS boolean` (security definer) – används i edge functions och i UI-guards.
+### Ändra `worker_location_pings`
+- `motion_activity` text nullable ('still' | 'walking' | 'moving' | 'unknown')
 
-GRANTs för alla nya tabeller enligt mall.
+### RLS / GRANTs
+- Org-medlemmar SELECT på alla nya tabeller.
+- Workers INSERT på `manual_presence_verifications` när `user_id = auth.uid()` (för att kunna submitta selfie). Egen UPDATE när pending.
+- Admins UPDATE på flags + verifications.
+- `risk_score_events` insert via service_role (edge functions) — workers ej.
 
 ---
 
 ## 2. Edge functions
 
 ### Uppdatera `process-location-ping`
-- Skicka `device_id` med varje ping. Om inte approved → skriv ping men flagga sessionen med en avvikelse + skicka 401-liknande svar som klienten loggar.
-- När en absence-period öppnas och har varat **90 min** utan `warning_sent_at`: sätt `warning_sent_at = now()` och returnera `notify_warning: true` till klienten (klienten skickar lokal notis).
-- När en absence-period varat **120 min**:
-  - Sätt `worker_check_ins.check_out_at = absence.left_at`, beräkna `gross_hours`, `net_hours`, `checkout_reason='auto_checkout_outside_geofence'`, `auto_checkout_triggered_at=now()`, `auto_closed=true`.
-  - Markera absence-perioden `auto_checkout_triggered=true`, `returned_at=left_at`, `duration_minutes=0` (för att undvika dubbelavdrag – tiden finns redan utanför check_out_at).
-  - Returnera `auto_checked_out: true` till klienten.
+- Ta emot valfritt `motion_activity` per ping och skriv till `worker_location_pings.motion_activity`.
 
-### Ny edge function `schedule-random-verification`
-- Anropas av klienten (eller cron) en gång per minut när en aktiv session finns.
-- Plockar aktiva check-ins äldre än 60 min, kollar att det inte redan finns en `random_presence_verifications` för dagens session, slumpar med liten sannolikhet så att den i snitt landar mellan 90 min in och 60 min före förväntat slut.
-- Skapar en `pending`-rad med `expires_at = now() + 5 min` och returnerar den. Klienten visar pushnotis + öppnar kameran.
+### Ny `analyze-stationary-sessions`
+Anropas av klienten var 10:e minut medan session aktiv (samma mönster som `schedule-random-verification`), samt vid varje admin-öppning av panelen.
+- Hämtar alla aktiva check-ins (eller en specifik om `check_in_id` skickas).
+- För varje session: läs senaste 150 min pings.
+- Räkna `total_movement_m` (summa av segmenten), `gps_variance_m` (stddev), `avg_accuracy_m`, `accelerometer_activity` (majoritet av motion_activity).
+- Skip-villkor (false positive guards):
+  - Senaste verifiering (random eller manual `passed`) < 30 min sedan.
+  - `avg_accuracy_m > 30`.
+  - Session yngre än 90 min.
+  - Öppen `worker_absence_periods` (markerad som transport/rast etc).
+  - Befintlig öppen flagga av samma nivå för samma session.
+- Medium trigger: movement < 15 m, duration ≥ 90 min, accelerometer 'low' eller 'none' (eller unknown om GPS-variansen är < 5 m).
+- High trigger: movement < 10 m, duration ≥ 120 min, accelerometer 'none' (eller unknown + GPS-variansen < 3 m), inga geofence-transitions (alla pings inside_radius=true).
+- Skapa rad i `stationary_device_flags`, logga risk_score_event (+5 medium, +15 high).
+- Skapa `notifications` (`type='security_anomaly'`) till admin.
 
-### Ny edge function `submit-random-verification`
-- Tar emot `verification_id, selfie_base64, lat, lng, accuracy, device_id`.
-- Validerar device, laddar upp selfie till `worker-checkin-photos`, räknar avstånd serverside, sätter `passed`/`failed`/`missed` (efter `expires_at`).
-- Vid `missed`/`failed`: skapar admin-notification (`type='security_anomaly'`).
+### Ny `trigger-manual-verification` (admin)
+Body: `flag_id` (krävs admin-roll).
+- Hämtar flag + check-in.
+- Skapar `manual_presence_verifications` rad pending, `expires_at = now() + 5 min`.
+- Skapar notification till workern (worker-klienten pollar redan notifications / vi pollar `manual_presence_verifications`).
+- Returnerar raden.
 
-### Ny edge function `register-device`
-- Body: `device_id, device_name, platform, app_version`.
-- Första enheten: status `approved`, registered + approved_at = now().
-- Ny enhet när en `approved` redan finns: status `pending`, skapa admin-notification.
-- Returnerar enhetens status så klienten kan visa rätt UI.
+### Ny `submit-manual-verification`
+Body: `verification_id, selfie_base64, lat, lng, accuracy, device_id`.
+- Likt `submit-random-verification`: ladda upp selfie, beräkna avstånd, sätt passed/failed/missed.
+- Uppdatera kopplad flag:
+  - `passed` → `status='verified_after_manual_check'`, risk -5.
+  - `failed` → `status` kvar `open`, risk +20, logga reason.
+  - `missed` (efter expires_at, körs av analyze-jobbet) → risk +10.
+- Skapa admin-notification med resultat.
 
-### Ny edge function `approve-device` (admin)
-- Sätter ny enhet `approved`, gamla aktiva `revoked`.
+### Uppdatera `analyze-stationary-sessions`
+- Efter ping-analysen: hitta `manual_presence_verifications` där `expires_at < now()` och status='pending' → sätt 'missed', uppdatera flag/risk.
+
+### Ny `update-flag-status` (admin)
+Body: `flag_id, status ('legitimate'|'ignored'|'escalated'), comment`.
+- RLS täcker det egentligen, men funktion ger oss en plats att också lägga risk_score_events när admin markerar legitimate (-flag-poäng).
 
 ---
 
-## 3. Frontend (React + Capacitor)
+## 3. Frontend
 
-### `src/lib/deviceId.ts`
-Wrapper kring `@capacitor/device` (`Device.getId()`) med web-fallback (UUID i localStorage).
-
-### `src/hooks/useDeviceBinding.ts`
-- Vid app-start: hämta device_id, anropa `register-device`, spara status i context.
-- Exponera `{ status, isApproved, deviceId }`.
-
-### `src/components/DeviceBindingGate.tsx`
-- Visas över check-in-UI när status ≠ approved.
-- Texter: "Denna telefon registreras…" eller "Ny enhet upptäckt. Din chef måste godkänna…".
+### `src/lib/motionActivity.ts`
+- Wrapper kring `@capacitor/motion`. Returnera 'still'/'low'/'normal' baserat på rolling RMS av accelerometer senaste 30 s.
+- Web: använd `DeviceMotionEvent` om tillgängligt, annars 'unknown'.
 
 ### Uppdatera `useGeofenceTracker.ts`
-- Skicka alltid `device_id` med ping.
-- När edge function svarar `notify_warning: true` → lokal notis "Du är fortfarande utanför arbetsområdet…".
-- När `auto_checked_out: true` → stäng UI för aktiv session, visa info-banner "Passet avslutades automatiskt kl XX:YY".
-- Polla `schedule-random-verification` var 60 s när session aktiv och äldre än 60 min.
+- Inkludera `motion_activity` i varje ping-payload.
+- Polla `analyze-stationary-sessions` var 10:e minut (precis som scheduler).
+- Polla `manual_presence_verifications` (latest pending för userId) var 30:e sekund. När en finns → öppna existerande `RandomVerificationPrompt`-mönstret återanvänt i en ny `ManualVerificationPrompt` (eller återanvänd och generalisera).
 
-### Ny `src/components/RandomVerificationPrompt.tsx`
-- Triggas av hooken när en pending verification finns.
-- Visar fullscreen modal som direkt öppnar kameran (Capacitor Camera). Efter selfie → hämta GPS → anropa `submit-random-verification`. Countdown 5 min.
+### `src/components/ManualVerificationPrompt.tsx`
+- Kopia av `RandomVerificationPrompt` men anropar `submit-manual-verification` och säger "Snabb verifiering krävs för aktivt arbetspass.".
 
-### Worker UI-texter
-Enkla, vänliga: "Bekräfta att du är på plats", "Passet avslutades automatiskt eftersom du var utanför arbetsområdet i 2 timmar". Inga ord som "fusk" eller "misstänkt".
+### `WorkerApp.tsx`
+- Lägga till polling-effekt + rendera `ManualVerificationPrompt`.
 
-### Admin
+### Admin: `src/components/admin/StationaryMonitoringView.tsx`
+Ny sektion i `Admin.tsx` (under `SecurityAnomaliesView`):
+- Tabell över aktiva flaggor med kolumner: användare, projekt, risknivå, stationary duration, total movement, last GPS, accelerometer, senaste verification, tidigare flag-antal, current risk score.
+- Action-knappar per rad: **Skicka verifiering**, **Markera som legitim**, **Ignorera**, **Eskalera**, kommentar-fält.
+- Vid "Skicka verifiering" → `trigger-manual-verification`, visa status (väntar/passed/missed/failed) som uppdateras via 30 s poll.
 
-#### Ny vy `src/components/admin/SecurityAnomaliesView.tsx`
-Lista med flikar/filter:
-- Auto-checkouts (länkad till check-in + karta över pings)
-- Missed/failed random verifications
-- Väntande device approvals (knappar: godkänn/neka)
-- Mock-GPS detected
-- Device mismatch
-
-Varje rad: användare, projekt, tid, typ, status, mini-karta (Leaflet, återanvänd patterns), åtgärdsknappar.
-
-#### Återöppna pass
-Knapp i auto-checkout-detalj: kallar liten edge function `reopen-check-in` (eller direkt DB-update via RLS-admin-policy) som nollställer `check_out_at`, `checkout_reason='admin_override'`, anteckning sparas.
+### Risk score badge
+Liten widget högst upp i `SecurityAnomaliesView` som listar topp 10 användare efter `user_risk_scores.score`.
 
 ---
 
-## 4. Lön
+## 4. Risk score
 
-`PayrollReportView` använder redan `net_hours`. Eftersom auto-checkout sätter `check_out_at` retroaktivt till `left_at` och **inte** skapar avdrag för samma intervall, blir lönen automatiskt korrekt. Ingen ny logik behövs förutom att verifiera att absences efter `check_out_at` inte räknas.
+Risk events och deltan:
+- `stationary_medium` +5
+- `stationary_high` +15
+- `manual_verification_missed` +10
+- `manual_verification_failed` +20
+- `manual_verification_passed` -5
+- `flag_marked_legitimate` -10
+- `mock_gps_detected` +25 (befintlig flagga som vi kopplar in)
+- `geofence_violation_repeated` +5 (när auto-checkout sker)
+
+Score är ren intelligence — påverkar inte payroll. Visas bara i adminpanelen.
 
 ---
 
 ## 5. Genomförandeordning
 
-1. Migration (kolumner + 2 tabeller + helper-funktion + grants/RLS).
-2. Edge functions: uppdatera `process-location-ping`, lägga till 4 nya.
-3. Frontend: device-id-helper, device binding gate, uppdatera geofence-hook.
-4. Random verification modal + polling.
-5. Admin `SecurityAnomaliesView` + routing.
-6. Manuell test: simulera auto-checkout, ny-enhet-flöde, missed verification.
+1. Migration (3 tabeller + kolumn på pings + grants/RLS + helper).
+2. `analyze-stationary-sessions`, `trigger-manual-verification`, `submit-manual-verification`, `update-flag-status`.
+3. `process-location-ping` (accept motion_activity).
+4. Frontend: motion helper, hook-uppdatering, ManualVerificationPrompt.
+5. Admin `StationaryMonitoringView` + risk score widget.
+6. Manuell test: simulera stillaliggande pings → medium → high → admin triggar verifiering → passed/missed.
 
 ---
 
 ## Tekniska anmärkningar
 
-- **Pushnotiser**: använd Capacitor `LocalNotifications` (redan beroende via background-geo). Servern kan inte push:a utan FCM/APNs setup – vi nöjer oss med lokala notiser triggade av polling-svar. Detta dokumenteras i `NATIVE_BUILD_CHECKLIST.md`.
-- **Device-id på web**: random UUID i localStorage. Säkrare native via `Device.getId()`.
-- **Inga dubbla avdrag**: när auto-checkout triggas sätts absence-perioden `auto_checkout_triggered=true` och `duration_minutes=0` så `net_hours = gross_hours` (där gross redan är förkortat).
-- **`pg_cron`** används inte – `schedule-random-verification` anropas från klienten medan sessionen är aktiv. Detta håller systemet enkelt och fungerar utan extra infrastruktur.
+- **Motion-data**: använd `@capacitor/motion` på native, `DeviceMotionEvent` på web; 'unknown' när inget finns. Vi triggar då bara på GPS-kriterier.
+- **Polling**: vi behåller mönstret från random verification (klient-driven, inga cronjobs) för att slippa pg_cron-uppsättning.
+- **Inga payroll-effekter**: ingen kod rör `worker_check_ins.check_out_at`, `net_hours` eller `wage_amount`.
+- **Push**: lokala notiser via `@capacitor/local-notifications` (samma mönster som warning push). Servern triggar via polling-svar.
+- **Återanvändning**: `RandomVerificationPrompt` och `ManualVerificationPrompt` får dela en gemensam intern `<PresenceSelfieCapture>`-komponent.
