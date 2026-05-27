@@ -1,4 +1,6 @@
-export type TeamType = 'Internt' | 'Underentreprenör' | 'Säljare' | 'Ställningsmontör';
+export type TeamType = 'Internt' | 'Underentreprenör' | 'Säljare' | 'Ställningsmontör' | 'Chef';
+
+export const CHEF_DEPARTMENTS = ['Tak', 'Ställning', 'Försäljning', 'Logistik', 'Material', 'Ekonomi', 'Projektledning'] as const;
 export type AvailabilityStatus = 'Tillgänglig' | 'Upptagen' | 'Begränsad';
 
 export interface TeamMember {

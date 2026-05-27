@@ -21,7 +21,7 @@ import {
 import { Users, Phone, Briefcase, Star, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { TeamDetailModal } from './team/TeamDetailModal';
 import { AddTeamMemberModal } from './team/AddTeamMemberModal';
-import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember } from '@/types/team';
+import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember, CHEF_DEPARTMENTS } from '@/types/team';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
 
 interface TeamsViewProps {
@@ -57,6 +57,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
       case 'Underentreprenör': return 'bg-purple-500';
       case 'Säljare': return 'bg-green-500';
       case 'Ställningsmontör': return 'bg-amber-500';
+      case 'Chef': return 'bg-rose-600';
       default: return 'bg-gray-500';
     }
   };
@@ -107,6 +108,17 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               </div>
             )}
             
+            {/* For Chef teams, show the chief details directly */}
+            {team.type === 'Chef' && team.members && team.members.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-foreground">Chef</div>
+                <div className="text-sm text-muted-foreground">
+                  {team.members[0].firstName} {team.members[0].lastName}
+                  {team.members[0].position && ` — ${team.members[0].position}`}
+                </div>
+              </div>
+            )}
+
             {/* For Säljare teams, show the seller details directly */}
             {team.type === 'Säljare' && team.sellers && team.sellers.length > 0 && (
               <div className="space-y-1">
@@ -135,8 +147,8 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               </div>
             )}
             
-            {/* Skills for teams (hide for Säljare type teams since they don't need skills) */}
-            {team.type !== 'Säljare' && (
+            {/* Skills for teams (hide for Säljare and Chef since they don't need skills) */}
+            {team.type !== 'Säljare' && team.type !== 'Chef' && (
               <div className="space-y-1">
                 <div className="text-sm font-medium text-foreground">Färdigheter</div>
                 <div className="flex flex-wrap gap-1">
@@ -197,21 +209,23 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
                 </DialogContent>
               </Dialog>
               
-              <AddTeamMemberModal 
-                team={team} 
-                onUpdateTeam={onUpdateTeam}
-                trigger={
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Lägg till medlemmar
-                  </Button>
-                }
-              />
+              {team.type !== 'Chef' && team.type !== 'Säljare' && (
+                <AddTeamMemberModal 
+                  team={team} 
+                  onUpdateTeam={onUpdateTeam}
+                  trigger={
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Lägg till medlemmar
+                    </Button>
+                  }
+                />
+              )}
               
               {onDeleteTeam && (
                 <AlertDialog>
@@ -298,6 +312,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
               <SelectItem value="Säljare">Säljare</SelectItem>
               <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
+              <SelectItem value="Chef">Chef</SelectItem>
             </SelectContent>
           </Select>
           
@@ -339,6 +354,14 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               {teams.filter(t => t.type === 'Säljare').length}
             </div>
             <div className="text-sm text-muted-foreground">Säljare</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-rose-600">
+              {teams.filter(t => t.type === 'Chef').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Chefer</div>
           </CardContent>
         </Card>
         <Card>
@@ -441,6 +464,15 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     region: 'Stockholm'
   });
 
+  // For chefs (managers)
+  const [chef, setChef] = useState({
+    firstName: '',
+    lastName: '',
+    department: CHEF_DEPARTMENTS[0] as string,
+    email: '',
+    phone: ''
+  });
+
   const addMember = () => {
     if (newMember.firstName && newMember.lastName) {
       const member: TeamMember = {
@@ -479,6 +511,29 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       };
       
       onSave(team);
+    } else if (teamType === 'Chef') {
+      if (!teamName || !chef.firstName || !chef.lastName) return;
+
+      const team: ConstructionTeam = {
+        id: `team-${Date.now()}`,
+        name: teamName,
+        type: teamType,
+        availabilityNextWeek: 'Tillgänglig',
+        skills: [chef.department],
+        members: [{
+          id: `member-${Date.now()}`,
+          firstName: chef.firstName,
+          lastName: chef.lastName,
+          skills: [chef.department],
+          position: chef.department,
+          email: chef.email || undefined,
+          phone: chef.phone || undefined,
+        }],
+        sellers: [],
+        leader: `${chef.firstName} ${chef.lastName}`,
+      };
+
+      onSave(team);
     } else {
       if (!teamName || members.length === 0) return;
 
@@ -500,11 +555,11 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium">Teamnamn</label>
+          <label className="text-sm font-medium">{teamType === 'Chef' ? 'Namn / titel' : 'Teamnamn'}</label>
           <Input
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
-            placeholder="t.ex. Team Alpha"
+            placeholder={teamType === 'Chef' ? 't.ex. Takchef Stockholm' : 't.ex. Team Alpha'}
             required
           />
         </div>
@@ -519,11 +574,67 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
               <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
               <SelectItem value="Säljare">Säljare</SelectItem>
               <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
+              <SelectItem value="Chef">Chef</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
-      {teamType === 'Säljare' ? (
+      {teamType === 'Chef' ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">Förnamn</label>
+              <Input
+                value={chef.firstName}
+                onChange={(e) => setChef({ ...chef, firstName: e.target.value })}
+                placeholder="Förnamn"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Efternamn</label>
+              <Input
+                value={chef.lastName}
+                onChange={(e) => setChef({ ...chef, lastName: e.target.value })}
+                placeholder="Efternamn"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Ansvarsområde</label>
+            <Select value={chef.department} onValueChange={(v) => setChef({ ...chef, department: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHEF_DEPARTMENTS.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">E-post (valfritt)</label>
+              <Input
+                type="email"
+                value={chef.email}
+                onChange={(e) => setChef({ ...chef, email: e.target.value })}
+                placeholder="namn@foretag.se"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Telefon (valfritt)</label>
+              <Input
+                value={chef.phone}
+                onChange={(e) => setChef({ ...chef, phone: e.target.value })}
+                placeholder="07X-XXX XX XX"
+              />
+            </div>
+          </div>
+        </div>
+      ) : teamType === 'Säljare' ? (
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium">Förnamn</label>
@@ -611,12 +722,15 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={teamType === 'Säljare' ? 
-          (!teamName || !salesPerson.firstName || !salesPerson.lastName) : 
-          (!teamName || members.length === 0)
+        disabled={
+          teamType === 'Säljare'
+            ? (!teamName || !salesPerson.firstName || !salesPerson.lastName)
+            : teamType === 'Chef'
+            ? (!teamName || !chef.firstName || !chef.lastName)
+            : (!teamName || members.length === 0)
         }
       >
-        Skapa {teamType === 'Säljare' ? 'säljare' : 'team'}
+        Skapa {teamType === 'Säljare' ? 'säljare' : teamType === 'Chef' ? 'chef' : 'team'}
       </Button>
     </form>
   );
