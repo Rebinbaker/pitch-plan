@@ -585,15 +585,27 @@ const WorkerAppInner = () => {
                   <Clock className="w-4 h-4" /> Idag
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <div>
                     <div className="text-2xl font-bold">{todayTotal.hours.toFixed(1)}h</div>
-                    <div className="text-xs text-muted-foreground">Arbetad tid</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid totalt</div>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">{Math.round(todayTotal.wage)} kr</div>
-                    <div className="text-xs text-muted-foreground">Intjänat</div>
+                    <div className="text-xs text-muted-foreground">Intjänat totalt</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                  <div>
+                    <div className="text-sm font-medium">{todayTotal.regular_hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Vanlig tid</div>
+                    <div className="text-sm font-medium mt-1">{Math.round(todayTotal.regular_pay)} kr</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-orange-600">{todayTotal.overtime_hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Övertid</div>
+                    <div className="text-sm font-medium mt-1 text-orange-600">{Math.round(todayTotal.overtime_pay)} kr</div>
                   </div>
                 </div>
               </CardContent>
