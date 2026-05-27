@@ -33,6 +33,7 @@ interface AssignedJob {
   team_name: string;
   team_member_id: string;
   hourly_rate: number;
+  overtime_hourly_rate: number;
   leader?: string;
 }
 
@@ -42,6 +43,7 @@ interface OpenCheckIn {
   project_name: string | null;
   check_in_at: string;
   hourly_rate_snapshot: number;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 interface CheckInHistory {
