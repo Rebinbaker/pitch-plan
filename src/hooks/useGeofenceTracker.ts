@@ -98,6 +98,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     autoCheckedOut: false,
     autoCheckoutAt: null,
     pendingVerification: null,
+    pendingManualVerification: null,
     deviceId: null,
   });
   const watchIdRef = useRef<number | null>(null);
