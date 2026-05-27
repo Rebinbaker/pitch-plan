@@ -588,9 +588,21 @@ const WorkerAppInner = () => {
                       <span>{job.address}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Wallet className="w-4 h-4" />
-                    <span>{job.hourly_rate ? `${job.hourly_rate} kr/h` : 'Timlön ej satt'}</span>
+                  <div className="rounded-md bg-muted/40 p-2 space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Wallet className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-semibold">{job.hourly_rate ? `${job.hourly_rate.toFixed(2)} kr/h` : 'Timlön ej satt'}</span>
+                      {job.overtime_hourly_rate > job.hourly_rate && (
+                        <span className="text-xs text-orange-600">övertid {job.overtime_hourly_rate.toFixed(2)} kr/h</span>
+                      )}
+                    </div>
+                    {job.monthly_salary ? (
+                      <div className="text-xs text-muted-foreground">
+                        Baserat på månadslön {job.monthly_salary.toLocaleString('sv-SE')} kr ÷ {MONTHLY_HOURS} h/mån (40 h/v × 52 v ÷ 12)
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">Fast timlön</div>
+                    )}
                   </div>
                   <Button
                     className="w-full mt-2"
