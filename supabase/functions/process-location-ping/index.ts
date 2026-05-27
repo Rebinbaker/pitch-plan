@@ -46,7 +46,7 @@ const processPing = async (admin: any, userId: string, payload: PingPayload) => 
 
   const { data: checkIn } = await admin
     .from("worker_check_ins")
-    .select("id, user_id, organization_id, project_id, check_out_at, hourly_rate_snapshot, check_in_at")
+    .select("id, user_id, organization_id, project_id, check_out_at, hourly_rate_snapshot, overtime_hourly_rate_snapshot, check_in_at")
     .eq("id", check_in_id)
     .single();
 
