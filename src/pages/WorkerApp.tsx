@@ -53,6 +53,10 @@ interface CheckInHistory {
   check_out_at: string | null;
   duration_hours: number | null;
   wage_amount: number | null;
+  regular_hours: number | null;
+  overtime_hours: number | null;
+  regular_pay: number | null;
+  overtime_pay: number | null;
 }
 
 const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
