@@ -23,6 +23,7 @@ import {
 import { Users, Phone, Briefcase, Star, Plus, UserPlus, Trash2 } from 'lucide-react';
 import { TeamDetailModal } from './team/TeamDetailModal';
 import { AddTeamMemberModal } from './team/AddTeamMemberModal';
+import { CreateChefLoginButton } from './team/CreateChefLoginButton';
 import { ConstructionTeam, TeamType, AvailabilityStatus, TeamMember, CHEF_DEPARTMENTS, CHEF_RESPONSIBILITIES, ChefDepartment } from '@/types/team';
 import { Check } from 'lucide-react';
 import { calculateRemainingTime, formatDaysRemaining } from '@/utils/timeCalculations';
@@ -119,6 +120,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
                   {team.members[0].firstName} {team.members[0].lastName}
                   {team.members[0].position && ` — ${team.members[0].position}`}
                 </div>
+                <CreateChefLoginButton teamId={team.id} member={team.members[0]} />
               </div>
             )}
 
