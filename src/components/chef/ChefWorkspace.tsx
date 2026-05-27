@@ -49,7 +49,7 @@ export const ChefWorkspace = ({ title, description, filter }: ChefWorkspaceProps
           projects={filtered}
           onUpdateProject={storage.updateProject}
           onDeleteProject={storage.deleteProject}
-          onAddProject={storage.addProject}
+          onAddProject={() => { /* chef-roller skapar inte projekt */ }}
           trailers={storage.scaffolding}
           teams={storage.teams}
           onUpdateTeam={storage.updateTeam}
