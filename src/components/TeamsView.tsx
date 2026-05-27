@@ -579,7 +579,62 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           </Select>
         </div>
       </div>
-      {teamType === 'Säljare' ? (
+      {teamType === 'Chef' ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">Förnamn</label>
+              <Input
+                value={chef.firstName}
+                onChange={(e) => setChef({ ...chef, firstName: e.target.value })}
+                placeholder="Förnamn"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Efternamn</label>
+              <Input
+                value={chef.lastName}
+                onChange={(e) => setChef({ ...chef, lastName: e.target.value })}
+                placeholder="Efternamn"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Ansvarsområde</label>
+            <Select value={chef.department} onValueChange={(v) => setChef({ ...chef, department: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHEF_DEPARTMENTS.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">E-post (valfritt)</label>
+              <Input
+                type="email"
+                value={chef.email}
+                onChange={(e) => setChef({ ...chef, email: e.target.value })}
+                placeholder="namn@foretag.se"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Telefon (valfritt)</label>
+              <Input
+                value={chef.phone}
+                onChange={(e) => setChef({ ...chef, phone: e.target.value })}
+                placeholder="07X-XXX XX XX"
+              />
+            </div>
+          </div>
+        </div>
+      ) : teamType === 'Säljare' ? (
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium">Förnamn</label>
