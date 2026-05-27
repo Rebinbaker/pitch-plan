@@ -95,21 +95,91 @@ const WorkerAppInner = () => {
   const [pendingJob, setPendingJob] = useState<AssignedJob | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const onPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setPhotoFile(f);
-    setPhotoPreview(URL.createObjectURL(f));
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setCameraReady(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+      setCameraReady(true);
+    } catch (err: any) {
+      console.error('Camera error', err);
+      setCameraError('Kunde inte starta kameran. Tillåt kameraåtkomst i webbläsaren.');
+    }
+  };
+
+  const captureSelfie = async () => {
+    const video = videoRef.current;
+    if (!video || !streamRef.current) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // mirror image horizontally so saved photo matches what user sees
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    const blob: Blob | null = await new Promise(res => canvas.toBlob(b => res(b), 'image/jpeg', 0.9));
+    if (!blob) return;
+    const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    stopCamera();
+  };
+
+  const retakeSelfie = () => {
+    setPhotoFile(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+    startCamera();
   };
 
   const closePhotoDialog = () => {
+    stopCamera();
     setPendingJob(null);
     setPhotoFile(null);
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoPreview(null);
+    setCameraError(null);
   };
+
+  // start camera automatically when selfie dialog opens
+  useEffect(() => {
+    if (pendingJob && !photoFile) {
+      startCamera();
+    }
+    if (!pendingJob) {
+      stopCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingJob]);
+
+  useEffect(() => () => stopCamera(), []);
 
   // live timer
   useEffect(() => {
