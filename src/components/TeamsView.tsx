@@ -604,8 +604,8 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">Ansvarsområde</label>
-            <Select value={chef.department} onValueChange={(v) => setChef({ ...chef, department: v })}>
+            <label className="text-sm font-medium">Titel / Ansvarsområde</label>
+            <Select value={chef.department} onValueChange={(v) => setChef({ ...chef, department: v as ChefDepartment })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -615,6 +615,20 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <div className="text-sm font-medium mb-2">Ansvar för {chef.department}</div>
+            <ul className="space-y-1.5">
+              {(CHEF_RESPONSIBILITIES[chef.department as ChefDepartment] || []).map((r) => (
+                <li key={r} className="flex items-center gap-2 text-sm">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </span>
+                  {r}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">Dessa ansvar tilldelas automatiskt baserat på titeln.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
