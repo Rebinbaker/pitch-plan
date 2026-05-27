@@ -85,7 +85,7 @@ const PayrollReportView = () => {
       const [{ data: checkIns, error: e1 }, { data: teams, error: e2 }] = await Promise.all([
         supabase
           .from('worker_check_ins')
-          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, gross_hours, absence_minutes, net_hours, wage_amount, hourly_rate_snapshot')
+          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, gross_hours, absence_minutes, net_hours, regular_hours, overtime_hours, regular_pay, overtime_pay, wage_amount, hourly_rate_snapshot, overtime_hourly_rate_snapshot')
           .eq('organization_id', organizationId)
           .gte('check_in_at', fromIso)
           .lte('check_in_at', toIso)
