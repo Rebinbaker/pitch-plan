@@ -167,9 +167,9 @@ const PayrollReportView = () => {
   ), [summaries]);
 
   const exportCsv = () => {
-    const header = 'Namn,Arbetslag,Antal pass,Timmar,Timlön (kr/h),Summa lön (kr)\n';
+    const header = 'Namn,Arbetslag,Antal pass,Vanliga timmar,Övertidstimmar,Timlön,Övertidslön/h,Vanlig lön,Övertidslön,Total lön\n';
     const body = summaries.map(s =>
-      `"${s.name}","${s.team_name || ''}",${s.sessions},${s.hours.toFixed(2)},${s.hourly_rate},${s.wage.toFixed(2)}`
+      `"${s.name}","${s.team_name || ''}",${s.sessions},${s.regular_hours.toFixed(2)},${s.overtime_hours.toFixed(2)},${s.hourly_rate},${s.overtime_rate},${s.regular_pay.toFixed(2)},${s.overtime_pay.toFixed(2)},${s.wage.toFixed(2)}`
     ).join('\n');
     const blob = new Blob([header + body], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
