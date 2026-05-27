@@ -59,7 +59,10 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       position: currentMember.position || undefined,
       email: currentMember.email || undefined,
       phone: currentMember.phone || undefined,
-      hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
+      monthly_salary: currentMember.monthly_salary ? parseFloat(currentMember.monthly_salary) : undefined,
+      calculated_hourly_rate: calculatedHourly ?? undefined,
+      hourly_rate: effectiveHourly ?? undefined,
+      overtime_hourly_rate: effectiveOvertime ?? undefined,
       skills: currentMember.skills 
         ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
         : [],
@@ -75,6 +78,8 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       phone: '',
       skills: '',
       hourly_rate: '',
+      monthly_salary: '',
+      overtime_hourly_rate: '',
       isLeader: false
     });
   };
@@ -95,7 +100,10 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
         position: currentMember.position || undefined,
         email: currentMember.email || undefined,
         phone: currentMember.phone || undefined,
-        hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
+        monthly_salary: currentMember.monthly_salary ? parseFloat(currentMember.monthly_salary) : undefined,
+        calculated_hourly_rate: calculatedHourly ?? undefined,
+        hourly_rate: effectiveHourly ?? undefined,
+        overtime_hourly_rate: effectiveOvertime ?? undefined,
         skills: currentMember.skills 
           ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
           : []
