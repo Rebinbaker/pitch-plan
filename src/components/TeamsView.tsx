@@ -722,12 +722,15 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       <Button 
         type="submit" 
         className="w-full" 
-        disabled={teamType === 'Säljare' ? 
-          (!teamName || !salesPerson.firstName || !salesPerson.lastName) : 
-          (!teamName || members.length === 0)
+        disabled={
+          teamType === 'Säljare'
+            ? (!teamName || !salesPerson.firstName || !salesPerson.lastName)
+            : teamType === 'Chef'
+            ? (!teamName || !chef.firstName || !chef.lastName)
+            : (!teamName || members.length === 0)
         }
       >
-        Skapa {teamType === 'Säljare' ? 'säljare' : 'team'}
+        Skapa {teamType === 'Säljare' ? 'säljare' : teamType === 'Chef' ? 'chef' : 'team'}
       </Button>
     </form>
   );
