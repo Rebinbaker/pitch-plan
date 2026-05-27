@@ -119,52 +119,6 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
                   {team.members[0].firstName} {team.members[0].lastName}
                   {team.members[0].position && ` — ${team.members[0].position}`}
                 </div>
-                {!(team.members[0] as any).user_id && (team.members[0] as any).email && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const member: any = team.members![0];
-                      const password = window.prompt(
-                        `Sätt ett lösenord (minst 8 tecken) för ${member.email}:`
-                      );
-                      if (!password || password.length < 8) {
-                        toast({ variant: 'destructive', title: 'Lösenordet är för kort' });
-                        return;
-                      }
-                      const { data, error } = await supabase.functions.invoke('create-chef-account', {
-                        body: {
-                          email: member.email,
-                          password,
-                          team_id: team.id,
-                          team_member_id: member.id,
-                          display_name: `${member.firstName} ${member.lastName}`,
-                          department: member.position,
-                        },
-                      });
-                      if (error || (data as any)?.error) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Kunde inte skapa inloggning',
-                          description: (data as any)?.error || error?.message,
-                        });
-                      } else {
-                        toast({
-                          title: 'Inloggning skapad',
-                          description: `${member.email} kan nu logga in som ${member.position}.`,
-                        });
-                        onUpdateTeam(team);
-                      }
-                    }}
-                  >
-                    Skapa inloggning
-                  </Button>
-                )}
-                {(team.members[0] as any).user_id && (
-                  <Badge variant="outline" className="text-xs">Inlogg aktivt</Badge>
-                )}
               </div>
             )}
 
