@@ -275,8 +275,59 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
                     value={currentMember.hourly_rate}
                     onChange={(e) => setCurrentMember({ ...currentMember, hourly_rate: e.target.value })}
                     placeholder="t.ex. 280"
+                    disabled={!!currentMember.monthly_salary}
                   />
                 </div>
+              </div>
+
+              {/* Salary block */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                <div className="text-sm font-medium">Lön</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="monthly_salary">Fast månadslön (kr/mån)</Label>
+                    <Input
+                      id="monthly_salary"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={currentMember.monthly_salary}
+                      onChange={(e) => setCurrentMember({ ...currentMember, monthly_salary: e.target.value })}
+                      placeholder="t.ex. 38 000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="calculated_hourly">Beräknad timlön (40 h/vecka)</Label>
+                    <Input
+                      id="calculated_hourly"
+                      type="text"
+                      readOnly
+                      value={calculatedHourly != null ? `${calculatedHourly.toFixed(2)} kr/h` : '—'}
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="overtime_rate">Extra timlön efter 8 h/dag (kr/h)</Label>
+                  <Input
+                    id="overtime_rate"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={currentMember.overtime_hourly_rate}
+                    onChange={(e) => setCurrentMember({ ...currentMember, overtime_hourly_rate: e.target.value })}
+                    placeholder="Lämna tom om samma som vanlig timlön"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Timlön beräknas automatiskt från månadslön baserat på 40 timmar/vecka, ca 173,33 timmar/månad.
+                  {effectiveHourly != null && (
+                    <span className="block mt-1 font-medium text-foreground">
+                      Används i löneberäkning: {effectiveHourly.toFixed(2)} kr/h vanlig
+                      {effectiveOvertime != null && ` • ${effectiveOvertime.toFixed(2)} kr/h övertid (efter 8 h/dag)`}
+                    </span>
+                  )}
+                </p>
               </div>
 
               <div>
