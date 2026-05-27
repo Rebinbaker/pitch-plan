@@ -203,7 +203,7 @@ const WorkerAppInner = () => {
       // open check-in
       const { data: openRows } = await supabase
         .from('worker_check_ins')
-        .select('id, project_id, project_name, check_in_at, hourly_rate_snapshot')
+        .select('id, project_id, project_name, check_in_at, hourly_rate_snapshot, overtime_hourly_rate_snapshot')
         .eq('user_id', user.id)
         .is('check_out_at', null)
         .order('check_in_at', { ascending: false })
