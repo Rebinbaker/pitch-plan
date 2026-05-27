@@ -3,6 +3,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { AdminPanel } from '@/components/AdminPanel';
 import { PeriCatalogUpload } from '@/components/admin/PeriCatalogUpload';
 import { SecurityAnomaliesView } from '@/components/admin/SecurityAnomaliesView';
+import { StationaryMonitoringView } from '@/components/admin/StationaryMonitoringView';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { BackButton } from '@/components/BackButton';

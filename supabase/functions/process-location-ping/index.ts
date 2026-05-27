@@ -38,10 +38,11 @@ interface PingPayload {
   is_mocked?: boolean;
   recorded_at?: string;
   device_id?: string;
+  motion_activity?: string;
 }
 
 const processPing = async (admin: any, userId: string, payload: PingPayload) => {
-  const { check_in_id, lat, lng, accuracy, is_mocked, recorded_at, device_id } = payload;
+  const { check_in_id, lat, lng, accuracy, is_mocked, recorded_at, device_id, motion_activity } = payload;
 
   const { data: checkIn } = await admin
     .from("worker_check_ins")
@@ -99,6 +100,7 @@ const processPing = async (admin: any, userId: string, payload: PingPayload) => 
     recorded_at: pingRecordedAt, lat, lng,
     accuracy_m: accuracy ?? null, distance_m: distance,
     inside_radius: insideRadius, is_mocked: !!is_mocked,
+    motion_activity: motion_activity ?? null,
   });
 
   const { data: openAbsence } = await admin

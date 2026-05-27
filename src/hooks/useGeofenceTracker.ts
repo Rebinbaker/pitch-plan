@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { BackgroundGeolocation } from '@/lib/backgroundGeolocation';
 import { getDeviceInfo } from '@/lib/deviceId';
+import { motionTracker } from '@/lib/motionActivity';
 
 interface AbsencePeriod {
   id: string;
@@ -31,6 +32,7 @@ interface GeofenceState {
   autoCheckedOut: boolean;
   autoCheckoutAt: string | null;
   pendingVerification: PendingVerification | null;
+  pendingManualVerification: PendingVerification | null;
   deviceId: string | null;
 }
 
@@ -42,12 +44,15 @@ interface QueuedPing {
   is_mocked: boolean;
   recorded_at: string;
   device_id?: string;
+  motion_activity?: string;
 }
 
 const PING_INTERVAL_MS = 60_000;
 const RV_POLL_INTERVAL_MS = 60_000;
+const MPV_POLL_INTERVAL_MS = 30_000;
+const STATIONARY_ANALYZE_MS = 10 * 60_000;
 const QUEUE_KEY = (checkInId: string) => `geo_ping_queue_${checkInId}`;
-const MAX_QUEUE = 500; // ~8h at 1/min
+const MAX_QUEUE = 500;
 
 const showLocalWarning = async (title: string, body: string) => {
   try {
@@ -93,6 +98,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     autoCheckedOut: false,
     autoCheckoutAt: null,
     pendingVerification: null,
+    pendingManualVerification: null,
     deviceId: null,
   });
   const watchIdRef = useRef<number | null>(null);
@@ -173,6 +179,7 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       is_mocked: pos.mocked,
       recorded_at: new Date().toISOString(),
       device_id: deviceIdRef.current ?? undefined,
+      motion_activity: motionTracker.current(),
     };
 
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
@@ -220,6 +227,32 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       });
       setState(prev => ({ ...prev, pendingVerification: (data as any)?.pending ?? null }));
     } catch (e) { console.warn('rv poll fail', e); }
+  };
+
+  const pollManualVerification = async () => {
+    if (!checkInId) return;
+    try {
+      const { data } = await (supabase as any)
+        .from('manual_presence_verifications')
+        .select('id, triggered_at, expires_at, status')
+        .eq('check_in_id', checkInId)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('triggered_at', { ascending: false })
+        .limit(1);
+      const row = data?.[0];
+      setState(prev => ({
+        ...prev,
+        pendingManualVerification: row ? { id: row.id, triggered_at: row.triggered_at, expires_at: row.expires_at } : null,
+      }));
+    } catch (e) { console.warn('mpv poll fail', e); }
+  };
+
+  const triggerStationaryAnalysis = async () => {
+    if (!checkInId) return;
+    try {
+      await supabase.functions.invoke('analyze-stationary-sessions', { body: { check_in_id: checkInId } });
+    } catch (e) { console.warn('analyze fail', e); }
   };
 
   const loadAbsences = async () => {
@@ -294,6 +327,13 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     rvIntervalRef.current = window.setInterval(pollRandomVerification, RV_POLL_INTERVAL_MS);
     pollRandomVerification();
 
+    const mpvInterval = window.setInterval(pollManualVerification, MPV_POLL_INTERVAL_MS);
+    pollManualVerification();
+
+    const stationaryInterval = window.setInterval(triggerStationaryAnalysis, STATIONARY_ANALYZE_MS);
+
+    motionTracker.start();
+
     const tickInterval = window.setInterval(() => {
       setState(prev => {
         if (!prev.awaySinceMs) return prev.currentAwaySeconds === 0 ? prev : { ...prev, currentAwaySeconds: 0 };
@@ -306,7 +346,10 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       if (watchIdRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       if (rvIntervalRef.current !== null) clearInterval(rvIntervalRef.current);
+      clearInterval(mpvInterval);
+      clearInterval(stationaryInterval);
       clearInterval(tickInterval);
+      motionTracker.stop();
       if (cleanupNative) cleanupNative();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -317,7 +360,12 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     pollRandomVerification();
   };
 
-  return { ...state, refresh: loadAbsences, clearPendingVerification };
+  const clearPendingManualVerification = () => {
+    setState(prev => ({ ...prev, pendingManualVerification: null }));
+    pollManualVerification();
+  };
+
+  return { ...state, refresh: loadAbsences, clearPendingVerification, clearPendingManualVerification };
 };
 
 export const formatAwayTimer = (seconds: number): string => {
