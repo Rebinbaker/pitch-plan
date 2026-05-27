@@ -546,7 +546,9 @@ export type Database = {
           checklist: Json | null
           completion_percentage: number | null
           construction_start_week: string | null
+          construction_status: Json
           construction_team: string | null
+          container_status: Json
           created_at: string
           customer_id: string | null
           customer_name: string | null
@@ -565,11 +567,14 @@ export type Database = {
           region: string | null
           responsible_booker: string | null
           responsible_seller: string | null
+          risk_flags: Json
           rot_status: string | null
           scaffolding_responsible: string | null
+          scaffolding_status: Json
           scaffolding_team_id: string | null
           start_date: string | null
           status: string
+          team_daily_status: Json
           updated_at: string
           user_id: string
           work_phases: Json | null
@@ -584,7 +589,9 @@ export type Database = {
           checklist?: Json | null
           completion_percentage?: number | null
           construction_start_week?: string | null
+          construction_status?: Json
           construction_team?: string | null
+          container_status?: Json
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -603,11 +610,14 @@ export type Database = {
           region?: string | null
           responsible_booker?: string | null
           responsible_seller?: string | null
+          risk_flags?: Json
           rot_status?: string | null
           scaffolding_responsible?: string | null
+          scaffolding_status?: Json
           scaffolding_team_id?: string | null
           start_date?: string | null
           status?: string
+          team_daily_status?: Json
           updated_at?: string
           user_id: string
           work_phases?: Json | null
@@ -622,7 +632,9 @@ export type Database = {
           checklist?: Json | null
           completion_percentage?: number | null
           construction_start_week?: string | null
+          construction_status?: Json
           construction_team?: string | null
+          container_status?: Json
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
@@ -641,11 +653,14 @@ export type Database = {
           region?: string | null
           responsible_booker?: string | null
           responsible_seller?: string | null
+          risk_flags?: Json
           rot_status?: string | null
           scaffolding_responsible?: string | null
+          scaffolding_status?: Json
           scaffolding_team_id?: string | null
           start_date?: string | null
           status?: string
+          team_daily_status?: Json
           updated_at?: string
           user_id?: string
           work_phases?: Json | null
@@ -1987,6 +2002,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_project_construction_team: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_project_scaffolder: {
         Args: { _project_id: string; _user_id: string }
         Returns: boolean
@@ -1994,7 +2013,16 @@ export type Database = {
       sync_trailer_status: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "worker"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "worker"
+        | "production_controller"
+        | "scaffolding_manager"
+        | "container_manager"
+        | "construction_manager"
+        | "construction_team"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2122,7 +2150,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "worker"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "worker",
+        "production_controller",
+        "scaffolding_manager",
+        "container_manager",
+        "construction_manager",
+        "construction_team",
+      ],
     },
   },
 } as const
