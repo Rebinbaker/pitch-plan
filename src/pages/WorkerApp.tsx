@@ -95,21 +95,91 @@ const WorkerAppInner = () => {
   const [pendingJob, setPendingJob] = useState<AssignedJob | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const onPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setPhotoFile(f);
-    setPhotoPreview(URL.createObjectURL(f));
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setCameraReady(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
+      }
+      setCameraReady(true);
+    } catch (err: any) {
+      console.error('Camera error', err);
+      setCameraError('Kunde inte starta kameran. Tillåt kameraåtkomst i webbläsaren.');
+    }
+  };
+
+  const captureSelfie = async () => {
+    const video = videoRef.current;
+    if (!video || !streamRef.current) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // mirror image horizontally so saved photo matches what user sees
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    const blob: Blob | null = await new Promise(res => canvas.toBlob(b => res(b), 'image/jpeg', 0.9));
+    if (!blob) return;
+    const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    stopCamera();
+  };
+
+  const retakeSelfie = () => {
+    setPhotoFile(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+    startCamera();
   };
 
   const closePhotoDialog = () => {
+    stopCamera();
     setPendingJob(null);
     setPhotoFile(null);
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoPreview(null);
+    setCameraError(null);
   };
+
+  // start camera automatically when selfie dialog opens
+  useEffect(() => {
+    if (pendingJob && !photoFile) {
+      startCamera();
+    }
+    if (!pendingJob) {
+      stopCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingJob]);
+
+  useEffect(() => () => stopCamera(), []);
 
   // live timer
   useEffect(() => {
@@ -813,43 +883,46 @@ const WorkerAppInner = () => {
       <Dialog open={!!pendingJob} onOpenChange={(o) => !o && closePhotoDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Verifiera incheckning med foto</DialogTitle>
+            <DialogTitle>Verifiera incheckning med selfie</DialogTitle>
           </DialogHeader>
           {pendingJob && (
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
-                Ta ett foto från arbetsplatsen — t.ex. taket, ställningen eller skylten. Detta sparas som verifikation.
+                Ta en selfie där ditt ansikte syns tydligt. Bilden tas direkt med frontkameran och sparas som verifikation — du kan inte ladda upp en befintlig bild.
               </div>
-              <div className="rounded-lg border bg-muted/30 p-2 flex items-center justify-center min-h-[200px]">
+              <div className="rounded-lg border bg-muted/30 overflow-hidden flex items-center justify-center min-h-[260px] relative">
                 {photoPreview ? (
                   <div className="relative w-full">
-                    <img src={photoPreview} alt="Förhandsvisning" className="w-full max-h-[300px] object-contain rounded" />
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="absolute top-2 right-2 h-7 w-7"
-                      onClick={() => { setPhotoFile(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null); }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <img src={photoPreview} alt="Selfie" className="w-full max-h-[320px] object-contain rounded" />
+                  </div>
+                ) : cameraError ? (
+                  <div className="text-center text-sm text-destructive p-4">
+                    {cameraError}
                   </div>
                 ) : (
-                  <div className="text-center text-muted-foreground text-sm py-8">
-                    Inget foto valt än
-                  </div>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full max-h-[320px] object-cover rounded"
+                    style={{ transform: 'scaleX(-1)' }}
+                  />
                 )}
               </div>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={onPhotoSelected}
-              />
-              <Button variant="outline" className="w-full" onClick={() => photoInputRef.current?.click()}>
-                <Camera className="w-4 h-4 mr-2" /> {photoPreview ? 'Ta nytt foto' : 'Ta foto'}
-              </Button>
+              {photoPreview ? (
+                <Button variant="outline" className="w-full" onClick={retakeSelfie}>
+                  <Camera className="w-4 h-4 mr-2" /> Ta om selfie
+                </Button>
+              ) : cameraError ? (
+                <Button variant="outline" className="w-full" onClick={startCamera}>
+                  <Camera className="w-4 h-4 mr-2" /> Försök igen
+                </Button>
+              ) : (
+                <Button className="w-full" onClick={captureSelfie} disabled={!cameraReady}>
+                  <Camera className="w-4 h-4 mr-2" /> {cameraReady ? 'Ta selfie' : 'Startar kamera…'}
+                </Button>
+              )}
             </div>
           )}
           <DialogFooter className="gap-2">
