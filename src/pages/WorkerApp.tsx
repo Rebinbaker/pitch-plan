@@ -53,6 +53,12 @@ interface CheckInHistory {
   check_out_at: string | null;
   duration_hours: number | null;
   wage_amount: number | null;
+  regular_hours: number | null;
+  overtime_hours: number | null;
+  regular_pay: number | null;
+  overtime_pay: number | null;
+  hourly_rate_snapshot: number | null;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -213,7 +219,7 @@ const WorkerAppInner = () => {
       // history (last 30)
       const { data: hist } = await supabase
         .from('worker_check_ins')
-        .select('id, project_name, check_in_at, check_out_at, duration_hours, wage_amount')
+        .select('id, project_name, check_in_at, check_out_at, duration_hours, wage_amount, regular_hours, overtime_hours, regular_pay, overtime_pay, hourly_rate_snapshot, overtime_hourly_rate_snapshot')
         .eq('user_id', user.id)
         .not('check_out_at', 'is', null)
         .order('check_in_at', { ascending: false })
@@ -400,10 +406,20 @@ const WorkerAppInner = () => {
     const today = new Date().toDateString();
     const sum = history
       .filter(h => new Date(h.check_in_at).toDateString() === today)
-      .reduce((acc, h) => ({
-        hours: acc.hours + (h.duration_hours || 0),
-        wage: acc.wage + (h.wage_amount || 0),
-      }), { hours: 0, wage: 0 });
+      .reduce((acc, h) => {
+        const regH = h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8);
+        const otH = h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8);
+        const regP = h.regular_pay != null ? h.regular_pay : regH * (h.hourly_rate_snapshot || 0);
+        const otP = h.overtime_pay != null ? h.overtime_pay : otH * (h.overtime_hourly_rate_snapshot || h.hourly_rate_snapshot || 0);
+        return {
+          hours: acc.hours + (h.duration_hours || 0),
+          regular_hours: acc.regular_hours + regH,
+          overtime_hours: acc.overtime_hours + otH,
+          wage: acc.wage + (h.wage_amount || 0),
+          regular_pay: acc.regular_pay + regP,
+          overtime_pay: acc.overtime_pay + otP,
+        };
+      }, { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, regular_pay: 0, overtime_pay: 0 });
     return sum;
   }, [history]);
 
@@ -569,15 +585,27 @@ const WorkerAppInner = () => {
                   <Clock className="w-4 h-4" /> Idag
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <div>
                     <div className="text-2xl font-bold">{todayTotal.hours.toFixed(1)}h</div>
-                    <div className="text-xs text-muted-foreground">Arbetad tid</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid totalt</div>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">{Math.round(todayTotal.wage)} kr</div>
-                    <div className="text-xs text-muted-foreground">Intjänat</div>
+                    <div className="text-xs text-muted-foreground">Intjänat totalt</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                  <div>
+                    <div className="text-sm font-medium">{todayTotal.regular_hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Vanlig tid</div>
+                    <div className="text-sm font-medium mt-1">{Math.round(todayTotal.regular_pay)} kr</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-orange-600">{todayTotal.overtime_hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Övertid</div>
+                    <div className="text-sm font-medium mt-1 text-orange-600">{Math.round(todayTotal.overtime_pay)} kr</div>
                   </div>
                 </div>
               </CardContent>
@@ -599,7 +627,20 @@ const WorkerAppInner = () => {
                       </div>
                       <div className="text-right">
                         <div className="font-bold">{(h.duration_hours || 0).toFixed(2)}h</div>
-                        <div className="text-xs text-muted-foreground">{Math.round(h.wage_amount || 0)} kr</div>
+                        <div className="text-xs text-muted-foreground">{Math.round(h.wage_amount || 0)} kr totalt</div>
+                      </div>
+                    </div>
+                    {/* Breakdown row */}
+                    <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/40">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Vanlig tid</div>
+                        <div className="text-sm font-medium">{(h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8)).toFixed(2)}h</div>
+                        <div className="text-xs">{Math.round(h.regular_pay || 0)} kr</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Övertid</div>
+                        <div className="text-sm font-medium text-orange-600">{(h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8)).toFixed(2)}h</div>
+                        <div className="text-xs text-orange-600">{Math.round(h.overtime_pay || 0)} kr</div>
                       </div>
                     </div>
                   </CardContent>
