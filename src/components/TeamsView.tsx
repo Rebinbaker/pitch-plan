@@ -617,22 +617,34 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium">E-post (valfritt)</label>
+              <label className="text-sm font-medium">E-post *</label>
               <Input
                 type="email"
                 value={chef.email}
                 onChange={(e) => setChef({ ...chef, email: e.target.value })}
                 placeholder="namn@foretag.se"
+                required
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Telefon (valfritt)</label>
+              <label className="text-sm font-medium">Lösenord *</label>
               <Input
-                value={chef.phone}
-                onChange={(e) => setChef({ ...chef, phone: e.target.value })}
-                placeholder="07X-XXX XX XX"
+                type="password"
+                value={chef.password}
+                onChange={(e) => setChef({ ...chef, password: e.target.value })}
+                placeholder="Minst 8 tecken"
+                minLength={8}
+                required
               />
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Telefon (valfritt)</label>
+            <Input
+              value={chef.phone}
+              onChange={(e) => setChef({ ...chef, phone: e.target.value })}
+              placeholder="07X-XXX XX XX"
+            />
           </div>
         </div>
       ) : teamType === 'Säljare' ? (
