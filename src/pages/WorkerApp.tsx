@@ -12,8 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getISOWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
+
+const MONTHLY_HOURS = 173.33;
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker';
