@@ -57,6 +57,8 @@ interface CheckInHistory {
   overtime_hours: number | null;
   regular_pay: number | null;
   overtime_pay: number | null;
+  hourly_rate_snapshot: number | null;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
