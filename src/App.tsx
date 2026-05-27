@@ -34,18 +34,9 @@ const App = () => (
             <Route path="/worker" element={<WorkerApp />} />
             <Route path="/scaffolder" element={<ScaffolderApp />} />
             <Route path="/download" element={<DownloadApp />} />
-            <Route path="/chef/stallning" element={
-              <ProtectedRoute><ChefStallning /></ProtectedRoute>
-            } />
-            <Route path="/chef/container" element={
-              <ProtectedRoute><ChefContainer /></ProtectedRoute>
-            } />
-            <Route path="/chef/bygg" element={
-              <ProtectedRoute><ChefBygg /></ProtectedRoute>
-            } />
             <Route path="/" element={
               <ProtectedRoute>
-                <RoleRouter />
+                <Index />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
