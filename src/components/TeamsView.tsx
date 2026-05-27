@@ -511,6 +511,29 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       };
       
       onSave(team);
+    } else if (teamType === 'Chef') {
+      if (!teamName || !chef.firstName || !chef.lastName) return;
+
+      const team: ConstructionTeam = {
+        id: `team-${Date.now()}`,
+        name: teamName,
+        type: teamType,
+        availabilityNextWeek: 'Tillgänglig',
+        skills: [chef.department],
+        members: [{
+          id: `member-${Date.now()}`,
+          firstName: chef.firstName,
+          lastName: chef.lastName,
+          skills: [chef.department],
+          position: chef.department,
+          email: chef.email || undefined,
+          phone: chef.phone || undefined,
+        }],
+        sellers: [],
+        leader: `${chef.firstName} ${chef.lastName}`,
+      };
+
+      onSave(team);
     } else {
       if (!teamName || members.length === 0) return;
 
