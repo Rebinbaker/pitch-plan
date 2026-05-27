@@ -327,6 +327,13 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     rvIntervalRef.current = window.setInterval(pollRandomVerification, RV_POLL_INTERVAL_MS);
     pollRandomVerification();
 
+    const mpvInterval = window.setInterval(pollManualVerification, MPV_POLL_INTERVAL_MS);
+    pollManualVerification();
+
+    const stationaryInterval = window.setInterval(triggerStationaryAnalysis, STATIONARY_ANALYZE_MS);
+
+    motionTracker.start();
+
     const tickInterval = window.setInterval(() => {
       setState(prev => {
         if (!prev.awaySinceMs) return prev.currentAwaySeconds === 0 ? prev : { ...prev, currentAwaySeconds: 0 };
@@ -339,7 +346,10 @@ export const useGeofenceTracker = (checkInId: string | null) => {
       if (watchIdRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchIdRef.current);
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       if (rvIntervalRef.current !== null) clearInterval(rvIntervalRef.current);
+      clearInterval(mpvInterval);
+      clearInterval(stationaryInterval);
       clearInterval(tickInterval);
+      motionTracker.stop();
       if (cleanupNative) cleanupNative();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -350,7 +360,12 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     pollRandomVerification();
   };
 
-  return { ...state, refresh: loadAbsences, clearPendingVerification };
+  const clearPendingManualVerification = () => {
+    setState(prev => ({ ...prev, pendingManualVerification: null }));
+    pollManualVerification();
+  };
+
+  return { ...state, refresh: loadAbsences, clearPendingVerification, clearPendingManualVerification };
 };
 
 export const formatAwayTimer = (seconds: number): string => {
