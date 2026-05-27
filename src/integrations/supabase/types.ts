@@ -1816,8 +1816,13 @@ export type Database = {
           net_hours: number | null
           notes: string | null
           organization_id: string
+          overtime_hourly_rate_snapshot: number | null
+          overtime_hours: number | null
+          overtime_pay: number | null
           project_id: string
           project_name: string | null
+          regular_hours: number | null
+          regular_pay: number | null
           team_id: string | null
           team_member_id: string | null
           updated_at: string
@@ -1846,8 +1851,13 @@ export type Database = {
           net_hours?: number | null
           notes?: string | null
           organization_id: string
+          overtime_hourly_rate_snapshot?: number | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
           project_id: string
           project_name?: string | null
+          regular_hours?: number | null
+          regular_pay?: number | null
           team_id?: string | null
           team_member_id?: string | null
           updated_at?: string
@@ -1876,8 +1886,13 @@ export type Database = {
           net_hours?: number | null
           notes?: string | null
           organization_id?: string
+          overtime_hourly_rate_snapshot?: number | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
           project_id?: string
           project_name?: string | null
+          regular_hours?: number | null
+          regular_pay?: number | null
           team_id?: string | null
           team_member_id?: string | null
           updated_at?: string
