@@ -513,7 +513,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       
       onSave(team);
     } else if (teamType === 'Chef') {
-      if (!teamName || !chef.firstName || !chef.lastName) return;
+      if (!teamName || !chef.firstName || !chef.lastName || !chef.email || !chef.password) return;
 
       const team: ConstructionTeam = {
         id: `team-${Date.now()}`,
