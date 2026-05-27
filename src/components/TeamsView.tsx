@@ -108,6 +108,17 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               </div>
             )}
             
+            {/* For Chef teams, show the chief details directly */}
+            {team.type === 'Chef' && team.members && team.members.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-foreground">Chef</div>
+                <div className="text-sm text-muted-foreground">
+                  {team.members[0].firstName} {team.members[0].lastName}
+                  {team.members[0].position && ` — ${team.members[0].position}`}
+                </div>
+              </div>
+            )}
+
             {/* For Säljare teams, show the seller details directly */}
             {team.type === 'Säljare' && team.sellers && team.sellers.length > 0 && (
               <div className="space-y-1">
