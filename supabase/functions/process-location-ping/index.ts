@@ -100,6 +100,7 @@ const processPing = async (admin: any, userId: string, payload: PingPayload) => 
     recorded_at: pingRecordedAt, lat, lng,
     accuracy_m: accuracy ?? null, distance_m: distance,
     inside_radius: insideRadius, is_mocked: !!is_mocked,
+    motion_activity: motion_activity ?? null,
   });
 
   const { data: openAbsence } = await admin
