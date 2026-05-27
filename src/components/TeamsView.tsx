@@ -355,6 +355,13 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
             </div>
             <div className="text-sm text-muted-foreground">Säljare</div>
           </CardContent>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-rose-600">
+              {teams.filter(t => t.type === 'Chef').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Chefer</div>
+          </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
