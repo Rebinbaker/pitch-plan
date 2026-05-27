@@ -739,7 +739,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           teamType === 'Säljare'
             ? (!teamName || !salesPerson.firstName || !salesPerson.lastName)
             : teamType === 'Chef'
-            ? (!teamName || !chef.firstName || !chef.lastName)
+            ? (!teamName || !chef.firstName || !chef.lastName || !chef.email || !chef.password)
             : (!teamName || members.length === 0)
         }
       >
