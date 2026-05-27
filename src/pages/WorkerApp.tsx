@@ -661,6 +661,12 @@ const WorkerAppInner = () => {
         deviceId={deviceBinding.deviceId}
         onComplete={() => setPendingVerification(null)}
       />
+
+      <ManualVerificationPrompt
+        pending={geofence.pendingManualVerification}
+        deviceId={deviceBinding.deviceId}
+        onComplete={geofence.clearPendingManualVerification}
+      />
     </div>
   );
 };
