@@ -25,8 +25,13 @@ interface CheckInRow {
   gross_hours: number | null;
   absence_minutes: number | null;
   net_hours: number | null;
+  regular_hours: number | null;
+  overtime_hours: number | null;
+  regular_pay: number | null;
+  overtime_pay: number | null;
   wage_amount: number | null;
   hourly_rate_snapshot: number;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 interface WorkerSummary {
@@ -34,10 +39,15 @@ interface WorkerSummary {
   name: string;
   team_name: string | null;
   hours: number;
+  regular_hours: number;
+  overtime_hours: number;
+  regular_pay: number;
+  overtime_pay: number;
   absence_min: number;
   wage: number;
   sessions: number;
   hourly_rate: number;
+  overtime_rate: number;
 }
 
 const PayrollReportView = () => {
