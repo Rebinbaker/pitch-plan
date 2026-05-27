@@ -32,8 +32,20 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
     phone: editingMember?.phone || '',
     skills: editingMember?.skills?.join(', ') || '',
     hourly_rate: editingMember?.hourly_rate?.toString() || '',
+    monthly_salary: editingMember?.monthly_salary?.toString() || '',
+    overtime_hourly_rate: editingMember?.overtime_hourly_rate?.toString() || '',
     isLeader: editingMember ? team.leader === `${editingMember.firstName} ${editingMember.lastName}` : false
   });
+
+  // Auto-calculated hourly rate from monthly salary (40h/week ≈ 173.33h/month)
+  const MONTHLY_HOURS = 173.33;
+  const calculatedHourly = currentMember.monthly_salary && !isNaN(parseFloat(currentMember.monthly_salary))
+    ? Math.round((parseFloat(currentMember.monthly_salary) / MONTHLY_HOURS) * 100) / 100
+    : null;
+  const effectiveHourly = calculatedHourly ?? (currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : null);
+  const effectiveOvertime = currentMember.overtime_hourly_rate
+    ? parseFloat(currentMember.overtime_hourly_rate)
+    : effectiveHourly;
 
   const isEditing = !!editingMember;
 
