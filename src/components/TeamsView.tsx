@@ -209,21 +209,23 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
                 </DialogContent>
               </Dialog>
               
-              <AddTeamMemberModal 
-                team={team} 
-                onUpdateTeam={onUpdateTeam}
-                trigger={
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Lägg till medlemmar
-                  </Button>
-                }
-              />
+              {team.type !== 'Chef' && team.type !== 'Säljare' && (
+                <AddTeamMemberModal 
+                  team={team} 
+                  onUpdateTeam={onUpdateTeam}
+                  trigger={
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Lägg till medlemmar
+                    </Button>
+                  }
+                />
+              )}
               
               {onDeleteTeam && (
                 <AlertDialog>
