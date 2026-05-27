@@ -164,6 +164,8 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       phone: '',
       skills: '',
       hourly_rate: '',
+      monthly_salary: '',
+      overtime_hourly_rate: '',
       isLeader: false
     });
     setOpen(false);
