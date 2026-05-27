@@ -464,6 +464,15 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
     region: 'Stockholm'
   });
 
+  // For chefs (managers)
+  const [chef, setChef] = useState({
+    firstName: '',
+    lastName: '',
+    department: CHEF_DEPARTMENTS[0] as string,
+    email: '',
+    phone: ''
+  });
+
   const addMember = () => {
     if (newMember.firstName && newMember.lastName) {
       const member: TeamMember = {
