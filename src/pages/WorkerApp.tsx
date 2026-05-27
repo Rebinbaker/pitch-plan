@@ -193,6 +193,7 @@ const WorkerAppInner = () => {
             team_name: match.team.name,
             team_member_id: match.me.id,
             hourly_rate: Number(match.me.hourly_rate || 0),
+            overtime_hourly_rate: Number(match.me.overtime_hourly_rate ?? match.me.hourly_rate ?? 0),
             leader: match.team.leader,
           };
         });
