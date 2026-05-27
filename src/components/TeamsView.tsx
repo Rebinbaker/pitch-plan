@@ -514,11 +514,11 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
       
       onSave(team);
     } else if (teamType === 'Chef') {
-      if (!teamName || !chef.firstName || !chef.lastName || !chef.email || !chef.password) return;
+      if (!chef.firstName || !chef.lastName || !chef.email || !chef.password) return;
 
       const team: ConstructionTeam = {
         id: `team-${Date.now()}`,
-        name: teamName,
+        name: `${chef.firstName} ${chef.lastName} – ${chef.department}`,
         type: teamType,
         availabilityNextWeek: 'Tillgänglig',
         skills: [chef.department, ...CHEF_RESPONSIBILITIES[chef.department]],
@@ -555,16 +555,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">{teamType === 'Chef' ? 'Namn / titel' : 'Teamnamn'}</label>
-          <Input
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            placeholder={teamType === 'Chef' ? 't.ex. Takchef Stockholm' : 't.ex. Team Alpha'}
-            required
-          />
-        </div>
+      {teamType === 'Chef' ? (
         <div>
           <label className="text-sm font-medium">Teamtyp</label>
           <Select value={teamType} onValueChange={(value: TeamType) => setTeamType(value)}>
@@ -580,7 +571,34 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">Teamnamn</label>
+            <Input
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="t.ex. Team Alpha"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Teamtyp</label>
+            <Select value={teamType} onValueChange={(value: TeamType) => setTeamType(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Internt">Internt</SelectItem>
+                <SelectItem value="Underentreprenör">Underentreprenör</SelectItem>
+                <SelectItem value="Säljare">Säljare</SelectItem>
+                <SelectItem value="Ställningsmontör">Ställningsmontör</SelectItem>
+                <SelectItem value="Chef">Chef</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
       {teamType === 'Chef' ? (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -754,7 +772,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
           teamType === 'Säljare'
             ? (!teamName || !salesPerson.firstName || !salesPerson.lastName)
             : teamType === 'Chef'
-            ? (!teamName || !chef.firstName || !chef.lastName || !chef.email || !chef.password)
+            ? (!chef.firstName || !chef.lastName || !chef.email || !chef.password)
             : (!teamName || members.length === 0)
         }
       >
