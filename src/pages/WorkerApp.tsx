@@ -12,8 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getISOWeek } from 'date-fns';
 import { sv } from 'date-fns/locale';
+
+const MONTHLY_HOURS = 173.33;
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useGeofenceTracker, formatAwayTimer } from '@/hooks/useGeofenceTracker';
@@ -34,6 +36,7 @@ interface AssignedJob {
   team_member_id: string;
   hourly_rate: number;
   overtime_hourly_rate: number;
+  monthly_salary: number | null;
   leader?: string;
 }
 
@@ -200,6 +203,7 @@ const WorkerAppInner = () => {
             team_member_id: match.me.id,
             hourly_rate: Number(match.me.hourly_rate || 0),
             overtime_hourly_rate: Number(match.me.overtime_hourly_rate ?? match.me.hourly_rate ?? 0),
+            monthly_salary: match.me.monthly_salary != null ? Number(match.me.monthly_salary) : null,
             leader: match.team.leader,
           };
         });
@@ -402,10 +406,12 @@ const WorkerAppInner = () => {
     // eslint-disable-next-line
   }, [openCheckIn, tick]);
 
-  const todayTotal = useMemo(() => {
-    const today = new Date().toDateString();
-    const sum = history
-      .filter(h => new Date(h.check_in_at).toDateString() === today)
+  const sumRange = (from: Date, to: Date) => {
+    return history
+      .filter(h => {
+        const d = new Date(h.check_in_at);
+        return d >= from && d <= to;
+      })
       .reduce((acc, h) => {
         const regH = h.regular_hours != null ? h.regular_hours : Math.min(h.duration_hours || 0, 8);
         const otH = h.overtime_hours != null ? h.overtime_hours : Math.max(0, (h.duration_hours || 0) - 8);
@@ -420,8 +426,36 @@ const WorkerAppInner = () => {
           overtime_pay: acc.overtime_pay + otP,
         };
       }, { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, regular_pay: 0, overtime_pay: 0 });
-    return sum;
+  };
+
+  const todayTotal = useMemo(() => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end = new Date(); end.setHours(23, 59, 59, 999);
+    return sumRange(start, end);
   }, [history]);
+
+  const weekTotal = useMemo(() => {
+    const now = new Date();
+    return sumRange(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
+  }, [history]);
+
+  const monthTotal = useMemo(() => {
+    const now = new Date();
+    return sumRange(startOfMonth(now), endOfMonth(now));
+  }, [history]);
+
+  // Primary salary info (uses first job's salary/rate as reference)
+  const salaryInfo = useMemo(() => {
+    const j = jobs.find(x => x.monthly_salary) || jobs[0];
+    if (!j) return null;
+    return {
+      monthly_salary: j.monthly_salary,
+      hourly_rate: j.hourly_rate,
+      overtime_hourly_rate: j.overtime_hourly_rate,
+    };
+  }, [jobs]);
+
+  const isoWeek = getISOWeek(new Date());
 
   if (redirectToScaffolder) {
     return <Navigate to="/scaffolder" replace />;
@@ -554,9 +588,21 @@ const WorkerAppInner = () => {
                       <span>{job.address}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Wallet className="w-4 h-4" />
-                    <span>{job.hourly_rate ? `${job.hourly_rate} kr/h` : 'Timlön ej satt'}</span>
+                  <div className="rounded-md bg-muted/40 p-2 space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Wallet className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-semibold">{job.hourly_rate ? `${job.hourly_rate.toFixed(2)} kr/h` : 'Timlön ej satt'}</span>
+                      {job.overtime_hourly_rate > job.hourly_rate && (
+                        <span className="text-xs text-orange-600">övertid {job.overtime_hourly_rate.toFixed(2)} kr/h</span>
+                      )}
+                    </div>
+                    {job.monthly_salary ? (
+                      <div className="text-xs text-muted-foreground">
+                        Baserat på månadslön {job.monthly_salary.toLocaleString('sv-SE')} kr ÷ {MONTHLY_HOURS} h/mån (40 h/v × 52 v ÷ 12)
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">Fast timlön</div>
+                    )}
                   </div>
                   <Button
                     className="w-full mt-2"
@@ -608,6 +654,90 @@ const WorkerAppInner = () => {
                     <div className="text-sm font-medium mt-1 text-orange-600">{Math.round(todayTotal.overtime_pay)} kr</div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Veckosammanfattning */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> Denna vecka (v.{isoWeek})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{weekTotal.hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid (av 40h avtalat)</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{Math.round(weekTotal.wage).toLocaleString('sv-SE')} kr</div>
+                    <div className="text-xs text-muted-foreground">Intjänat</div>
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(100, (weekTotal.hours / 40) * 100)}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Vanlig: </span>
+                    <span className="font-medium">{weekTotal.regular_hours.toFixed(1)}h · {Math.round(weekTotal.regular_pay)} kr</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Övertid: </span>
+                    <span className="font-medium text-orange-600">{weekTotal.overtime_hours.toFixed(1)}h · {Math.round(weekTotal.overtime_pay)} kr</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Månadssammanfattning */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> {format(new Date(), 'MMMM yyyy', { locale: sv })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{monthTotal.hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid (av {MONTHLY_HOURS} h avtalat)</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{Math.round(monthTotal.wage).toLocaleString('sv-SE')} kr</div>
+                    <div className="text-xs text-muted-foreground">
+                      {salaryInfo?.monthly_salary
+                        ? `av ${salaryInfo.monthly_salary.toLocaleString('sv-SE')} kr månadslön`
+                        : 'Intjänat'}
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(100, (monthTotal.hours / MONTHLY_HOURS) * 100)}%` }}
+                  />
+                </div>
+                {salaryInfo && (
+                  <div className="rounded-md bg-muted/40 p-2 text-xs space-y-1">
+                    <div className="font-semibold">Så räknas din timlön</div>
+                    {salaryInfo.monthly_salary ? (
+                      <div className="text-muted-foreground">
+                        {salaryInfo.monthly_salary.toLocaleString('sv-SE')} kr ÷ {MONTHLY_HOURS} h ={' '}
+                        <span className="font-medium text-foreground">{salaryInfo.hourly_rate.toFixed(2)} kr/h</span>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">Fast timlön: <span className="font-medium text-foreground">{salaryInfo.hourly_rate.toFixed(2)} kr/h</span></div>
+                    )}
+                    <div className="text-muted-foreground">
+                      {MONTHLY_HOURS} h = 40 h/v × 52 v ÷ 12 mån (branschstandard, jämnar ut månader med olika antal arbetsdagar)
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
