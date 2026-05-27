@@ -217,7 +217,7 @@ const WorkerAppInner = () => {
       // history (last 30)
       const { data: hist } = await supabase
         .from('worker_check_ins')
-        .select('id, project_name, check_in_at, check_out_at, duration_hours, wage_amount')
+        .select('id, project_name, check_in_at, check_out_at, duration_hours, wage_amount, regular_hours, overtime_hours, regular_pay, overtime_pay')
         .eq('user_id', user.id)
         .not('check_out_at', 'is', null)
         .order('check_in_at', { ascending: false })
