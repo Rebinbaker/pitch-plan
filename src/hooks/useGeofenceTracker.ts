@@ -229,6 +229,32 @@ export const useGeofenceTracker = (checkInId: string | null) => {
     } catch (e) { console.warn('rv poll fail', e); }
   };
 
+  const pollManualVerification = async () => {
+    if (!checkInId) return;
+    try {
+      const { data } = await (supabase as any)
+        .from('manual_presence_verifications')
+        .select('id, triggered_at, expires_at, status')
+        .eq('check_in_id', checkInId)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('triggered_at', { ascending: false })
+        .limit(1);
+      const row = data?.[0];
+      setState(prev => ({
+        ...prev,
+        pendingManualVerification: row ? { id: row.id, triggered_at: row.triggered_at, expires_at: row.expires_at } : null,
+      }));
+    } catch (e) { console.warn('mpv poll fail', e); }
+  };
+
+  const triggerStationaryAnalysis = async () => {
+    if (!checkInId) return;
+    try {
+      await supabase.functions.invoke('analyze-stationary-sessions', { body: { check_in_id: checkInId } });
+    } catch (e) { console.warn('analyze fail', e); }
+  };
+
   const loadAbsences = async () => {
     if (!checkInId) return;
     const { data } = await supabase
