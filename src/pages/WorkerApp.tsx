@@ -657,6 +657,90 @@ const WorkerAppInner = () => {
               </CardContent>
             </Card>
 
+            {/* Veckosammanfattning */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> Denna vecka (v.{isoWeek})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{weekTotal.hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid (av 40h avtalat)</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{Math.round(weekTotal.wage).toLocaleString('sv-SE')} kr</div>
+                    <div className="text-xs text-muted-foreground">Intjänat</div>
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(100, (weekTotal.hours / 40) * 100)}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Vanlig: </span>
+                    <span className="font-medium">{weekTotal.regular_hours.toFixed(1)}h · {Math.round(weekTotal.regular_pay)} kr</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Övertid: </span>
+                    <span className="font-medium text-orange-600">{weekTotal.overtime_hours.toFixed(1)}h · {Math.round(weekTotal.overtime_pay)} kr</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Månadssammanfattning */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> {format(new Date(), 'MMMM yyyy', { locale: sv })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">{monthTotal.hours.toFixed(1)}h</div>
+                    <div className="text-xs text-muted-foreground">Arbetad tid (av {MONTHLY_HOURS} h avtalat)</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{Math.round(monthTotal.wage).toLocaleString('sv-SE')} kr</div>
+                    <div className="text-xs text-muted-foreground">
+                      {salaryInfo?.monthly_salary
+                        ? `av ${salaryInfo.monthly_salary.toLocaleString('sv-SE')} kr månadslön`
+                        : 'Intjänat'}
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${Math.min(100, (monthTotal.hours / MONTHLY_HOURS) * 100)}%` }}
+                  />
+                </div>
+                {salaryInfo && (
+                  <div className="rounded-md bg-muted/40 p-2 text-xs space-y-1">
+                    <div className="font-semibold">Så räknas din timlön</div>
+                    {salaryInfo.monthly_salary ? (
+                      <div className="text-muted-foreground">
+                        {salaryInfo.monthly_salary.toLocaleString('sv-SE')} kr ÷ {MONTHLY_HOURS} h ={' '}
+                        <span className="font-medium text-foreground">{salaryInfo.hourly_rate.toFixed(2)} kr/h</span>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground">Fast timlön: <span className="font-medium text-foreground">{salaryInfo.hourly_rate.toFixed(2)} kr/h</span></div>
+                    )}
+                    <div className="text-muted-foreground">
+                      {MONTHLY_HOURS} h = 40 h/v × 52 v ÷ 12 mån (branschstandard, jämnar ut månader med olika antal arbetsdagar)
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {history.length === 0 ? (
               <Card><CardContent className="p-6 text-center text-muted-foreground">Inga avslutade pass än.</CardContent></Card>
             ) : (
