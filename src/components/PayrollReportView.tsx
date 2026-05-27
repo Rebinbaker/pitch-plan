@@ -123,15 +123,32 @@ const PayrollReportView = () => {
         name: info?.name || 'Okänd byggare',
         team_name: info?.team || null,
         hours: 0,
+        regular_hours: 0,
+        overtime_hours: 0,
+        regular_pay: 0,
+        overtime_pay: 0,
         absence_min: 0,
         wage: 0,
         sessions: 0,
         hourly_rate: r.hourly_rate_snapshot,
+        overtime_rate: Number(r.overtime_hourly_rate_snapshot ?? r.hourly_rate_snapshot),
       };
-      const hrs = r.net_hours ?? r.duration_hours ?? 0;
-      existing.hours += Number(hrs);
+      const netHrs = Number(r.net_hours ?? r.duration_hours ?? 0);
+      // Backfill split for rows saved before the feature
+      const regH = r.regular_hours != null ? Number(r.regular_hours) : Math.min(netHrs, 8);
+      const otH = r.overtime_hours != null ? Number(r.overtime_hours) : Math.max(0, netHrs - 8);
+      const regP = r.regular_pay != null ? Number(r.regular_pay)
+        : Math.round(regH * Number(r.hourly_rate_snapshot || 0) * 100) / 100;
+      const otRate = Number(r.overtime_hourly_rate_snapshot ?? r.hourly_rate_snapshot ?? 0);
+      const otP = r.overtime_pay != null ? Number(r.overtime_pay)
+        : Math.round(otH * otRate * 100) / 100;
+      existing.hours += netHrs;
+      existing.regular_hours += regH;
+      existing.overtime_hours += otH;
+      existing.regular_pay += regP;
+      existing.overtime_pay += otP;
       existing.absence_min += Number(r.absence_minutes || 0);
-      existing.wage += Number(r.wage_amount || 0);
+      existing.wage += Number(r.wage_amount || (regP + otP));
       existing.sessions += 1;
       map.set(key, existing);
     });
@@ -139,8 +156,14 @@ const PayrollReportView = () => {
   }, [rows, memberLookup]);
 
   const totals = useMemo(() => summaries.reduce(
-    (acc, s) => ({ hours: acc.hours + s.hours, wage: acc.wage + s.wage, sessions: acc.sessions + s.sessions }),
-    { hours: 0, wage: 0, sessions: 0 }
+    (acc, s) => ({
+      hours: acc.hours + s.hours,
+      regular_hours: acc.regular_hours + s.regular_hours,
+      overtime_hours: acc.overtime_hours + s.overtime_hours,
+      wage: acc.wage + s.wage,
+      sessions: acc.sessions + s.sessions,
+    }),
+    { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, sessions: 0 }
   ), [summaries]);
 
   const exportCsv = () => {
