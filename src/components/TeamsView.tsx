@@ -469,7 +469,7 @@ function NewTeamForm({ onSave }: NewTeamFormProps) {
   const [chef, setChef] = useState({
     firstName: '',
     lastName: '',
-    department: CHEF_DEPARTMENTS[0] as string,
+    department: CHEF_DEPARTMENTS[0] as ChefDepartment,
     email: '',
     password: '',
     phone: ''
