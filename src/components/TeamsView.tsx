@@ -57,6 +57,7 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
       case 'Underentreprenör': return 'bg-purple-500';
       case 'Säljare': return 'bg-green-500';
       case 'Ställningsmontör': return 'bg-amber-500';
+      case 'Chef': return 'bg-rose-600';
       default: return 'bg-gray-500';
     }
   };
