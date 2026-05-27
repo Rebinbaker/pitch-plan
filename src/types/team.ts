@@ -10,6 +10,9 @@ export interface TeamMember {
   email?: string;
   phone?: string;
   hourly_rate?: number;
+  monthly_salary?: number;
+  calculated_hourly_rate?: number;
+  overtime_hourly_rate?: number;
   user_id?: string;
   login_email?: string;
 }

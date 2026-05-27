@@ -32,8 +32,20 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
     phone: editingMember?.phone || '',
     skills: editingMember?.skills?.join(', ') || '',
     hourly_rate: editingMember?.hourly_rate?.toString() || '',
+    monthly_salary: editingMember?.monthly_salary?.toString() || '',
+    overtime_hourly_rate: editingMember?.overtime_hourly_rate?.toString() || '',
     isLeader: editingMember ? team.leader === `${editingMember.firstName} ${editingMember.lastName}` : false
   });
+
+  // Auto-calculated hourly rate from monthly salary (40h/week ≈ 173.33h/month)
+  const MONTHLY_HOURS = 173.33;
+  const calculatedHourly = currentMember.monthly_salary && !isNaN(parseFloat(currentMember.monthly_salary))
+    ? Math.round((parseFloat(currentMember.monthly_salary) / MONTHLY_HOURS) * 100) / 100
+    : null;
+  const effectiveHourly = calculatedHourly ?? (currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : null);
+  const effectiveOvertime = currentMember.overtime_hourly_rate
+    ? parseFloat(currentMember.overtime_hourly_rate)
+    : effectiveHourly;
 
   const isEditing = !!editingMember;
 
@@ -47,7 +59,10 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       position: currentMember.position || undefined,
       email: currentMember.email || undefined,
       phone: currentMember.phone || undefined,
-      hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
+      monthly_salary: currentMember.monthly_salary ? parseFloat(currentMember.monthly_salary) : undefined,
+      calculated_hourly_rate: calculatedHourly ?? undefined,
+      hourly_rate: effectiveHourly ?? undefined,
+      overtime_hourly_rate: effectiveOvertime ?? undefined,
       skills: currentMember.skills 
         ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
         : [],
@@ -63,6 +78,8 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       phone: '',
       skills: '',
       hourly_rate: '',
+      monthly_salary: '',
+      overtime_hourly_rate: '',
       isLeader: false
     });
   };
@@ -83,7 +100,10 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
         position: currentMember.position || undefined,
         email: currentMember.email || undefined,
         phone: currentMember.phone || undefined,
-        hourly_rate: currentMember.hourly_rate ? parseFloat(currentMember.hourly_rate) : undefined,
+        monthly_salary: currentMember.monthly_salary ? parseFloat(currentMember.monthly_salary) : undefined,
+        calculated_hourly_rate: calculatedHourly ?? undefined,
+        hourly_rate: effectiveHourly ?? undefined,
+        overtime_hourly_rate: effectiveOvertime ?? undefined,
         skills: currentMember.skills 
           ? currentMember.skills.split(',').map(s => s.trim()).filter(s => s)
           : []
@@ -144,6 +164,8 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
       phone: '',
       skills: '',
       hourly_rate: '',
+      monthly_salary: '',
+      overtime_hourly_rate: '',
       isLeader: false
     });
     setOpen(false);
@@ -253,8 +275,59 @@ export function AddTeamMemberModal({ team, onUpdateTeam, trigger, editingMember 
                     value={currentMember.hourly_rate}
                     onChange={(e) => setCurrentMember({ ...currentMember, hourly_rate: e.target.value })}
                     placeholder="t.ex. 280"
+                    disabled={!!currentMember.monthly_salary}
                   />
                 </div>
+              </div>
+
+              {/* Salary block */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                <div className="text-sm font-medium">Lön</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="monthly_salary">Fast månadslön (kr/mån)</Label>
+                    <Input
+                      id="monthly_salary"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={currentMember.monthly_salary}
+                      onChange={(e) => setCurrentMember({ ...currentMember, monthly_salary: e.target.value })}
+                      placeholder="t.ex. 38 000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="calculated_hourly">Beräknad timlön (40 h/vecka)</Label>
+                    <Input
+                      id="calculated_hourly"
+                      type="text"
+                      readOnly
+                      value={calculatedHourly != null ? `${calculatedHourly.toFixed(2)} kr/h` : '—'}
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="overtime_rate">Extra timlön efter 8 h/dag (kr/h)</Label>
+                  <Input
+                    id="overtime_rate"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={currentMember.overtime_hourly_rate}
+                    onChange={(e) => setCurrentMember({ ...currentMember, overtime_hourly_rate: e.target.value })}
+                    placeholder="Lämna tom om samma som vanlig timlön"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Timlön beräknas automatiskt från månadslön baserat på 40 timmar/vecka, ca 173,33 timmar/månad.
+                  {effectiveHourly != null && (
+                    <span className="block mt-1 font-medium text-foreground">
+                      Används i löneberäkning: {effectiveHourly.toFixed(2)} kr/h vanlig
+                      {effectiveOvertime != null && ` • ${effectiveOvertime.toFixed(2)} kr/h övertid (efter 8 h/dag)`}
+                    </span>
+                  )}
+                </p>
               </div>
 
               <div>

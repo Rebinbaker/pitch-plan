@@ -25,8 +25,13 @@ interface CheckInRow {
   gross_hours: number | null;
   absence_minutes: number | null;
   net_hours: number | null;
+  regular_hours: number | null;
+  overtime_hours: number | null;
+  regular_pay: number | null;
+  overtime_pay: number | null;
   wage_amount: number | null;
   hourly_rate_snapshot: number;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 interface WorkerSummary {
@@ -34,10 +39,15 @@ interface WorkerSummary {
   name: string;
   team_name: string | null;
   hours: number;
+  regular_hours: number;
+  overtime_hours: number;
+  regular_pay: number;
+  overtime_pay: number;
   absence_min: number;
   wage: number;
   sessions: number;
   hourly_rate: number;
+  overtime_rate: number;
 }
 
 const PayrollReportView = () => {
@@ -75,7 +85,7 @@ const PayrollReportView = () => {
       const [{ data: checkIns, error: e1 }, { data: teams, error: e2 }] = await Promise.all([
         supabase
           .from('worker_check_ins')
-          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, gross_hours, absence_minutes, net_hours, wage_amount, hourly_rate_snapshot')
+          .select('id, user_id, team_member_id, project_name, check_in_at, check_out_at, duration_hours, gross_hours, absence_minutes, net_hours, regular_hours, overtime_hours, regular_pay, overtime_pay, wage_amount, hourly_rate_snapshot, overtime_hourly_rate_snapshot')
           .eq('organization_id', organizationId)
           .gte('check_in_at', fromIso)
           .lte('check_in_at', toIso)
@@ -113,15 +123,32 @@ const PayrollReportView = () => {
         name: info?.name || 'Okänd byggare',
         team_name: info?.team || null,
         hours: 0,
+        regular_hours: 0,
+        overtime_hours: 0,
+        regular_pay: 0,
+        overtime_pay: 0,
         absence_min: 0,
         wage: 0,
         sessions: 0,
         hourly_rate: r.hourly_rate_snapshot,
+        overtime_rate: Number(r.overtime_hourly_rate_snapshot ?? r.hourly_rate_snapshot),
       };
-      const hrs = r.net_hours ?? r.duration_hours ?? 0;
-      existing.hours += Number(hrs);
+      const netHrs = Number(r.net_hours ?? r.duration_hours ?? 0);
+      // Backfill split for rows saved before the feature
+      const regH = r.regular_hours != null ? Number(r.regular_hours) : Math.min(netHrs, 8);
+      const otH = r.overtime_hours != null ? Number(r.overtime_hours) : Math.max(0, netHrs - 8);
+      const regP = r.regular_pay != null ? Number(r.regular_pay)
+        : Math.round(regH * Number(r.hourly_rate_snapshot || 0) * 100) / 100;
+      const otRate = Number(r.overtime_hourly_rate_snapshot ?? r.hourly_rate_snapshot ?? 0);
+      const otP = r.overtime_pay != null ? Number(r.overtime_pay)
+        : Math.round(otH * otRate * 100) / 100;
+      existing.hours += netHrs;
+      existing.regular_hours += regH;
+      existing.overtime_hours += otH;
+      existing.regular_pay += regP;
+      existing.overtime_pay += otP;
       existing.absence_min += Number(r.absence_minutes || 0);
-      existing.wage += Number(r.wage_amount || 0);
+      existing.wage += Number(r.wage_amount || (regP + otP));
       existing.sessions += 1;
       map.set(key, existing);
     });
@@ -129,14 +156,20 @@ const PayrollReportView = () => {
   }, [rows, memberLookup]);
 
   const totals = useMemo(() => summaries.reduce(
-    (acc, s) => ({ hours: acc.hours + s.hours, wage: acc.wage + s.wage, sessions: acc.sessions + s.sessions }),
-    { hours: 0, wage: 0, sessions: 0 }
+    (acc, s) => ({
+      hours: acc.hours + s.hours,
+      regular_hours: acc.regular_hours + s.regular_hours,
+      overtime_hours: acc.overtime_hours + s.overtime_hours,
+      wage: acc.wage + s.wage,
+      sessions: acc.sessions + s.sessions,
+    }),
+    { hours: 0, regular_hours: 0, overtime_hours: 0, wage: 0, sessions: 0 }
   ), [summaries]);
 
   const exportCsv = () => {
-    const header = 'Namn,Arbetslag,Antal pass,Timmar,Timlön (kr/h),Summa lön (kr)\n';
+    const header = 'Namn,Arbetslag,Antal pass,Vanliga timmar,Övertidstimmar,Timlön,Övertidslön/h,Vanlig lön,Övertidslön,Total lön\n';
     const body = summaries.map(s =>
-      `"${s.name}","${s.team_name || ''}",${s.sessions},${s.hours.toFixed(2)},${s.hourly_rate},${s.wage.toFixed(2)}`
+      `"${s.name}","${s.team_name || ''}",${s.sessions},${s.regular_hours.toFixed(2)},${s.overtime_hours.toFixed(2)},${s.hourly_rate},${s.overtime_rate},${s.regular_pay.toFixed(2)},${s.overtime_pay.toFixed(2)},${s.wage.toFixed(2)}`
     ).join('\n');
     const blob = new Blob([header + body], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -172,14 +205,18 @@ const PayrollReportView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card><CardContent className="p-4">
               <div className="text-xs text-muted-foreground flex items-center gap-1"><Users className="w-3 h-3" /> Byggare</div>
               <div className="text-2xl font-bold">{summaries.length}</div>
             </CardContent></Card>
             <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Timmar</div>
-              <div className="text-2xl font-bold">{totals.hours.toFixed(1)}h</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Vanliga tim</div>
+              <div className="text-2xl font-bold">{totals.regular_hours.toFixed(1)}h</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Övertidstim</div>
+              <div className="text-2xl font-bold text-orange-600">{totals.overtime_hours.toFixed(1)}h</div>
             </CardContent></Card>
             <Card><CardContent className="p-4">
               <div className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> Total lön</div>
@@ -193,32 +230,38 @@ const PayrollReportView = () => {
             </Button>
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Namn</TableHead>
                   <TableHead>Arbetslag</TableHead>
                   <TableHead className="text-right">Pass</TableHead>
-                  <TableHead className="text-right">Nettotim</TableHead>
-                  <TableHead className="text-right">Avdrag (min)</TableHead>
+                  <TableHead className="text-right">Vanliga tim</TableHead>
+                  <TableHead className="text-right">Övertid tim</TableHead>
                   <TableHead className="text-right">Timlön</TableHead>
+                  <TableHead className="text-right">Övertidslön/h</TableHead>
+                  <TableHead className="text-right">Vanlig lön</TableHead>
+                  <TableHead className="text-right">Övertidslön</TableHead>
                   <TableHead className="text-right">Summa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
                 ) : summaries.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
                 ) : summaries.map(s => (
                   <TableRow key={s.user_id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>{s.team_name ? <Badge variant="secondary">{s.team_name}</Badge> : '—'}</TableCell>
                     <TableCell className="text-right">{s.sessions}</TableCell>
-                    <TableCell className="text-right">{s.hours.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-orange-600">{s.absence_min > 0 ? Math.round(s.absence_min) : '—'}</TableCell>
-                    <TableCell className="text-right">{s.hourly_rate} kr/h</TableCell>
+                    <TableCell className="text-right">{s.regular_hours.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.overtime_hours > 0 ? s.overtime_hours.toFixed(2) : '—'}</TableCell>
+                    <TableCell className="text-right">{Math.round(s.hourly_rate)} kr/h</TableCell>
+                    <TableCell className="text-right">{Math.round(s.overtime_rate)} kr/h</TableCell>
+                    <TableCell className="text-right">{Math.round(s.regular_pay).toLocaleString('sv-SE')} kr</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.overtime_pay > 0 ? `${Math.round(s.overtime_pay).toLocaleString('sv-SE')} kr` : '—'}</TableCell>
                     <TableCell className="text-right font-bold">{Math.round(s.wage).toLocaleString('sv-SE')} kr</TableCell>
                   </TableRow>
                 ))}

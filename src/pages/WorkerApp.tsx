@@ -33,6 +33,7 @@ interface AssignedJob {
   team_name: string;
   team_member_id: string;
   hourly_rate: number;
+  overtime_hourly_rate: number;
   leader?: string;
 }
 
@@ -42,6 +43,7 @@ interface OpenCheckIn {
   project_name: string | null;
   check_in_at: string;
   hourly_rate_snapshot: number;
+  overtime_hourly_rate_snapshot: number | null;
 }
 
 interface CheckInHistory {
@@ -191,6 +193,7 @@ const WorkerAppInner = () => {
             team_name: match.team.name,
             team_member_id: match.me.id,
             hourly_rate: Number(match.me.hourly_rate || 0),
+            overtime_hourly_rate: Number(match.me.overtime_hourly_rate ?? match.me.hourly_rate ?? 0),
             leader: match.team.leader,
           };
         });
@@ -200,7 +203,7 @@ const WorkerAppInner = () => {
       // open check-in
       const { data: openRows } = await supabase
         .from('worker_check_ins')
-        .select('id, project_id, project_name, check_in_at, hourly_rate_snapshot')
+        .select('id, project_id, project_name, check_in_at, hourly_rate_snapshot, overtime_hourly_rate_snapshot')
         .eq('user_id', user.id)
         .is('check_out_at', null)
         .order('check_in_at', { ascending: false })
@@ -292,6 +295,7 @@ const WorkerAppInner = () => {
         check_in_lng: pos.coords.longitude,
         distance_km: distanceKm,
         hourly_rate_snapshot: job.hourly_rate,
+        overtime_hourly_rate_snapshot: job.overtime_hourly_rate || job.hourly_rate,
         check_in_photo_url: path,
       }).select().single();
 
@@ -333,7 +337,13 @@ const WorkerAppInner = () => {
       });
 
       const netHours = Math.max(0, grossHours - absenceMinutes / 60);
-      const wage = Math.round(netHours * (openCheckIn.hourly_rate_snapshot || 0) * 100) / 100;
+      const regularRate = Number(openCheckIn.hourly_rate_snapshot || 0);
+      const overtimeRate = Number(openCheckIn.overtime_hourly_rate_snapshot ?? regularRate);
+      const regularHours = Math.min(netHours, 8);
+      const overtimeHours = Math.max(0, netHours - 8);
+      const regularPay = Math.round(regularHours * regularRate * 100) / 100;
+      const overtimePay = Math.round(overtimeHours * overtimeRate * 100) / 100;
+      const wage = Math.round((regularPay + overtimePay) * 100) / 100;
 
       // close any open absence
       await supabase
@@ -352,6 +362,10 @@ const WorkerAppInner = () => {
           gross_hours: Math.round(grossHours * 100) / 100,
           absence_minutes: Math.round(absenceMinutes),
           net_hours: Math.round(netHours * 100) / 100,
+          regular_hours: Math.round(regularHours * 100) / 100,
+          overtime_hours: Math.round(overtimeHours * 100) / 100,
+          regular_pay: regularPay,
+          overtime_pay: overtimePay,
           wage_amount: wage,
         })
         .eq('id', openCheckIn.id);
