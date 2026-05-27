@@ -36,6 +36,7 @@ interface AssignedJob {
   team_member_id: string;
   hourly_rate: number;
   overtime_hourly_rate: number;
+  monthly_salary: number | null;
   leader?: string;
 }
 
