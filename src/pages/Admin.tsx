@@ -50,6 +50,10 @@ const Admin: React.FC = () => {
         </div>
 
         <div className="mt-6">
+          <StationaryMonitoringView />
+        </div>
+
+        <div className="mt-6">
           <PeriCatalogUpload />
         </div>
       </div>
