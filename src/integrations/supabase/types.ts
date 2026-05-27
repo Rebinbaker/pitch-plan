@@ -279,6 +279,72 @@ export type Database = {
           },
         ]
       }
+      manual_presence_verifications: {
+        Row: {
+          check_in_id: string
+          completed_at: string | null
+          created_at: string
+          device_id: string | null
+          distance_from_project_m: number | null
+          expires_at: string
+          failure_reason: string | null
+          flag_id: string | null
+          gps_accuracy: number | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          organization_id: string
+          project_id: string
+          requested_by: string | null
+          selfie_url: string | null
+          status: string
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_id: string
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          distance_from_project_m?: number | null
+          expires_at: string
+          failure_reason?: string | null
+          flag_id?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          organization_id: string
+          project_id: string
+          requested_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_id?: string
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          distance_from_project_m?: number | null
+          expires_at?: string
+          failure_reason?: string | null
+          flag_id?: string | null
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          organization_id?: string
+          project_id?: string
+          requested_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_required: boolean
@@ -754,6 +820,42 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_score_events: {
+        Row: {
+          created_at: string
+          delta: number
+          event_type: string
+          id: string
+          organization_id: string
+          reason: string | null
+          related_flag_id: string | null
+          related_verification_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          event_type: string
+          id?: string
+          organization_id: string
+          reason?: string | null
+          related_flag_id?: string | null
+          related_verification_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          event_type?: string
+          id?: string
+          organization_id?: string
+          reason?: string | null
+          related_flag_id?: string | null
+          related_verification_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       scaffolding: {
         Row: {
           created_at: string
@@ -1076,6 +1178,72 @@ export type Database = {
           updated_at?: string
           width_m?: number | null
           work_levels?: number | null
+        }
+        Relationships: []
+      }
+      stationary_device_flags: {
+        Row: {
+          accelerometer_activity: string | null
+          admin_comment: string | null
+          avg_accuracy_m: number | null
+          check_in_id: string
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          gps_variance_m: number | null
+          id: string
+          last_verification_at: string | null
+          organization_id: string
+          project_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: string
+          started_at: string
+          status: string
+          total_movement_m: number | null
+          user_id: string
+        }
+        Insert: {
+          accelerometer_activity?: string | null
+          admin_comment?: string | null
+          avg_accuracy_m?: number | null
+          check_in_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          gps_variance_m?: number | null
+          id?: string
+          last_verification_at?: string | null
+          organization_id: string
+          project_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level: string
+          started_at: string
+          status?: string
+          total_movement_m?: number | null
+          user_id: string
+        }
+        Update: {
+          accelerometer_activity?: string | null
+          admin_comment?: string | null
+          avg_accuracy_m?: number | null
+          check_in_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          gps_variance_m?: number | null
+          id?: string
+          last_verification_at?: string | null
+          organization_id?: string
+          project_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string
+          started_at?: string
+          status?: string
+          total_movement_m?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1408,6 +1576,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_risk_scores: {
+        Row: {
+          created_at: string
+          id: string
+          last_event_at: string | null
+          organization_id: string
+          score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_event_at?: string | null
+          organization_id: string
+          score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_event_at?: string | null
+          organization_id?: string
+          score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1699,6 +1897,7 @@ export type Database = {
           is_mocked: boolean
           lat: number
           lng: number
+          motion_activity: string | null
           organization_id: string
           recorded_at: string
           user_id: string
@@ -1713,6 +1912,7 @@ export type Database = {
           is_mocked?: boolean
           lat: number
           lng: number
+          motion_activity?: string | null
           organization_id: string
           recorded_at?: string
           user_id: string
@@ -1727,6 +1927,7 @@ export type Database = {
           is_mocked?: boolean
           lat?: number
           lng?: number
+          motion_activity?: string | null
           organization_id?: string
           recorded_at?: string
           user_id?: string
