@@ -205,14 +205,18 @@ const PayrollReportView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card><CardContent className="p-4">
               <div className="text-xs text-muted-foreground flex items-center gap-1"><Users className="w-3 h-3" /> Byggare</div>
               <div className="text-2xl font-bold">{summaries.length}</div>
             </CardContent></Card>
             <Card><CardContent className="p-4">
-              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Timmar</div>
-              <div className="text-2xl font-bold">{totals.hours.toFixed(1)}h</div>
+              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Vanliga tim</div>
+              <div className="text-2xl font-bold">{totals.regular_hours.toFixed(1)}h</div>
+            </CardContent></Card>
+            <Card><CardContent className="p-4">
+              <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Övertidstim</div>
+              <div className="text-2xl font-bold text-orange-600">{totals.overtime_hours.toFixed(1)}h</div>
             </CardContent></Card>
             <Card><CardContent className="p-4">
               <div className="text-xs text-muted-foreground flex items-center gap-1"><Wallet className="w-3 h-3" /> Total lön</div>
@@ -226,32 +230,38 @@ const PayrollReportView = () => {
             </Button>
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Namn</TableHead>
                   <TableHead>Arbetslag</TableHead>
                   <TableHead className="text-right">Pass</TableHead>
-                  <TableHead className="text-right">Nettotim</TableHead>
-                  <TableHead className="text-right">Avdrag (min)</TableHead>
+                  <TableHead className="text-right">Vanliga tim</TableHead>
+                  <TableHead className="text-right">Övertid tim</TableHead>
                   <TableHead className="text-right">Timlön</TableHead>
+                  <TableHead className="text-right">Övertidslön/h</TableHead>
+                  <TableHead className="text-right">Vanlig lön</TableHead>
+                  <TableHead className="text-right">Övertidslön</TableHead>
                   <TableHead className="text-right">Summa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Laddar…</TableCell></TableRow>
                 ) : summaries.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Inga incheckningar i perioden.</TableCell></TableRow>
                 ) : summaries.map(s => (
                   <TableRow key={s.user_id}>
                     <TableCell className="font-medium">{s.name}</TableCell>
                     <TableCell>{s.team_name ? <Badge variant="secondary">{s.team_name}</Badge> : '—'}</TableCell>
                     <TableCell className="text-right">{s.sessions}</TableCell>
-                    <TableCell className="text-right">{s.hours.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-orange-600">{s.absence_min > 0 ? Math.round(s.absence_min) : '—'}</TableCell>
-                    <TableCell className="text-right">{s.hourly_rate} kr/h</TableCell>
+                    <TableCell className="text-right">{s.regular_hours.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.overtime_hours > 0 ? s.overtime_hours.toFixed(2) : '—'}</TableCell>
+                    <TableCell className="text-right">{Math.round(s.hourly_rate)} kr/h</TableCell>
+                    <TableCell className="text-right">{Math.round(s.overtime_rate)} kr/h</TableCell>
+                    <TableCell className="text-right">{Math.round(s.regular_pay).toLocaleString('sv-SE')} kr</TableCell>
+                    <TableCell className="text-right text-orange-600">{s.overtime_pay > 0 ? `${Math.round(s.overtime_pay).toLocaleString('sv-SE')} kr` : '—'}</TableCell>
                     <TableCell className="text-right font-bold">{Math.round(s.wage).toLocaleString('sv-SE')} kr</TableCell>
                   </TableRow>
                 ))}
