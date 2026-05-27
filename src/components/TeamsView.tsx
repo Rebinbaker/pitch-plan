@@ -147,8 +147,8 @@ export function TeamsView({ teams, onUpdateTeam, onAddTeam, onDeleteTeam, projec
               </div>
             )}
             
-            {/* Skills for teams (hide for Säljare type teams since they don't need skills) */}
-            {team.type !== 'Säljare' && (
+            {/* Skills for teams (hide for Säljare and Chef since they don't need skills) */}
+            {team.type !== 'Säljare' && team.type !== 'Chef' && (
               <div className="space-y-1">
                 <div className="text-sm font-medium text-foreground">Färdigheter</div>
                 <div className="flex flex-wrap gap-1">
