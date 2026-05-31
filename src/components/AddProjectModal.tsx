@@ -467,6 +467,7 @@ export function AddProjectModal({ isOpen, onClose, onAddProject, project, onUpda
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="planned">Planerad</SelectItem>
+                        <SelectItem value="redo">Redo</SelectItem>
                         <SelectItem value="ongoing">Pågående</SelectItem>
                         <SelectItem value="completed">Slutförd</SelectItem>
                         <SelectItem value="invoiced">Fakturerad</SelectItem>
