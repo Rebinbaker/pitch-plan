@@ -32,7 +32,7 @@ const editProjectSchema = z.object({
   customerName: z.string().min(1, 'Kundnamn krävs'),
   customerPhone: z.string().min(1, 'Telefonnummer krävs'),
   address: z.string().optional(),
-  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
+  status: z.enum(['planned', 'redo', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   completion_percentage: z.number().min(0).max(100),
   construction_team: z.string().optional(),
   scaffolding_team_id: z.string().optional(),
