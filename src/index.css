@@ -47,6 +47,7 @@
 
     /* Status variants for project status */
     --planned: 220 91% 54%;
+    --redo: 280 75% 58%;
     --ongoing: 24 95% 53%;
     --completed: 142 71% 45%;
     --invoiced: 262 83% 58%;
