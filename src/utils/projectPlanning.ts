@@ -231,16 +231,28 @@ export function migrateProjectToNewPlanning(project: Project): Project {
   // Migrate bygg_start_vecka from constructionStartWeek or startDate
   if (!migratedProject.bygg_start_vecka) {
     if (migratedProject.constructionStartWeek) {
-      // Convert "v33" format to "2025-W33" format
-      const weekNum = migratedProject.constructionStartWeek.replace(/[^0-9]/g, '');
-      const currentYear = new Date().getFullYear();
-      migratedProject.bygg_start_vecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
+      const raw = migratedProject.constructionStartWeek.trim();
+      // Already in ISO format "YYYY-Www" — use as-is (and sanitize accidental duplicates like "2026-W2026...24")
+      const isoMatch = raw.match(/^(\d{4})-W0*(\d{1,2})$/i);
+      const dupMatch = raw.match(/^(\d{4})-W(?:\d{4})+(\d{1,2})$/i);
+      if (isoMatch) {
+        migratedProject.bygg_start_vecka = `${isoMatch[1]}-W${isoMatch[2].padStart(2, '0')}`;
+      } else if (dupMatch) {
+        // Recover from previously corrupted values
+        migratedProject.bygg_start_vecka = `${dupMatch[1]}-W${dupMatch[2].padStart(2, '0')}`;
+      } else {
+        // Legacy formats like "v33" or "33"
+        const weekNum = raw.replace(/[^0-9]/g, '').slice(-2);
+        const currentYear = new Date().getFullYear();
+        migratedProject.bygg_start_vecka = `${currentYear}-W${weekNum.padStart(2, '0')}`;
+      }
     } else {
       // Use startDate to calculate week
       const startDate = new Date(migratedProject.startDate);
       migratedProject.bygg_start_vecka = dateToWeekString(startDate);
     }
   }
+
   
   // Calculate planerad_start_datum from bygg_start_vecka
   if (!migratedProject.planerad_start_datum) {
