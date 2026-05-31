@@ -91,7 +91,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
 
     const welcomeDone = !!welcome?.completed;
     const containerDone = !!container?.completed || !!container?.containerOrderConfirmed;
-    const scaffoldingDone = scaffolding?.scaffoldingStatus === 'built_ready' || !!scaffolding?.completed;
+    const scaffoldingDone = scaffolding?.scaffoldingStatus === 'built_ready';
     const materialDone =
       project.materialOrder?.status === 'ordered' ||
       project.materialOrder?.status === 'delivered' ||
