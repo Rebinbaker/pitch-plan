@@ -186,8 +186,8 @@ export function MaterialOrdersDashboard({
                 <SelectItem value="all">Alla status</SelectItem>
                 <SelectItem value="draft">Utkast</SelectItem>
                 <SelectItem value="ready_to_order">Klar för beställning</SelectItem>
-                <SelectItem value="ordered">Beställd</SelectItem>
-                <SelectItem value="delivered">Levererad</SelectItem>
+                <SelectItem value="ordered">Beställt</SelectItem>
+                <SelectItem value="delivered">På plats</SelectItem>
               </SelectContent>
             </Select>
 
