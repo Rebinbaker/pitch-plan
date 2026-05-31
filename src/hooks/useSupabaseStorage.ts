@@ -12,6 +12,22 @@ import { migrateProjectToNewPlanning } from '@/utils/projectPlanning';
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Ensure the "Välkomstsamtal" checklist item exists on every loaded project (migration for older projects)
+const ensureWelcomeCallItem = (checklist: any[]): any[] => {
+  if (!Array.isArray(checklist)) return checklist || [];
+  if (checklist.some((c) => c?.label === 'Välkomstsamtal')) return checklist;
+  return [
+    {
+      id: `welcome-call-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: 'Välkomstsamtal',
+      completed: false,
+      weight: 2,
+    },
+    ...checklist,
+  ];
+};
+
+
 // This hook provides Supabase storage with localStorage fallback
 export const useSupabaseStorage = () => {
   const { user } = useAuth();
@@ -75,7 +91,7 @@ export const useSupabaseStorage = () => {
           estimatedWorkDays: project.estimated_work_days || 0,
           actualConstructionStart: project.actual_construction_start || '',
           completionPercentage: project.completion_percentage || 0,
-          checklist: project.checklist || [],
+          checklist: ensureWelcomeCallItem(project.checklist || []),
           workPhases: project.work_phases || [],
           activityLog: project.activity_log || [],
           region: project.region || 'Stockholm',

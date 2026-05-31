@@ -131,6 +131,8 @@ export interface ChecklistItem {
   accommodationConfirmed?: boolean; // Flag to track that accommodation has been booked
   scaffoldingStatus?: 'on_the_way' | 'on_site_unbuilt' | 'built_ready'; // Scaffolding arrival/build status
   scaffoldingArrivalDate?: string; // Expected arrival date (ISO yyyy-mm-dd) when status is 'on_the_way'
+  welcomeCallNotes?: string; // Notes from the welcome call with the customer
+  welcomeCallAt?: string; // ISO timestamp of when welcome call notes were last saved
 }
 
 export interface WorkPhaseItem {
@@ -148,6 +150,7 @@ export interface WorkPhaseItem {
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
+  { label: 'Välkomstsamtal', completed: false, weight: 2 },
   { label: 'Containerbeställning', completed: false, weight: 5 },
   { label: 'Ställningshantering', completed: false, weight: 5 },
   { label: 'Schedule construction team', completed: false, weight: 2 },

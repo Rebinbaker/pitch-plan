@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ChecklistItem, Project, MaterialType, MaterialItem, getMaterialUnit, areAllWorkPhasesConfirmed, MaterialOrder, AccommodationBooking } from '@/types/project';
 import { CheckCircle2, Circle, AlertTriangle, Truck, Users, Plus, X, MessageCircle, Clock, Check, Copy, Lock, Mail, Package, FileText } from 'lucide-react';
@@ -1015,6 +1016,7 @@ Tack!`);
             const isContainerOrder = isContainerOrderItem(item.label);
             const isMaterialOrder = item.label === 'Materialbeställning';
             const isAccommodation = item.label === 'Boka boende';
+            const isWelcomeCall = item.label === 'Välkomstsamtal';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
@@ -1158,6 +1160,41 @@ Tack!`);
                         }}
                       />
                     )}
+
+                    {/* Välkomstsamtal: notes from the call with the customer */}
+                    {isWelcomeCall && (
+                      <div className="mt-2 space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          Anteckningar från välkomstsamtalet (vad sas, är kund införstådd, etc.)
+                        </Label>
+                        <Textarea
+                          rows={4}
+                          className="text-sm"
+                          placeholder="T.ex. genomgång av tidsplan, ROT-avdrag, kundens frågor och eventuella önskemål..."
+                          value={item.welcomeCallNotes || ''}
+                          disabled={!isEditable}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const updated = checklist.map((c) =>
+                              c.id === item.id
+                                ? {
+                                    ...c,
+                                    welcomeCallNotes: e.target.value,
+                                    welcomeCallAt: new Date().toISOString(),
+                                  }
+                                : c
+                            );
+                            onChecklistUpdate(updated);
+                          }}
+                        />
+                        {item.welcomeCallAt && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Senast uppdaterad: {new Date(item.welcomeCallAt).toLocaleString('sv-SE')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
 
                      {/* Show trailer dropdown for Book scaffolding */}
                     {isBookScaffolding && trailers.length > 0 && project && onUpdateProject && (
