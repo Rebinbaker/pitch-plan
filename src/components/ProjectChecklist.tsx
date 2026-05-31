@@ -1016,6 +1016,7 @@ Tack!`);
             const isContainerOrder = isContainerOrderItem(item.label);
             const isMaterialOrder = item.label === 'Materialbeställning';
             const isAccommodation = item.label === 'Boka boende';
+            const isWelcomeCall = item.label === 'Välkomstsamtal';
             const hasTrailerAssigned = !!project?.assignedTrailer;
             const isDailyInspections = item.label === 'Dagliga egenkontroller';
             const hasTeamAssigned = !!(project?.constructionTeam && teams.some(team => team.name === project.constructionTeam));
