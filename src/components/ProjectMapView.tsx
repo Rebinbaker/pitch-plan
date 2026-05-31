@@ -32,6 +32,7 @@ interface GeocodedProject extends Project {
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   planned: 'hsl(220, 91%, 54%)',
+  redo: 'hsl(280, 75%, 58%)',
   ongoing: 'hsl(24, 95%, 53%)',
   completed: 'hsl(142, 71%, 45%)',
   invoiced: 'hsl(262, 83%, 58%)',
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
 
 const STATUS_LABELS: Record<ProjectStatus, string> = {
   planned: 'Planerad',
+  redo: 'Redo',
   ongoing: 'Pågående',
   completed: 'Slutförd',
   invoiced: 'Fakturerad',
