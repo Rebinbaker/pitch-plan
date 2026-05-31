@@ -150,6 +150,7 @@ export interface WorkPhaseItem {
 }
 
 export const defaultChecklist: Omit<ChecklistItem, 'id'>[] = [
+  { label: 'Välkomstsamtal', completed: false, weight: 2 },
   { label: 'Containerbeställning', completed: false, weight: 5 },
   { label: 'Ställningshantering', completed: false, weight: 5 },
   { label: 'Schedule construction team', completed: false, weight: 2 },
