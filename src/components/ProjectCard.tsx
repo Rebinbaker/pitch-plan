@@ -78,26 +78,28 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
     }
   }, [project, onUpdateProject]);
 
-  // Auto-transition to 'redo' when project is planned and pre-construction readiness is met
+  // Auto-transition between 'planned' and 'redo' based on pre-construction readiness
   React.useEffect(() => {
     if (!onUpdateProject) return;
-    if (project.status !== 'planned') return;
+    if (project.status !== 'planned' && project.status !== 'redo') return;
 
     const items = project.checklist || [];
     const welcome = items.find(i => i.label === 'Välkomstsamtal');
     const container = items.find(i => i.label === 'Containerbeställning');
     const scaffolding = items.find(i => i.label === 'Ställningshantering');
+    const material = items.find(i => i.label === 'Materialbeställning');
 
     const welcomeDone = !!welcome?.completed;
     const containerDone = !!container?.completed || !!container?.containerOrderConfirmed;
     const scaffoldingDone = scaffolding?.scaffoldingStatus === 'built_ready' || !!scaffolding?.completed;
-    const material = items.find(i => i.label === 'Materialbeställning');
     const materialDone =
       project.materialOrder?.status === 'ordered' ||
       project.materialOrder?.status === 'delivered' ||
       !!material?.completed;
 
-    if (welcomeDone && containerDone && scaffoldingDone && materialDone) {
+    const allReady = welcomeDone && containerDone && scaffoldingDone && materialDone;
+
+    if (allReady && project.status === 'planned') {
       const activityEntry = {
         id: `activity-${Date.now()}`,
         timestamp: new Date().toISOString(),
@@ -111,6 +113,22 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
       onUpdateProject({
         ...project,
         status: 'redo',
+        activityLog: [...(project.activityLog || []), activityEntry],
+      });
+    } else if (!allReady && project.status === 'redo') {
+      const activityEntry = {
+        id: `activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        user: 'System',
+        action: 'Projekt åter planerat - förutsättningar för Redo uppfylls inte längre',
+        description: 'status',
+        category: 'status' as const,
+        oldValue: 'Redo',
+        newValue: 'Planerad',
+      };
+      onUpdateProject({
+        ...project,
+        status: 'planned',
         activityLog: [...(project.activityLog || []), activityEntry],
       });
     }
