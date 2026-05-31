@@ -126,6 +126,7 @@ export function MobileEditProjectModal({
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-orange-100 text-orange-800';
+      case 'redo': return 'bg-purple-100 text-purple-800';
       case 'ongoing': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-green-100 text-green-800';
       case 'invoiced': return 'bg-purple-100 text-purple-800';
