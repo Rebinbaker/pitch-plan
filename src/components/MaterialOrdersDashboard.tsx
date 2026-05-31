@@ -98,8 +98,8 @@ export function MaterialOrdersDashboard({
     switch (status) {
       case 'draft': return 'Utkast';
       case 'ready_to_order': return 'Klar för beställning';
-      case 'ordered': return 'Beställd';
-      case 'delivered': return 'Levererad';
+      case 'ordered': return 'Beställt';
+      case 'delivered': return 'På plats';
       default: return 'Okänd';
     }
   };
