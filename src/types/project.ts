@@ -104,6 +104,12 @@ export interface AccommodationBooking {
   checkInDate: string; // ISO date (YYYY-MM-DD)
   nights: number;
   bookedAt?: string; // ISO timestamp
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  distanceKm?: number;
+  travelMinutes?: number;
+  distanceEstimated?: boolean; // true if Haversine fallback was used
 }
 
 // Returns the calculated check-out date for an accommodation booking
