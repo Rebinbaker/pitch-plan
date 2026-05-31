@@ -75,7 +75,7 @@ export const useSupabaseStorage = () => {
           estimatedWorkDays: project.estimated_work_days || 0,
           actualConstructionStart: project.actual_construction_start || '',
           completionPercentage: project.completion_percentage || 0,
-          checklist: project.checklist || [],
+          checklist: ensureWelcomeCallItem(project.checklist || []),
           workPhases: project.work_phases || [],
           activityLog: project.activity_log || [],
           region: project.region || 'Stockholm',
