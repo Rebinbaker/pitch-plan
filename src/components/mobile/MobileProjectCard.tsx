@@ -34,6 +34,7 @@ export function MobileProjectCard({ project, onUpdate, trailers = [], teams = []
   const getStatusLabel = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'Planerat';
+      case 'redo': return 'Redo';
       case 'ongoing': return 'Pågående';
       case 'completed': return 'Avslutat';
       case 'invoiced': return 'Fakturerat';
