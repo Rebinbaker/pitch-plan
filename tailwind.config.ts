@@ -69,6 +69,7 @@ export default {
 				},
 				/* Project status specific colors */
 				planned: 'hsl(var(--planned))',
+				redo: 'hsl(var(--redo))',
 				ongoing: 'hsl(var(--ongoing))',
 				completed: 'hsl(var(--completed))',
 				invoiced: 'hsl(var(--invoiced))',
