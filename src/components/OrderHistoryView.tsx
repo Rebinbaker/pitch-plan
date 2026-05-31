@@ -79,8 +79,8 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
 
   const getStatusText = (status: MaterialOrderStatus) => {
     switch (status) {
-      case 'ordered': return 'Beställd';
-      case 'delivered': return 'Levererad';
+      case 'ordered': return 'Beställt';
+      case 'delivered': return 'På plats';
       default: return 'Okänd';
     }
   };
