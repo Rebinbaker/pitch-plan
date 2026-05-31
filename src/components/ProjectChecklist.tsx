@@ -1164,39 +1164,190 @@ Tack!`);
                       />
                     )}
 
-                    {/* Välkomstsamtal: notes from the call with the customer */}
+                    {/* Välkomstsamtal: utökad panel */}
                     {isWelcomeCall && (
-                      <div className="mt-2 space-y-1">
-                        <Label className="text-xs text-muted-foreground">
-                          Anteckningar från välkomstsamtalet (vad sas, är kund införstådd, etc.)
-                        </Label>
-                        <Textarea
-                          rows={4}
-                          className="text-sm"
-                          placeholder="T.ex. genomgång av tidsplan, ROT-avdrag, kundens frågor och eventuella önskemål..."
-                          value={item.welcomeCallNotes || ''}
-                          disabled={!isEditable}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const updated = checklist.map((c) =>
-                              c.id === item.id
-                                ? {
-                                    ...c,
-                                    welcomeCallNotes: e.target.value,
-                                    welcomeCallAt: new Date().toISOString(),
-                                  }
-                                : c
-                            );
-                            onChecklistUpdate(updated);
-                          }}
-                        />
-                        {item.welcomeCallAt && (
-                          <p className="text-[10px] text-muted-foreground">
-                            Senast uppdaterad: {new Date(item.welcomeCallAt).toLocaleString('sv-SE')}
-                          </p>
-                        )}
+                      <div
+                        className="mt-2 space-y-3 rounded-md border border-border bg-muted/30 p-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Vem ringde + när */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <PhoneCall className="w-3.5 h-3.5" />
+                          {item.welcomeCallBy ? (
+                            <span>
+                              Samtal av <strong className="text-foreground">{item.welcomeCallBy}</strong>
+                              {item.welcomeCallAt && (
+                                <> · {new Date(item.welcomeCallAt).toLocaleString('sv-SE')}</>
+                              )}
+                            </span>
+                          ) : (
+                            <span>Ingen anteckning ännu</span>
+                          )}
+                        </div>
+
+                        {/* Tips-ruta (kollapsbar samtalsguide) */}
+                        <div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-primary hover:text-primary"
+                            onClick={() => setShowWelcomeTips((v) => !v)}
+                          >
+                            <Lightbulb className="w-3.5 h-3.5 mr-1" />
+                            {showWelcomeTips ? 'Dölj samtalsguide' : 'Visa samtalsguide'}
+                            {showWelcomeTips ? (
+                              <ChevronUp className="w-3 h-3 ml-1" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3 ml-1" />
+                            )}
+                          </Button>
+                          {showWelcomeTips && (
+                            <ul className="mt-2 space-y-1 rounded border border-primary/20 bg-primary/5 p-2 text-xs text-foreground">
+                              <li>• Presentera projektledare och bygglag</li>
+                              <li>• Gå igenom preliminär tidsplan och startvecka</li>
+                              <li>• Förklara ROT-avdrag och fakturering</li>
+                              <li>• Informera om ställning, container och tillfartsvägar</li>
+                              <li>• Stäm av kontaktperson och anträffbarhet</li>
+                              <li>• Fråga om grannar är informerade</li>
+                              <li>• Bekräfta att kund är införstådd</li>
+                            </ul>
+                          )}
+                        </div>
+
+                        {/* Kunds inställning */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Kundens inställning</Label>
+                          <div className="flex gap-2">
+                            {([
+                              { key: 'positive', label: 'Positiv', Icon: Smile, cls: 'bg-success/15 text-success border-success/30 hover:bg-success/25' },
+                              { key: 'neutral', label: 'Neutral', Icon: Meh, cls: 'bg-muted text-foreground border-border hover:bg-muted/80' },
+                              { key: 'worried', label: 'Orolig', Icon: Frown, cls: 'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20' },
+                            ] as const).map(({ key, label, Icon, cls }) => {
+                              const active = item.welcomeCallMood === key;
+                              return (
+                                <Button
+                                  key={key}
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={!isEditable}
+                                  className={`h-7 px-2 text-xs ${active ? cls + ' ring-2 ring-offset-1 ring-current' : ''}`}
+                                  onClick={() => {
+                                    const updated = checklist.map((c) =>
+                                      c.id === item.id
+                                        ? {
+                                            ...c,
+                                            welcomeCallMood: active ? undefined : (key as 'positive' | 'neutral' | 'worried'),
+                                            welcomeCallAt: new Date().toISOString(),
+                                            welcomeCallBy: c.welcomeCallBy || user?.email || undefined,
+                                          }
+                                        : c
+                                    );
+                                    onChecklistUpdate(updated);
+                                  }}
+                                >
+                                  <Icon className="w-3.5 h-3.5 mr-1" />
+                                  {label}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Fritextanteckning */}
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            Anteckningar från samtalet (vad sas, är kund införstådd, etc.)
+                          </Label>
+                          <Textarea
+                            rows={4}
+                            className="text-sm"
+                            placeholder="T.ex. genomgång av tidsplan, ROT-avdrag, kundens frågor och eventuella önskemål..."
+                            value={item.welcomeCallNotes || ''}
+                            disabled={!isEditable}
+                            onChange={(e) => {
+                              const updated = checklist.map((c) =>
+                                c.id === item.id
+                                  ? {
+                                      ...c,
+                                      welcomeCallNotes: e.target.value,
+                                      welcomeCallAt: new Date().toISOString(),
+                                      welcomeCallBy: c.welcomeCallBy || user?.email || undefined,
+                                    }
+                                  : c
+                              );
+                              onChecklistUpdate(updated);
+                            }}
+                          />
+                        </div>
+
+                        {/* Uppföljning */}
+                        <div className="space-y-2 pt-1 border-t border-border/60">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={`${item.id}-followup`}
+                              checked={!!item.welcomeCallFollowUpRequired}
+                              disabled={!isEditable}
+                              onCheckedChange={(checked) => {
+                                const required = !!checked;
+                                const updated = checklist.map((c) =>
+                                  c.id === item.id
+                                    ? {
+                                        ...c,
+                                        welcomeCallFollowUpRequired: required,
+                                        welcomeCallFollowUpDate: required ? c.welcomeCallFollowUpDate : undefined,
+                                        welcomeCallAt: new Date().toISOString(),
+                                        welcomeCallBy: c.welcomeCallBy || user?.email || undefined,
+                                      }
+                                    : c
+                                );
+                                onChecklistUpdate(updated);
+                              }}
+                            />
+                            <Label
+                              htmlFor={`${item.id}-followup`}
+                              className="text-xs cursor-pointer"
+                            >
+                              Uppföljning krävs
+                            </Label>
+                          </div>
+                          {item.welcomeCallFollowUpRequired && (
+                            <div className="flex items-center gap-2 pl-6">
+                              <Label className="text-xs text-muted-foreground">Datum:</Label>
+                              <Input
+                                type="date"
+                                className="h-7 w-40 text-xs"
+                                value={item.welcomeCallFollowUpDate || ''}
+                                disabled={!isEditable}
+                                onChange={(e) => {
+                                  const updated = checklist.map((c) =>
+                                    c.id === item.id
+                                      ? {
+                                          ...c,
+                                          welcomeCallFollowUpDate: e.target.value || undefined,
+                                          welcomeCallAt: new Date().toISOString(),
+                                          welcomeCallBy: c.welcomeCallBy || user?.email || undefined,
+                                        }
+                                      : c
+                                  );
+                                  onChecklistUpdate(updated);
+                                }}
+                              />
+                              {item.welcomeCallFollowUpDate &&
+                                new Date(item.welcomeCallFollowUpDate) < new Date(new Date().toDateString()) &&
+                                !item.completed && (
+                                  <span className="flex items-center gap-1 text-xs text-destructive">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    Försenad
+                                  </span>
+                                )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
+
 
 
                      {/* Show trailer dropdown for Book scaffolding */}
