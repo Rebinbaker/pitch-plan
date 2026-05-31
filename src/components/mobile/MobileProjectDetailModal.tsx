@@ -82,6 +82,7 @@ export function MobileProjectDetailModal({
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
+      case 'redo': return 'redo';
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
