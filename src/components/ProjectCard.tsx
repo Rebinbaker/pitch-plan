@@ -196,6 +196,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
               <Badge variant={getStatusVariant(project.status)}>
                 {project.status === 'completed' ? 'Avslutad' : 
                  project.status === 'ånger' ? 'Ånger' :
+                 project.status === 'redo' ? 'Redo' :
                  project.status.charAt(0).toUpperCase() + project.status.slice(1)}
               </Badge>
               {project.rotStatus === 'Yes' && (
