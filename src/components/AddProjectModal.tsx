@@ -44,7 +44,7 @@ const projectFormSchema = z.object({
   constructionStartWeek: z.string().min(1, 'Construction start week is required'),
   estimatedWorkDays: z.number().min(1, 'Estimated work days is required'),
   rotStatus: z.enum(['Yes', 'No'] as const),
-  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
+  status: z.enum(['planned', 'redo', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   region: z.string().min(1, 'Region is required'),
   notes: z.string().optional(),
 });
