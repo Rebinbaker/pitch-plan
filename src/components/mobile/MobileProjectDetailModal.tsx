@@ -56,6 +56,7 @@ export function MobileProjectDetailModal({
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-planned text-white';
+      case 'redo': return 'bg-redo text-white';
       case 'ongoing': return 'bg-ongoing text-white';
       case 'completed': return 'bg-completed text-white';
       case 'invoiced': return 'bg-invoiced text-white';
