@@ -34,6 +34,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
   const getStatusText = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'Planerad';
+      case 'redo': return 'Redo';
       case 'ongoing': return 'Pågående';
       case 'completed': return 'Avslutad';
       case 'invoiced': return 'Fakturerad';
