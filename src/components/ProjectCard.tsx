@@ -91,7 +91,11 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
     const welcomeDone = !!welcome?.completed;
     const containerDone = !!container?.completed || !!container?.containerOrderConfirmed;
     const scaffoldingDone = scaffolding?.scaffoldingStatus === 'built_ready' || !!scaffolding?.completed;
-    const materialDone = project.materialOrder?.status === 'ordered' || project.materialOrder?.status === 'delivered';
+    const material = items.find(i => i.label === 'Materialbeställning');
+    const materialDone =
+      project.materialOrder?.status === 'ordered' ||
+      project.materialOrder?.status === 'delivered' ||
+      !!material?.completed;
 
     if (welcomeDone && containerDone && scaffoldingDone && materialDone) {
       const activityEntry = {
