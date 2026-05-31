@@ -76,6 +76,7 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const activeProjectId = selectedProjectId ?? selectedProject?.id ?? null;
 
   useEffect(() => {
     try {
@@ -85,14 +86,14 @@ export function ProjectDashboard({ projects, onUpdateProject, onDeleteProject, o
 
   // Auto-open project detail modal when selectedProjectId changes
   useEffect(() => {
-    if (selectedProjectId) {
-      const project = projects.find(p => p.id === selectedProjectId);
-      if (project) {
-        setSelectedProject(project);
-        setIsDetailModalOpen(true);
-      }
+    if (!activeProjectId) return;
+
+    const project = projects.find(p => p.id === activeProjectId);
+    if (project) {
+      setSelectedProject(project);
+      setIsDetailModalOpen(true);
     }
-  }, [selectedProjectId, projects]);
+  }, [activeProjectId, projects]);
 
   // Filter projects based on search term and filters
   const filteredProjects = projects.filter(project => {
