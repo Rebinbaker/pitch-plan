@@ -160,8 +160,8 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
                 <SelectItem value="all">Alla status</SelectItem>
-                <SelectItem value="ordered">Beställda</SelectItem>
-                <SelectItem value="delivered">Levererade</SelectItem>
+                <SelectItem value="ordered">Beställt</SelectItem>
+                <SelectItem value="delivered">På plats</SelectItem>
               </SelectContent>
             </Select>
 
