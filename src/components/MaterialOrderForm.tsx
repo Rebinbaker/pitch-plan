@@ -269,8 +269,8 @@ export function MaterialOrderForm({ project, allProjects, onSave, onClose }: Mat
             <Badge variant={status === 'draft' ? 'secondary' : status === 'ready_to_order' ? 'default' : 'outline'}>
               {status === 'draft' && 'Utkast'}
               {status === 'ready_to_order' && 'Klar för beställning'}
-              {status === 'ordered' && 'Beställd'}
-              {status === 'delivered' && 'Levererad'}
+              {status === 'ordered' && 'Beställt'}
+              {status === 'delivered' && 'På plats'}
             </Badge>
           </div>
 

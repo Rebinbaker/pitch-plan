@@ -32,7 +32,7 @@ const editProjectSchema = z.object({
   customerName: z.string().min(1, 'Kundnamn krävs'),
   customerPhone: z.string().min(1, 'Telefonnummer krävs'),
   address: z.string().optional(),
-  status: z.enum(['planned', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
+  status: z.enum(['planned', 'redo', 'ongoing', 'completed', 'invoiced', 'ånger'] as const),
   completion_percentage: z.number().min(0).max(100),
   construction_team: z.string().optional(),
   scaffolding_team_id: z.string().optional(),
@@ -115,6 +115,7 @@ export function MobileEditProjectModal({
   const getStatusLabel = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'Planerat';
+      case 'redo': return 'Redo';
       case 'ongoing': return 'Pågående';
       case 'completed': return 'Avslutat';
       case 'invoiced': return 'Fakturerat';
@@ -125,6 +126,7 @@ export function MobileEditProjectModal({
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-orange-100 text-orange-800';
+      case 'redo': return 'bg-purple-100 text-purple-800';
       case 'ongoing': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-green-100 text-green-800';
       case 'invoiced': return 'bg-purple-100 text-purple-800';

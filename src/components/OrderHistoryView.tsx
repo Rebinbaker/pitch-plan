@@ -79,8 +79,8 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
 
   const getStatusText = (status: MaterialOrderStatus) => {
     switch (status) {
-      case 'ordered': return 'Beställd';
-      case 'delivered': return 'Levererad';
+      case 'ordered': return 'Beställt';
+      case 'delivered': return 'På plats';
       default: return 'Okänd';
     }
   };
@@ -160,8 +160,8 @@ export function OrderHistoryView({ projects }: OrderHistoryViewProps) {
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
                 <SelectItem value="all">Alla status</SelectItem>
-                <SelectItem value="ordered">Beställda</SelectItem>
-                <SelectItem value="delivered">Levererade</SelectItem>
+                <SelectItem value="ordered">Beställt</SelectItem>
+                <SelectItem value="delivered">På plats</SelectItem>
               </SelectContent>
             </Select>
 

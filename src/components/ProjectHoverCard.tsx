@@ -23,6 +23,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-blue-500';
+      case 'redo': return 'bg-purple-500';
       case 'ongoing': return 'bg-orange-500';
       case 'completed': return 'bg-green-500';
       case 'invoiced': return 'bg-purple-500';
@@ -33,6 +34,7 @@ export function ProjectHoverCard({ project, children }: ProjectHoverCardProps) {
   const getStatusText = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'Planerad';
+      case 'redo': return 'Redo';
       case 'ongoing': return 'Pågående';
       case 'completed': return 'Avslutad';
       case 'invoiced': return 'Fakturerad';

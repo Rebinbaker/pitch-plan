@@ -78,9 +78,44 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
     }
   }, [project, onUpdateProject]);
 
+  // Auto-transition to 'redo' when project is planned and pre-construction readiness is met
+  React.useEffect(() => {
+    if (!onUpdateProject) return;
+    if (project.status !== 'planned') return;
+
+    const items = project.checklist || [];
+    const welcome = items.find(i => i.label === 'Välkomstsamtal');
+    const container = items.find(i => i.label === 'Containerbeställning');
+    const scaffolding = items.find(i => i.label === 'Ställningshantering');
+
+    const welcomeDone = !!welcome?.completed;
+    const containerDone = !!container?.completed || !!container?.containerOrderConfirmed;
+    const scaffoldingDone = scaffolding?.scaffoldingStatus === 'built_ready' || !!scaffolding?.completed;
+    const materialDone = project.materialOrder?.status === 'ordered' || project.materialOrder?.status === 'delivered';
+
+    if (welcomeDone && containerDone && scaffoldingDone && materialDone) {
+      const activityEntry = {
+        id: `activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        user: 'System',
+        action: 'Projekt redo - välkomstsamtal, container, ställning och material klara',
+        description: 'status',
+        category: 'status' as const,
+        oldValue: 'Planerad',
+        newValue: 'Redo',
+      };
+      onUpdateProject({
+        ...project,
+        status: 'redo',
+        activityLog: [...(project.activityLog || []), activityEntry],
+      });
+    }
+  }, [project, onUpdateProject]);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
+      case 'redo': return 'redo';
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
@@ -161,6 +196,7 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
               <Badge variant={getStatusVariant(project.status)}>
                 {project.status === 'completed' ? 'Avslutad' : 
                  project.status === 'ånger' ? 'Ånger' :
+                 project.status === 'redo' ? 'Redo' :
                  project.status.charAt(0).toUpperCase() + project.status.slice(1)}
               </Badge>
               {project.rotStatus === 'Yes' && (

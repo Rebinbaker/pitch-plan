@@ -1,4 +1,4 @@
-export type ProjectStatus = 'planned' | 'ongoing' | 'completed' | 'invoiced' | 'ånger';
+export type ProjectStatus = 'planned' | 'redo' | 'ongoing' | 'completed' | 'invoiced' | 'ånger';
 export type Region = string;
 export type ROTStatus = 'Yes' | 'No';
 export type StorageLocation = 'Hos kund' | 'Ställningspark' | 'I bil' | 'Montörens garage' | 'Annat';

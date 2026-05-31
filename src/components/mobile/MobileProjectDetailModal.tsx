@@ -56,6 +56,7 @@ export function MobileProjectDetailModal({
   const getStatusColor = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'bg-planned text-white';
+      case 'redo': return 'bg-redo text-white';
       case 'ongoing': return 'bg-ongoing text-white';
       case 'completed': return 'bg-completed text-white';
       case 'invoiced': return 'bg-invoiced text-white';
@@ -66,6 +67,7 @@ export function MobileProjectDetailModal({
   const getStatusLabel = (status: ProjectStatus) => {
     switch (status) {
       case 'planned': return 'Planerat';
+      case 'redo': return 'Redo';
       case 'ongoing': return 'Pågående';
       case 'completed': return 'Avslutat';
       case 'invoiced': return 'Fakturerat';
@@ -80,6 +82,7 @@ export function MobileProjectDetailModal({
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
+      case 'redo': return 'redo';
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';

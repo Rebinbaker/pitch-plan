@@ -31,6 +31,7 @@ interface ProjectHeaderProps {
 
 const STATUS_OPTIONS: { value: StatusFilterValue; label: string }[] = [
   { value: 'planned', label: 'Planerad' },
+  { value: 'redo', label: 'Redo' },
   { value: 'ongoing', label: 'Pågående' },
   { value: 'completed', label: 'Slutförd' },
   { value: 'invoiced', label: 'Fakturerad' },

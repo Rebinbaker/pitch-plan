@@ -77,6 +77,7 @@ export function ProjectDetailModal({
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'planned': return 'planned';
+      case 'redo': return 'redo';
       case 'ongoing': return 'ongoing';
       case 'completed': return 'completed';
       case 'invoiced': return 'invoiced';
@@ -406,7 +407,7 @@ Tack! 👷‍♂️`;
             </div>
             <div className="flex flex-col gap-2">
               <Badge variant={getStatusVariant(project.status)}>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {project.status === 'redo' ? 'Redo' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
               </Badge>
               {project.rotStatus === 'Yes' && (
                 <Badge variant="rot">ROT</Badge>

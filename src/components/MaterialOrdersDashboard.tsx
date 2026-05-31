@@ -98,8 +98,8 @@ export function MaterialOrdersDashboard({
     switch (status) {
       case 'draft': return 'Utkast';
       case 'ready_to_order': return 'Klar för beställning';
-      case 'ordered': return 'Beställd';
-      case 'delivered': return 'Levererad';
+      case 'ordered': return 'Beställt';
+      case 'delivered': return 'På plats';
       default: return 'Okänd';
     }
   };
@@ -186,8 +186,8 @@ export function MaterialOrdersDashboard({
                 <SelectItem value="all">Alla status</SelectItem>
                 <SelectItem value="draft">Utkast</SelectItem>
                 <SelectItem value="ready_to_order">Klar för beställning</SelectItem>
-                <SelectItem value="ordered">Beställd</SelectItem>
-                <SelectItem value="delivered">Levererad</SelectItem>
+                <SelectItem value="ordered">Beställt</SelectItem>
+                <SelectItem value="delivered">På plats</SelectItem>
               </SelectContent>
             </Select>
 
