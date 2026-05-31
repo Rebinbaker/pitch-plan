@@ -48,6 +48,8 @@ export function ProjectChecklist({
   onFileUploaded
 }: ProjectChecklistProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [showWelcomeTips, setShowWelcomeTips] = useState(false);
   
   // Debug logging to see what data we have
   console.log('DEBUG ProjectChecklist - Data received:', {
