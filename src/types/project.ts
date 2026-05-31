@@ -133,6 +133,10 @@ export interface ChecklistItem {
   scaffoldingArrivalDate?: string; // Expected arrival date (ISO yyyy-mm-dd) when status is 'on_the_way'
   welcomeCallNotes?: string; // Notes from the welcome call with the customer
   welcomeCallAt?: string; // ISO timestamp of when welcome call notes were last saved
+  welcomeCallBy?: string; // Name/email of who made the welcome call
+  welcomeCallMood?: 'positive' | 'neutral' | 'worried'; // Customer's mood/attitude during the call
+  welcomeCallFollowUpRequired?: boolean; // Whether a follow-up is needed
+  welcomeCallFollowUpDate?: string; // ISO yyyy-mm-dd for follow-up date
 }
 
 export interface WorkPhaseItem {
