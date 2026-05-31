@@ -1161,6 +1161,41 @@ Tack!`);
                       />
                     )}
 
+                    {/* Välkomstsamtal: notes from the call with the customer */}
+                    {isWelcomeCall && (
+                      <div className="mt-2 space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          Anteckningar från välkomstsamtalet (vad sas, är kund införstådd, etc.)
+                        </Label>
+                        <Textarea
+                          rows={4}
+                          className="text-sm"
+                          placeholder="T.ex. genomgång av tidsplan, ROT-avdrag, kundens frågor och eventuella önskemål..."
+                          value={item.welcomeCallNotes || ''}
+                          disabled={!isEditable}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const updated = checklist.map((c) =>
+                              c.id === item.id
+                                ? {
+                                    ...c,
+                                    welcomeCallNotes: e.target.value,
+                                    welcomeCallAt: new Date().toISOString(),
+                                  }
+                                : c
+                            );
+                            onChecklistUpdate(updated);
+                          }}
+                        />
+                        {item.welcomeCallAt && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Senast uppdaterad: {new Date(item.welcomeCallAt).toLocaleString('sv-SE')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+
                      {/* Show trailer dropdown for Book scaffolding */}
                     {isBookScaffolding && trailers.length > 0 && project && onUpdateProject && (
                       <div className="mt-2 space-y-2">
