@@ -78,6 +78,32 @@ export function ProjectCard({ project, onViewDetails, onUpdateProject, onDeleteP
     }
   }, [project, onUpdateProject]);
 
+  // Auto-transition to 'ongoing' as soon as any work phase is completed
+  React.useEffect(() => {
+    if (!onUpdateProject) return;
+    if (project.status !== 'planned' && project.status !== 'redo') return;
+
+    const anyPhaseDone = (project.workPhases || []).some(p => p.completed);
+    if (anyPhaseDone) {
+      const activityEntry = {
+        id: `activity-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        user: 'System',
+        action: 'Projekt startat - första arbetsmomentet avbockat',
+        description: 'status',
+        category: 'status' as const,
+        oldValue: project.status === 'redo' ? 'Redo' : 'Planerad',
+        newValue: 'Pågående',
+      };
+      onUpdateProject({
+        ...project,
+        status: 'ongoing',
+        activityLog: [...(project.activityLog || []), activityEntry],
+      });
+      return;
+    }
+  }, [project, onUpdateProject]);
+
   // Auto-transition between 'planned' and 'redo' based on pre-construction readiness
   React.useEffect(() => {
     if (!onUpdateProject) return;
