@@ -35,10 +35,14 @@ export const useSupabaseStorage = () => {
     }
   }, [user, organizationId]);
 
-  const loadSupabaseProjects = async () => {
+  const loadSupabaseProjects = async ({ background = false }: { background?: boolean } = {}) => {
     if (!user || !organizationId) return;
-    
-    setLoading(true);
+
+    const shouldShowLoading = !background && supabaseProjects.length === 0;
+
+    if (shouldShowLoading) {
+      setLoading(true);
+    }
     try {
       const { data, error } = await supabase
         .from('projects' as any)
@@ -96,7 +100,9 @@ export const useSupabaseStorage = () => {
     } catch (error) {
       console.error('Error loading Supabase projects:', error);
     } finally {
-      setLoading(false);
+      if (shouldShowLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -144,7 +150,7 @@ export const useSupabaseStorage = () => {
           filter: `organization_id=eq.${organizationId}`
         },
         () => {
-          loadSupabaseProjects();
+          loadSupabaseProjects({ background: true });
         }
       )
       .subscribe();
