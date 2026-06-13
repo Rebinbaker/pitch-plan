@@ -1,46 +1,41 @@
-## Utöka "Välkomstsamtal" i projektchecklistan
+## Goal
+Make `npm install`, `npm run build`, and `npx cap sync android` work on your Mac without `--legacy-peer-deps` or any other workaround flags.
 
-### Vad som läggs till i kortet
+## Root cause
+Your `package.json` mixes Capacitor major versions:
 
-Under checklistpunkten "Välkomstsamtal" visas en utökad panel med:
+- `@capacitor/core`, `cli`, `android`, `ios`, `geolocation` → **v7**
+- `@capacitor/camera`, `device`, `local-notifications` → **v8**
+- `@capacitor-community/background-geolocation` → expects core v7
 
-1. **Vem ringde + när** – auto-fylls med inloggad användare och tidsstämpel när första anteckningen sparas. Visas som "Samtal av [namn] · [datum/tid]". Kan justeras manuellt om någon annan ringde.
+Capacitor v8 plugins require `@capacitor/core >= 8`, so npm refuses to install. The half-installed `node_modules` is also why `vite` and `cap` are "not found".
 
-2. **Tips-ruta (kollapsbar samtalsguide)** – en liten "Visa tips"-knapp som fäller ut en lista med förslag på vad man bör ta upp, t.ex.:
-   - Presentera projektledare och bygglag
-   - Gå igenom preliminär tidsplan och startvecka
-   - Förklara ROT-avdrag och fakturering
-   - Informera om ställning, container och tillfartsvägar
-   - Stäm av kontaktperson och anträffbarhet
-   - Fråga om grannar är informerade
-   - Bekräfta att kund är införstådd
+## Fix (in Lovable repo)
+Align everything on **Capacitor 7** (matches your existing native build checklist and the background-geolocation plugin, which has no v8 release yet).
 
-3. **Kunds inställning** – tre snabbknappar: Positiv / Neutral / Orolig. Färgkodade. "Orolig" flaggar kortet visuellt så projektledaren ser det i översikten.
+Bump these down to the latest v7:
 
-4. **Fritextanteckning** – textarea för vad som sas.
+- `@capacitor/camera`: `^8.2.0` → `^7.0.1`
+- `@capacitor/device`: `^8.0.2` → `^7.0.1`
+- `@capacitor/local-notifications`: `^8.2.0` → `^7.0.1`
 
-5. **Uppföljning krävs** – checkbox. Om ikryssad visas ett datumfält för när uppföljning ska ske. Om datum passerats utan att samtalet är avbockat → visuell varning på kortet.
+Keep everything else as-is. Commit to GitHub.
 
-### Tekniska detaljer
+## What you do on your Mac afterwards
+```bash
+cd ~/Desktop/pitch-plan
+git pull
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+npx cap add android        # only first time
+npx cap sync android
+npx cap open android
+```
 
-**`src/types/project.ts`** — utöka `ChecklistItem` med:
-- `welcomeCallNotes?: string` (finns redan)
-- `welcomeCallAt?: string` (finns redan)
-- `welcomeCallBy?: string` (namn/e-post på den som ringde)
-- `welcomeCallMood?: 'positive' | 'neutral' | 'worried'`
-- `welcomeCallFollowUpRequired?: boolean`
-- `welcomeCallFollowUpDate?: string` (ISO yyyy-mm-dd)
+This will install cleanly (no `--legacy-peer-deps`), `vite` will be available, and `npx cap` will work because `@capacitor/cli` will be properly installed in `node_modules/.bin`.
 
-**`src/components/ProjectChecklist.tsx`** — ersätt nuvarande enkla textarea för `isWelcomeCall` med en komplett panel:
-- Header med "Samtal av X · datum" (auto-fyll vid första save via `useAuth`)
-- Kollapsbar tips-ruta (lokal `useState` för open/close, ChevronDown-ikon)
-- Tre toggle-knappar för humör (använd `Badge`/`Button` med variant)
-- Textarea (befintlig)
-- Checkbox + Input type="date" för uppföljning
-
-Alla ändringar sparas via `onChecklistUpdate` precis som idag — inga DB-schemaändringar krävs eftersom checklistan lagras som `jsonb` på `projects.checklist`.
-
-**Ingen migration behövs** — nya fält är optional och befintliga projekt fortsätter fungera. Punkten "Välkomstsamtal" injiceras redan i `useSupabaseStorage` för äldre projekt.
-
-### Bonus (om önskat senare)
-Visning av "Orolig kund" eller "Uppföljning försenad" som risk-flagga i ProjectCard / Control Tower.
+## Technical notes
+- We stay on Capacitor 7 instead of upgrading the whole stack to 8 because `@capacitor-community/background-geolocation@1.2.x` (your time-tracking plugin) doesn't yet support core v8. Upgrading would break GPS check-in.
+- No code changes needed — the v7 plugin APIs you use (Camera.getPhoto, Device.getId, LocalNotifications.schedule) are identical to v8 for your call sites.
+- `package-lock.json` will be regenerated on your machine when you run `npm install`.
